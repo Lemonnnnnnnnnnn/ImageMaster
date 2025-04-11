@@ -23,6 +23,8 @@
 
   let mangaImages = new Map(); // 缓存图片
 
+  let showMangaView = false; // 控制是否显示漫画查看页面
+
   onMount(async () => {
     // 加载库和漫画
     await loadLibraries();
@@ -75,29 +77,33 @@
   async function viewManga(manga) {
     loading = true;
     selectedManga = manga;
+    selectedImages = [];
     
     // 获取所有图片路径
     const imagePaths = await GetMangaImages(manga.path);
-    selectedImages = [];
     
-    // 加载第一张图片
-    if (imagePaths.length > 0) {
-      const firstImage = await GetImageDataUrl(imagePaths[0]);
-      selectedImages.push(firstImage);
-      
-      // 异步加载其余图片
-      setTimeout(async () => {
-        for (let i = 1; i < imagePaths.length; i++) {
-          const imagePath = imagePaths[i];
-          const imageData = await GetImageDataUrl(imagePath);
-          selectedImages = [...selectedImages, imageData];
+    // 加载所有图片
+    for (let i = 0; i < imagePaths.length; i++) {
+      try {
+        const imageData = await GetImageDataUrl(imagePaths[i]);
+        selectedImages = [...selectedImages, imageData];
+        
+        // 加载第一张后即显示页面
+        if (i === 0) {
+          showMangaView = true;
         }
-      }, 100);
+      } catch (error) {
+        console.error("加载图片失败:", error);
+      }
     }
     
-    currentImageIndex = 0;
-    showViewer = true;
     loading = false;
+  }
+
+  function backToHome() {
+    showMangaView = false;
+    selectedManga = null;
+    selectedImages = [];
   }
 
   async function deleteManga(event, manga) {
@@ -113,117 +119,93 @@
       loading = false;
     }
   }
-
-  function closeViewer() {
-    showViewer = false;
-    selectedManga = null;
-    selectedImages = [];
-  }
-
-  function prevImage() {
-    if (currentImageIndex > 0) {
-      currentImageIndex--;
-    }
-  }
-
-  function nextImage() {
-    if (currentImageIndex < selectedImages.length - 1) {
-      currentImageIndex++;
-    }
-  }
-
-  function handleKeydown(event) {
-    if (!showViewer) return;
-    
-    if (event.key === 'ArrowLeft') {
-      prevImage();
-    } else if (event.key === 'ArrowRight') {
-      nextImage();
-    } else if (event.key === 'Escape') {
-      closeViewer();
-    }
-  }
 </script>
 
-<svelte:window on:keydown={handleKeydown}/>
-
 <main>
-  <div class="header">
-    <h1>漫画查看器</h1>
-    <button on:click={chooseLibrary} class="add-library-btn">添加漫画库</button>
-  </div>
-
-  {#if libraries.length === 0 && !loading}
-    <div class="welcome">
-      <h2>欢迎使用漫画查看器</h2>
-      <p>请点击"添加漫画库"按钮选择一个包含漫画的文件夹</p>
+  {#if !showMangaView}
+    <!-- 主页面 -->
+    <div class="header">
+      <h1>漫画查看器</h1>
+      <button on:click={chooseLibrary} class="add-library-btn">添加漫画库</button>
     </div>
-  {:else if libraries.length > 0}
-    <div class="libraries">
-      <h3>已添加的漫画库：</h3>
-      <ul>
-        {#each libraries as lib}
-          <li>{lib}</li>
+
+    {#if libraries.length === 0 && !loading}
+      <div class="welcome">
+        <h2>欢迎使用漫画查看器</h2>
+        <p>请点击"添加漫画库"按钮选择一个包含漫画的文件夹</p>
+      </div>
+    {:else if libraries.length > 0}
+      <div class="libraries">
+        <h3>已添加的漫画库：</h3>
+        <ul>
+          {#each libraries as lib}
+            <li>{lib}</li>
+          {/each}
+        </ul>
+      </div>
+    {/if}
+
+    {#if loading}
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>加载中...</p>
+      </div>
+    {:else if mangas.length > 0}
+      <div class="manga-grid">
+        {#each mangas as manga}
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div class="manga-card" on:click={() => viewManga(manga)}>
+            <div class="manga-preview">
+              <img src={mangaImages.get(manga.previewImg) || ''} alt={manga.name} />
+            </div>
+            <div class="manga-info">
+              <h3>{manga.name}</h3>
+              <p>{manga.imagesCount} 张图片</p>
+              <button 
+                class="delete-btn" 
+                on:click={(e) => deleteManga(e, manga)}
+                title="删除"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
         {/each}
-      </ul>
-    </div>
-  {/if}
-
-  {#if loading}
-    <div class="loading">
-      <div class="spinner"></div>
-      <p>加载中...</p>
-    </div>
-  {:else if mangas.length > 0}
-    <div class="manga-grid">
-      {#each mangas as manga}
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <div class="manga-card" on:click={() => viewManga(manga)}>
-          <div class="manga-preview">
-            <img src={mangaImages.get(manga.previewImg) || ''} alt={manga.name} />
-          </div>
-          <div class="manga-info">
-            <h3>{manga.name}</h3>
-            <p>{manga.imagesCount} 张图片</p>
-            <button 
-              class="delete-btn" 
-              on:click={(e) => deleteManga(e, manga)}
-              title="删除"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      {/each}
-    </div>
-  {:else if libraries.length > 0 && !loading}
-    <div class="no-mangas">
-      <p>未找到漫画。请确保您的漫画库中包含有图片的子文件夹。</p>
-    </div>
-  {/if}
-
-  {#if showScrollTop}
-    <button class="scroll-top-btn" on:click={scrollToTop}>
-      ↑
-    </button>
-  {/if}
-
-  {#if showViewer && selectedManga}
-    <div class="image-viewer">
-      <div class="viewer-header">
-        <h2>{selectedManga.name}</h2>
-        <span class="counter">{currentImageIndex + 1} / {selectedImages.length}</span>
-        <button class="close-btn" on:click={closeViewer}>✕</button>
       </div>
-      <div class="viewer-content">
-        <button class="nav-btn prev" on:click={prevImage} disabled={currentImageIndex === 0}>❮</button>
-        <div class="image-container">
-          {#if selectedImages.length > currentImageIndex}
-            <img src={selectedImages[currentImageIndex]} alt={`图片 ${currentImageIndex + 1}`} />
-          {/if}
-        </div>
-        <button class="nav-btn next" on:click={nextImage} disabled={currentImageIndex === selectedImages.length - 1}>❯</button>
+    {:else if libraries.length > 0 && !loading}
+      <div class="no-mangas">
+        <p>未找到漫画。请确保您的漫画库中包含有图片的子文件夹。</p>
       </div>
+    {/if}
+
+    {#if showScrollTop}
+      <button class="scroll-top-btn" on:click={scrollToTop}>
+        ↑
+      </button>
+    {/if}
+  {:else}
+    <!-- 漫画查看页面 -->
+    <div class="manga-view">
+      <div class="manga-view-header">
+        <button class="back-btn" on:click={backToHome}>← 返回</button>
+        <h2>{selectedManga?.name}</h2>
+        <div class="placeholder"></div>
+      </div>
+      
+      {#if loading}
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>加载中...</p>
+        </div>
+      {:else}
+        <div class="manga-view-content">
+          {#each selectedImages as image}
+            <div class="manga-page">
+              <img src={image} alt="漫画页面" />
+            </div>
+          {/each}
+        </div>
+      {/if}
     </div>
   {/if}
 </main>
@@ -428,87 +410,71 @@
     z-index: 100;
   }
 
-  .image-viewer {
+  .manga-view {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.9);
+    background-color: #f5f5f5;
     z-index: 1000;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
-  .viewer-header {
+  .manga-view-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px 20px;
-    color: white;
-    background-color: rgba(0,0,0,0.5);
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 100;
   }
 
-  .viewer-header h2 {
+  .manga-view-header h2 {
     margin: 0;
     font-size: 18px;
+    text-align: center;
   }
 
-  .counter {
-    color: #ccc;
-  }
-
-  .close-btn {
+  .back-btn {
     background: none;
     border: none;
-    color: white;
-    font-size: 24px;
+    color: #333;
+    font-size: 16px;
     cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
   }
 
-  .viewer-content {
+  .back-btn:hover {
+    background-color: #f0f0f0;
+  }
+
+  .placeholder {
+    width: 80px; /* 与back-btn大致相同宽度，用于居中标题 */
+  }
+
+  .manga-view-content {
     flex: 1;
+    overflow-y: auto;
+    padding: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
+  }
+
+  .manga-page {
+    width: 100%;
+    display: flex;
     justify-content: center;
   }
 
-  .image-container {
-    height: 90%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .image-container img {
+  .manga-page img {
     max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-  }
-
-  .nav-btn {
-    background: rgba(0,0,0,0.3);
-    color: white;
-    border: none;
-    font-size: 24px;
-    padding: 10px;
-    margin: 0 10px;
-    cursor: pointer;
-    height: 50px;
-    width: 50px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-  }
-
-  .nav-btn:hover:not(:disabled) {
-    background: rgba(0,0,0,0.6);
-  }
-
-  .nav-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
+    height: auto;
+    display: block;
   }
 </style>
