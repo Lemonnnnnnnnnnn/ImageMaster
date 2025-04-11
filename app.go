@@ -242,24 +242,39 @@ func (a *App) DeleteManga(path string) bool {
 
 // SortImages 排序图片文件
 func (a *App) SortImages(images []string) {
-	// 按数字和字符排序
 	sort.Slice(images, func(i, j int) bool {
 		nameI := filepath.Base(images[i])
 		nameJ := filepath.Base(images[j])
 
-		// 提取文件名中的数字
+		// 尝试提取 page_offset 格式
+		partsI := strings.Split(strings.TrimSuffix(nameI, ".jpg"), "_")
+		partsJ := strings.Split(strings.TrimSuffix(nameJ, ".jpg"), "_")
+
+		if len(partsI) == 2 && len(partsJ) == 2 {
+			pageI, errI1 := strconv.Atoi(partsI[0])
+			offsetI, errI2 := strconv.Atoi(partsI[1])
+			pageJ, errJ1 := strconv.Atoi(partsJ[0])
+			offsetJ, errJ2 := strconv.Atoi(partsJ[1])
+
+			if errI1 == nil && errI2 == nil && errJ1 == nil && errJ2 == nil {
+				if pageI != pageJ {
+					return pageI < pageJ
+				}
+				return offsetI < offsetJ
+			}
+		}
+
+		// 回退到原来的排序逻辑
 		reNum := regexp.MustCompile(`\d+`)
 		numsI := reNum.FindAllString(nameI, -1)
 		numsJ := reNum.FindAllString(nameJ, -1)
 
-		// 如果两个文件名都包含数字
 		if len(numsI) > 0 && len(numsJ) > 0 {
 			numI, _ := strconv.Atoi(numsI[0])
 			numJ, _ := strconv.Atoi(numsJ[0])
 			return numI < numJ
 		}
 
-		// 如果只有一个包含数字，有数字的优先
 		if len(numsI) > 0 {
 			return true
 		}
@@ -267,7 +282,6 @@ func (a *App) SortImages(images []string) {
 			return false
 		}
 
-		// 都没有数字，按ASCII码排序
 		return nameI < nameJ
 	})
 }
