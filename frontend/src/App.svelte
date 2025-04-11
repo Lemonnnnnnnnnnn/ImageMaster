@@ -16,6 +16,7 @@
   let showViewer = false;
   let loading = true;
   let libraries = [];
+  let showNavigation = false; // 控制导航按钮的显示
 
   // 向上滚动按钮显示控制
   let showScrollTop = false;
@@ -39,6 +40,15 @@
   function handleScroll() {
     scrollY = window.scrollY;
     showScrollTop = scrollY > 300;
+    
+    // 检查是否滚动到底部
+    if (showMangaView) {
+      const content = document.querySelector('.manga-view-content');
+      if (content) {
+        const { scrollTop, scrollHeight, clientHeight } = content;
+        showNavigation = scrollHeight - scrollTop - clientHeight < 50;
+      }
+    }
   }
 
   function scrollToTop() {
@@ -117,6 +127,20 @@
         alert('删除失败！');
       }
       loading = false;
+    }
+  }
+
+  function navigateToNextManga() {
+    const currentIndex = mangas.findIndex(m => m.path === selectedManga.path);
+    if (currentIndex < mangas.length - 1) {
+      viewManga(mangas[currentIndex + 1]);
+    }
+  }
+
+  function navigateToPrevManga() {
+    const currentIndex = mangas.findIndex(m => m.path === selectedManga.path);
+    if (currentIndex > 0) {
+      viewManga(mangas[currentIndex - 1]);
     }
   }
 </script>
@@ -198,12 +222,31 @@
           <p>加载中...</p>
         </div>
       {:else}
-        <div class="manga-view-content">
+        <div class="manga-view-content" on:scroll={handleScroll}>
           {#each selectedImages as image}
             <div class="manga-page">
               <img src={image} alt="漫画页面" />
             </div>
           {/each}
+          
+          {#if showNavigation}
+            <div class="manga-navigation">
+              <button 
+                class="nav-btn prev-btn" 
+                on:click={navigateToPrevManga}
+                disabled={mangas.findIndex(m => m.path === selectedManga.path) === 0}
+              >
+                ← 上一个
+              </button>
+              <button 
+                class="nav-btn next-btn" 
+                on:click={navigateToNextManga}
+                disabled={mangas.findIndex(m => m.path === selectedManga.path) === mangas.length - 1}
+              >
+                下一个 →
+              </button>
+            </div>
+          {/if}
         </div>
       {/if}
     </div>
@@ -476,5 +519,34 @@
     max-width: 100%;
     height: auto;
     display: block;
+  }
+
+  .manga-navigation {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 20px;
+  }
+
+  .nav-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+  }
+
+  .nav-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+
+  .nav-btn:not(:disabled):hover {
+    background-color: #45a049;
   }
 </style>
