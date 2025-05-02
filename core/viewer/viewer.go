@@ -17,6 +17,7 @@ import (
 // 应用配置
 type Config struct {
 	Libraries []string `json:"libraries"`
+	OutputDir string   `json:"output_dir"`
 }
 
 // 下载进度回调函数类型
@@ -56,14 +57,26 @@ func (v *Viewer) Startup(ctx context.Context) {
 	if err != nil {
 		userDir, _ = os.Getwd()
 	}
-	outputDir := filepath.Join(userDir, "Pictures", "ImageMaster")
+	defaultOutputDir := filepath.Join(userDir, "Pictures", "ImageMaster")
+
+	// 加载配置
+	v.LoadConfig()
+
+	// 如果配置中有指定的输出目录，使用配置中的目录，否则使用默认目录
+	outputDir := defaultOutputDir
+	if v.config.OutputDir != "" {
+		outputDir = v.config.OutputDir
+	} else {
+		// 如果是第一次使用，将默认目录保存到配置中
+		v.config.OutputDir = outputDir
+		v.SaveConfig()
+	}
+
+	// 确保输出目录存在
 	os.MkdirAll(outputDir, 0755)
 
 	v.localGetter = getter.NewLocalGetter(outputDir)
 	v.crawlerFactory = crawler.NewCrawlerFactory(ctx)
-
-	// 加载配置
-	v.LoadConfig()
 
 	// 如果配置中有图书馆，自动加载
 	if len(v.config.Libraries) > 0 {
@@ -285,6 +298,11 @@ func (v *Viewer) SetOutputDir() string {
 	}
 
 	v.localGetter.SetOutputDir(dir)
+
+	// 更新配置并保存
+	v.config.OutputDir = dir
+	v.SaveConfig()
+
 	return dir
 }
 

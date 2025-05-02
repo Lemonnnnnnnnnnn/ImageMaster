@@ -66,14 +66,6 @@ export function SetOutputDir() {
   return window['go']['viewer']['Viewer']['SetOutputDir']();
 }
 
-export function SubscribeToDownloadProgress(arg1) {
-  return window['go']['viewer']['Viewer']['SubscribeToDownloadProgress'](arg1);
-}
-
-export function UnsubscribeFromDownloadProgress() {
-  return window['go']['viewer']['Viewer']['UnsubscribeFromDownloadProgress']();
-}
-
 export function UpdateDownloaderProgress(arg1, arg2) {
   return window['go']['viewer']['Viewer']['UpdateDownloaderProgress'](arg1, arg2);
 }
