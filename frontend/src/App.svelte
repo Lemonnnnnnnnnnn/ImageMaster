@@ -13,6 +13,8 @@
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
       Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
   }
   
   :global(*) {
@@ -21,6 +23,9 @@
   
   main {
     height: 100vh;
-    /* width: 100vw; */
+    width: 100%;
+    /* overflow: hidden; */
+    display: flex;
+    flex-direction: column;
   }
 </style>

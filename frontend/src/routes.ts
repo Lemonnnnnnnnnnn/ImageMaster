@@ -1,14 +1,21 @@
 import { wrap } from 'svelte-spa-router/wrap';
 
 // 导入页面组件
-import Home from './views/Home.svelte';
-import MangaViewer from './views/MangaViewer.svelte';
 import NotFound from './views/NotFound.svelte';
+
+// 导入漫画查看器组件
+import MangaViewer from './views/viewer/MangaViewer.svelte';
+import ViewerContainer from './views/viewer/ViewerContainer.svelte';
+
+// 导入下载器组件
+import Downloader from './views/downloader/Downloader.svelte';
 
 // 定义路由
 const routes = {
-  // 主页 - 显示所有漫画
-  '/': Home,
+  // 主页 - 显示漫画查看器
+  '/': wrap({
+    component: ViewerContainer
+  }),
   
   // 漫画查看页面 - 带参数路由
   '/manga/:path': wrap({
@@ -25,6 +32,9 @@ const routes = {
     ]
   }),
 
+  // 下载器页面
+  '/downloader': Downloader,
+  
   // 通配符路由 - 处理所有未匹配的 URL
   '*': NotFound,
 };
