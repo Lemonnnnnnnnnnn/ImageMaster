@@ -140,6 +140,11 @@ func (dm *DownloadManager) executeTask(taskID string, cancelChan chan struct{}) 
 			// 4. 设置下载器到爬虫
 			imageCrawler.SetDownloader(dm.downloader)
 
+			// 5. 设置下载进度回调函数
+			dm.downloader.SetProgressCallback(func(current, total int) {
+				dm.updateTaskProgress(taskID, current, total)
+			})
+
 			// 获取配置的输出目录
 			var outputDir string
 			if cm, ok := dm.downloader.GetConfigManager().(types.ConfigProvider); ok {
@@ -160,14 +165,6 @@ func (dm *DownloadManager) executeTask(taskID string, cancelChan chan struct{}) 
 				}
 				outputDir = filepath.Join(homeDir, "ImageMaster/downloads")
 			}
-
-			// 使用URL的最后一部分或时间戳作为目录名
-			// dirName := ""
-			// if path := filepath.Base(task.URL); path != "" && path != "." && path != "/" {
-			// 	dirName = path
-			// } else {
-			// 	dirName = fmt.Sprintf("download_%d", time.Now().Unix())
-			// }
 
 			// 构建完整保存路径
 			savePath := filepath.Join(outputDir)

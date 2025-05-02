@@ -27,13 +27,17 @@ type DownloadTask struct {
 	} `json:"progress"` // 下载进度
 }
 
+// ProgressCallback 定义进度回调函数类型
+type ProgressCallback func(current, total int)
+
 // Downloader 下载器
 type Downloader struct {
-	reqClient     *request.Client
-	retryCount    int
-	retryDelay    time.Duration
-	showProcess   bool
-	configManager types.ConfigProvider
+	reqClient        *request.Client
+	retryCount       int
+	retryDelay       time.Duration
+	showProcess      bool
+	configManager    types.ConfigProvider
+	progressCallback ProgressCallback // 进度回调函数
 }
 
 // NewDownloader 创建新的下载器
@@ -162,13 +166,18 @@ func (d *Downloader) BatchDownload(urls []string, filepaths []string, headers ma
 	for i, url := range urls {
 		if err := d.DownloadFile(url, filepaths[i], headers); err == nil {
 			successCount++
+
+			// 下载成功后调用进度回调
+			if d.progressCallback != nil {
+				d.progressCallback(successCount, total)
+			}
 		}
 	}
 
 	return successCount, nil
 }
 
-// SetProgressCallback 设置进度回调函数 - 空实现，仅为兼容接口
+// SetProgressCallback 设置进度回调函数
 func (d *Downloader) SetProgressCallback(callback func(current, total int)) {
-	// 空实现，前端采用轮询方式获取进度
+	d.progressCallback = callback
 }

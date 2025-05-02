@@ -114,13 +114,17 @@ func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, sa
 	// 等待所有URL收集任务完成
 	wg.Wait()
 
+	// 计算总图片数量
+	totalImages := len(imgURLs)
+	fmt.Printf("已收集 %d 张图片URL，开始下载...\n", totalImages)
+
 	// 批量下载所有图片
 	successImages, err = localDownloader.BatchDownload(imgURLs, filePaths, nil)
 	if err != nil {
 		fmt.Printf("批量下载出错: %v\n", err)
 	}
 
-	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", len(imgURLs), successImages)
+	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", totalImages, successImages)
 	return nil
 }
 

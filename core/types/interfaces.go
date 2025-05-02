@@ -4,7 +4,7 @@ package types
 type Downloader interface {
 	DownloadFile(url string, filepath string, headers map[string]string) error
 	BatchDownload(urls []string, filepaths []string, headers map[string]string) (int, error)
-	SetProgressCallback(callback func(current, total int)) // 已不再使用，保留接口兼容性
+	SetProgressCallback(callback func(current, total int))
 	GetProxy() string
 	SetProxy(proxyURL string) error
 }
