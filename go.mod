@@ -1,4 +1,4 @@
-module myproject
+module ImageMaster
 
 go 1.23
 
