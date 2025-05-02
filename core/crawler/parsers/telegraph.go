@@ -23,7 +23,7 @@ type TelegraphImage struct {
 }
 
 // ParseTelegraph 解析Telegraph网站
-func ParseTelegraph(client *http.Client, url string, savePath string) error {
+func ParseTelegraph(client *http.Client, url string, savePath string, dl *downloader.Downloader) error {
 	fmt.Printf("下载 Telegraph 专辑: %s\n", url)
 
 	album, err := GetTelegraphAlbum(client, url)
@@ -31,30 +31,35 @@ func ParseTelegraph(client *http.Client, url string, savePath string) error {
 		return fmt.Errorf("获取专辑失败: %w", err)
 	}
 
-	// 创建下载器
-	downloader := downloader.NewDownloader(3, 2, true)
+	// 使用传入的下载器或创建新的下载器
+	localDownloader := dl
+	if localDownloader == nil {
+		localDownloader = downloader.NewDownloader(3, 2, true)
+		fmt.Printf("Telegraph解析器创建了新的下载器: %p\n", localDownloader)
+	} else {
+		fmt.Printf("Telegraph解析器使用传入的下载器: %p\n", localDownloader)
+	}
 
 	// 保存路径
 	albumPath := savePath + "/" + album.Name
 
-	// 下载所有图片
-	successCount := 0
-	totalCount := len(album.Images)
+	// 准备批量下载
+	var imgURLs []string
+	var filePaths []string
 
-	for i, image := range album.Images {
-		fmt.Printf("下载图片 %d/%d: %s\n", i+1, totalCount, image.URL)
-
+	for _, image := range album.Images {
 		fullPath := fmt.Sprintf("%s/%s", albumPath, image.Name)
-		err := downloader.DownloadFile(image.URL, fullPath, nil)
-		if err != nil {
-			fmt.Printf("下载图片失败: %s, 错误: %v\n", image.URL, err)
-		} else {
-			fmt.Printf("图片下载成功: %s\n", fullPath)
-			successCount++
-		}
+		imgURLs = append(imgURLs, image.URL)
+		filePaths = append(filePaths, fullPath)
 	}
 
-	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", totalCount, successCount)
+	// 批量下载所有图片并跟踪进度
+	successCount, err := localDownloader.BatchDownload(imgURLs, filePaths, nil)
+	if err != nil {
+		fmt.Printf("批量下载出错: %v\n", err)
+	}
+
+	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", len(imgURLs), successCount)
 	return nil
 }
 

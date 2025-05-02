@@ -24,7 +24,7 @@ type EHentaiAlbum struct {
 }
 
 // ParseEHentai 解析EH网站
-func ParseEHentai(ctx context.Context, client *http.Client, url string, savePath string) error {
+func ParseEHentai(ctx context.Context, client *http.Client, url string, savePath string, dl *downloader.Downloader) error {
 	fmt.Printf("下载 eHentai 专辑: %s\n", url)
 
 	eHentaiAlbum, err := GetAlbum(client, url)
@@ -37,14 +37,24 @@ func ParseEHentai(ctx context.Context, client *http.Client, url string, savePath
 	semaphore := make(chan struct{}, PARALLEL)
 
 	// 统计结果
-	totalImages := 0
+	var successMutex sync.Mutex
 	successImages := 0
 
-	// 创建下载器
-	downloader := downloader.NewDownloader(3, 3, true)
+	// 使用传入的下载器或创建新的下载器
+	localDownloader := dl
+	if localDownloader == nil {
+		localDownloader = downloader.NewDownloader(3, 3, true)
+		fmt.Printf("EHentai解析器创建了新的下载器: %p\n", localDownloader)
+	} else {
+		fmt.Printf("EHentai解析器使用传入的下载器: %p\n", localDownloader)
+	}
 
 	// 保存路径
 	albumPath := savePath + "/" + eHentaiAlbum.Name
+
+	// 批量下载URL和路径
+	var imgURLs []string
+	var filePaths []string
 
 	// 遍历每一页
 	for pageIndex, page := range eHentaiAlbum.Pages {
@@ -73,28 +83,28 @@ func ParseEHentai(ctx context.Context, client *http.Client, url string, savePath
 				filename := fmt.Sprintf("%d_%d.jpg", pageIndex, linkIndex)
 				fullPath := fmt.Sprintf("%s/%s", albumPath, filename)
 
-				// 下载图片
-				err = downloader.DownloadFile(imgURL, fullPath, nil)
-				if err != nil {
-					fmt.Printf("下载图片失败 %s: %v\n", imgURL, err)
-					return
-				}
+				successMutex.Lock()
+				imgURLs = append(imgURLs, imgURL)
+				filePaths = append(filePaths, fullPath)
+				successMutex.Unlock()
 
-				successImages++
-
-				// 随机休眠1到5秒防止被ban
-				sleepDuration := time.Duration(1+rand.Intn(5)) * time.Second
+				// 随机休眠1到3秒防止被ban
+				sleepDuration := time.Duration(1+rand.Intn(3)) * time.Second
 				time.Sleep(sleepDuration)
 			}(pageIndex, linkIndex, link)
-
-			totalImages++
 		}
 	}
 
-	// 等待所有下载任务完成
+	// 等待所有URL收集任务完成
 	wg.Wait()
 
-	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", totalImages, successImages)
+	// 批量下载所有图片并跟踪进度
+	successImages, err = localDownloader.BatchDownload(imgURLs, filePaths, nil)
+	if err != nil {
+		fmt.Printf("批量下载出错: %v\n", err)
+	}
+
+	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", len(imgURLs), successImages)
 	return nil
 }
 

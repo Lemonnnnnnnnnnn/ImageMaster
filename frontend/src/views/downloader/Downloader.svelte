@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { push } from 'svelte-spa-router';
   import { 
     CrawlFromWeb,
     SetOutputDir,
     GetOutputDir
   } from '../../../wailsjs/go/viewer/Viewer';
+  import { EventsOn, EventsOff } from '../../../wailsjs/runtime';
 
   let url = '';
   let saveName = '';
@@ -13,11 +14,49 @@
   let outputDir = '';
   let result = '';
   let error = '';
+  
+  // 添加下载进度变量
+  let downloadProgress = {
+    current: 0,
+    total: 0,
+    percent: 0
+  };
+  let showProgress = false;
 
   onMount(async () => {
     // 获取当前输出目录
     outputDir = await GetOutputDir();
+    
+    // 确保在组件挂载时就订阅下载进度更新事件
+    setupEventListener();
+    console.log("组件已挂载，事件监听已设置");
   });
+  
+  onDestroy(() => {
+    // 组件销毁时取消订阅
+    EventsOff('download:progress');
+    console.log("组件已销毁，事件监听已移除");
+  });
+  
+  // 单独的设置事件监听函数，确保可以重新设置
+  function setupEventListener() {
+    // 先移除旧的监听，防止重复
+    EventsOff('download:progress');
+    // 重新设置监听
+    EventsOn('download:progress', updateProgress);
+    console.log("已设置download:progress事件监听");
+  }
+  
+  // 更新下载进度
+  function updateProgress(current: number, total: number) {
+    console.log("更新下载进度", current, total);
+    downloadProgress = {
+      current,
+      total,
+      percent: total > 0 ? Math.round((current / total) * 100) : 0
+    };
+    showProgress = total > 0;
+  }
 
   async function handleSubmit() {
     if (!url) {
@@ -29,6 +68,12 @@
       loading = true;
       error = '';
       result = '';
+      showProgress = false;
+      downloadProgress = { current: 0, total: 0, percent: 0 };
+      
+      // 确保下载前重新设置事件监听
+      setupEventListener();
+      console.log("准备开始下载，已重新设置事件监听");
       
       // 开始下载
       const savedDir = await CrawlFromWeb(url, saveName);
@@ -107,6 +152,18 @@
         <div class="loading">
           <div class="spinner"></div>
           <p>正在下载图片，请稍候...</p>
+          
+          <!-- 添加下载进度显示 -->
+          {#if showProgress}
+            <div class="progress-container">
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: {downloadProgress.percent}%"></div>
+              </div>
+              <div class="progress-text">
+                已下载: {downloadProgress.current}/{downloadProgress.total} 张图片 ({downloadProgress.percent}%)
+              </div>
+            </div>
+          {/if}
         </div>
       {/if}
       
@@ -130,6 +187,7 @@
       <li>输入包含图片的网页地址</li>
       <li>可以指定自定义保存文件夹名称</li>
       <li>点击"开始下载"按钮开始抓取并下载网页中的图片</li>
+      <li>下载过程中可以实时查看下载进度</li>
       <li>下载完成后，可在漫画查看器中浏览已下载的图片</li>
     </ul>
   </div>
@@ -247,6 +305,32 @@
     border-left-color: #4CAF50;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+  }
+  
+  /* 添加进度条样式 */
+  .progress-container {
+    width: 100%;
+    margin-top: 15px;
+  }
+  
+  .progress-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: #4CAF50;
+    transition: width 0.3s ease;
+  }
+  
+  .progress-text {
+    text-align: center;
+    margin-top: 5px;
+    font-weight: bold;
   }
   
   @keyframes spin {

@@ -3,8 +3,10 @@ package viewer
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -17,14 +19,19 @@ type Config struct {
 	Libraries []string `json:"libraries"`
 }
 
+// 下载进度回调函数类型
+type DownloadProgressCallback func(current int, total int)
+
 // Viewer 结构体
 type Viewer struct {
-	ctx            context.Context
-	config         Config
-	mangas         []getter.Manga
-	configPath     string
-	localGetter    *getter.LocalGetter
-	crawlerFactory *crawler.CrawlerFactory
+	ctx                  context.Context
+	config               Config
+	mangas               []getter.Manga
+	configPath           string
+	localGetter          *getter.LocalGetter
+	crawlerFactory       *crawler.CrawlerFactory
+	progressCallbackLock sync.Mutex
+	// progressCallback     DownloadProgressCallback
 }
 
 // NewViewer 创建新的 Viewer 实例
@@ -195,23 +202,75 @@ func (v *Viewer) GetOSType() string {
 	return osType
 }
 
+// SubscribeToDownloadProgress 订阅下载进度更新
+// func (v *Viewer) SubscribeToDownloadProgress(callback DownloadProgressCallback) {
+// 	v.progressCallbackLock.Lock()
+// 	defer v.progressCallbackLock.Unlock()
+// 	v.progressCallback = callback
+// }
+
+// // UnsubscribeFromDownloadProgress 取消订阅下载进度更新
+// func (v *Viewer) UnsubscribeFromDownloadProgress() {
+// 	v.progressCallbackLock.Lock()
+// 	defer v.progressCallbackLock.Unlock()
+// 	v.progressCallback = nil
+// }
+
+// NotifyDownloadProgress 通知下载进度
+func (v *Viewer) NotifyDownloadProgress(current, total int) {
+	fmt.Printf("通知下载进度: %d/%d\n", current, total)
+
+	// 关键修改：直接通过事件通知前端，不使用回调机制
+	runtime.EventsEmit(v.ctx, "download:progress", current, total)
+
+	v.progressCallbackLock.Lock()
+	defer v.progressCallbackLock.Unlock()
+
+	// if v.progressCallback != nil {
+	// 	// 仍然执行老的回调，保持兼容性
+	// 	v.progressCallback(current, total)
+	// }
+}
+
+// UpdateDownloaderProgress 下载器进度回调函数
+func (v *Viewer) UpdateDownloaderProgress(current, total int) {
+	fmt.Printf("更新下载进度: %d/%d\n", current, total)
+	v.NotifyDownloadProgress(current, total)
+}
+
 // CrawlFromWeb 从网页爬取图片
 func (v *Viewer) CrawlFromWeb(url string, saveName string) string {
 	// 检测网站类型
 	siteType := v.crawlerFactory.DetectSiteType(url)
+	fmt.Printf("检测到网站类型: %s\n", siteType)
 
 	// 创建对应爬虫
 	crawler := v.crawlerFactory.CreateCrawler(siteType)
 
+	// 设置进度回调
+	downloader := crawler.GetDownloader()
+	if downloader != nil {
+		fmt.Printf("设置进度回调\n")
+		// 直接使用匿名函数包装，确保调用是正确的
+		downloader.SetProgressCallback(func(current, total int) {
+			fmt.Printf("进度回调被触发: %d/%d\n", current, total)
+			v.NotifyDownloadProgress(current, total)
+		})
+	} else {
+		fmt.Printf("警告: 下载器为nil，无法设置进度回调\n")
+	}
+
 	// 执行爬取
 	saveDir, err := crawler.Crawl(url, v.GetOutputDir())
 	if err != nil {
+		fmt.Printf("爬取失败: %v\n", err)
 		return ""
 	}
 
 	// 刷新库
 	v.LoadAllLibraries()
 
+	fmt.Printf("爬取完成，保存到: %s\n", saveDir)
 	return saveDir
 }
 

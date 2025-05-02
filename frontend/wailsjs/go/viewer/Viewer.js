@@ -50,6 +50,10 @@ export function LoadLibrary(arg1) {
   return window['go']['viewer']['Viewer']['LoadLibrary'](arg1);
 }
 
+export function NotifyDownloadProgress(arg1, arg2) {
+  return window['go']['viewer']['Viewer']['NotifyDownloadProgress'](arg1, arg2);
+}
+
 export function SaveConfig() {
   return window['go']['viewer']['Viewer']['SaveConfig']();
 }
@@ -60,4 +64,16 @@ export function SelectLibrary() {
 
 export function SetOutputDir() {
   return window['go']['viewer']['Viewer']['SetOutputDir']();
+}
+
+export function SubscribeToDownloadProgress(arg1) {
+  return window['go']['viewer']['Viewer']['SubscribeToDownloadProgress'](arg1);
+}
+
+export function UnsubscribeFromDownloadProgress() {
+  return window['go']['viewer']['Viewer']['UnsubscribeFromDownloadProgress']();
+}
+
+export function UpdateDownloaderProgress(arg1, arg2) {
+  return window['go']['viewer']['Viewer']['UpdateDownloaderProgress'](arg1, arg2);
 }
