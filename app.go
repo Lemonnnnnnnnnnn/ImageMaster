@@ -307,8 +307,9 @@ func (a *App) GetImageDataUrl(path string) string {
 		mimeType = "image/bmp"
 	}
 
-	// 构建data URL
-	return fmt.Sprintf("data:%s;base64,%s", mimeType, encodeBytesToBase64(data))
+	// 构建data URL，直接返回不打印
+	base64Data := encodeBytesToBase64(data)
+	return fmt.Sprintf("data:%s;base64,%s", mimeType, base64Data)
 }
 
 // 辅助函数 - 编码为base64
