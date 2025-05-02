@@ -38,12 +38,12 @@ export function GetPathSeparator() {
   return window['go']['viewer']['Viewer']['GetPathSeparator']();
 }
 
-export function LoadAllLibraries() {
-  return window['go']['viewer']['Viewer']['LoadAllLibraries']();
+export function GetProxy() {
+  return window['go']['viewer']['Viewer']['GetProxy']();
 }
 
-export function LoadConfig() {
-  return window['go']['viewer']['Viewer']['LoadConfig']();
+export function LoadAllLibraries() {
+  return window['go']['viewer']['Viewer']['LoadAllLibraries']();
 }
 
 export function LoadLibrary(arg1) {
@@ -54,10 +54,6 @@ export function NotifyDownloadProgress(arg1, arg2) {
   return window['go']['viewer']['Viewer']['NotifyDownloadProgress'](arg1, arg2);
 }
 
-export function SaveConfig() {
-  return window['go']['viewer']['Viewer']['SaveConfig']();
-}
-
 export function SelectLibrary() {
   return window['go']['viewer']['Viewer']['SelectLibrary']();
 }
@@ -66,6 +62,6 @@ export function SetOutputDir() {
   return window['go']['viewer']['Viewer']['SetOutputDir']();
 }
 
-export function UpdateDownloaderProgress(arg1, arg2) {
-  return window['go']['viewer']['Viewer']['UpdateDownloaderProgress'](arg1, arg2);
+export function SetProxy(arg1) {
+  return window['go']['viewer']['Viewer']['SetProxy'](arg1);
 }

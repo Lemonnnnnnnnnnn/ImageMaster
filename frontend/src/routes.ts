@@ -10,6 +10,9 @@ import ViewerContainer from './views/viewer/ViewerContainer.svelte';
 // 导入下载器组件
 import Downloader from './views/downloader/Downloader.svelte';
 
+// 导入配置组件
+import Config from './views/config/Config.svelte';
+
 // 定义路由
 const routes = {
   // 主页 - 显示漫画查看器
@@ -34,6 +37,9 @@ const routes = {
 
   // 下载器页面
   '/downloader': Downloader,
+  
+  // 配置页面
+  '/config': Config,
   
   // 通配符路由 - 处理所有未匹配的 URL
   '*': NotFound,

@@ -3,7 +3,6 @@
   import { push } from 'svelte-spa-router';
   import { 
     GetAllMangas, 
-    SelectLibrary, 
     GetLibraries, 
     DeleteManga,
     GetImageDataUrl
@@ -54,16 +53,6 @@
     loading = false;
   }
 
-  async function chooseLibrary() {
-    loading = true;
-    const newLib = await SelectLibrary();
-    if (newLib) {
-      await loadLibraries();
-      await loadMangas();
-    }
-    loading = false;
-  }
-
   async function deleteManga(event, manga) {
     event.stopPropagation();
     if (confirm(`确定要删除 "${manga.name}" 吗？这将永久删除该文件夹及其内容！`)) {
@@ -88,22 +77,12 @@
 <div class="home-container">
   <div class="header">
     <h1>漫画查看器</h1>
-    <button on:click={chooseLibrary} class="add-library-btn">添加漫画库</button>
   </div>
 
   {#if libraries.length === 0 && !loading}
     <div class="welcome">
       <h2>欢迎使用漫画查看器</h2>
-      <p>请点击"添加漫画库"按钮选择一个包含漫画的文件夹</p>
-    </div>
-  {:else if libraries.length > 0}
-    <div class="libraries">
-      <h3>已添加的漫画库：</h3>
-      <ul>
-        {#each libraries as lib}
-          <li>{lib}</li>
-        {/each}
-      </ul>
+      <p>请前往"应用设置"页面添加一个漫画库</p>
     </div>
   {/if}
 
@@ -160,15 +139,6 @@
     margin-bottom: 20px;
   }
 
-  .add-library-btn {
-    padding: 8px 16px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
   .welcome, .no-manga {
     text-align: center;
     padding: 40px;
@@ -201,33 +171,34 @@
     width: 40px;
     height: 40px;
     border: 4px solid rgba(0, 0, 0, 0.1);
-    border-left-color: #4CAF50;
+    border-left-color: #3498db;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
-  
+
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .manga-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
-    margin-top: 20px;
   }
 
   .manga-card {
-    background-color: #fff;
+    border: 1px solid #ddd;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
     cursor: pointer;
   }
 
   .manga-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   }
 
   .manga-preview {
@@ -242,58 +213,45 @@
   }
 
   .manga-info {
-    padding: 15px;
-    position: relative;
+    padding: 10px;
   }
 
   .manga-info h3 {
-    margin: 0 0 10px 0;
-    font-size: 16px;
-    text-overflow: ellipsis;
-    overflow: hidden;
+    margin: 0 0 5px 0;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .manga-info p {
-    margin: 0;
+    margin: 0 0 10px 0;
     color: #666;
-    font-size: 14px;
   }
 
   .delete-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background-color: #f44336;
+    padding: 5px 10px;
+    background-color: #e74c3c;
     color: white;
     border: none;
     border-radius: 4px;
-    padding: 5px 10px;
-    font-size: 12px;
     cursor: pointer;
-    display: none;
-  }
-
-  .manga-card:hover .delete-btn {
-    display: block;
   }
 
   .scroll-top-btn {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    font-size: 20px;
+    background-color: #3498db;
+    color: white;
+    font-size: 24px;
+    border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    z-index: 100;
   }
 </style> 

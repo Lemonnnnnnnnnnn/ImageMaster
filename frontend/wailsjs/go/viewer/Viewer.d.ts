@@ -20,18 +20,16 @@ export function GetOutputDir():Promise<string>;
 
 export function GetPathSeparator():Promise<string>;
 
-export function LoadAllLibraries():Promise<void>;
+export function GetProxy():Promise<string>;
 
-export function LoadConfig():Promise<boolean>;
+export function LoadAllLibraries():Promise<void>;
 
 export function LoadLibrary(arg1:string):Promise<boolean>;
 
 export function NotifyDownloadProgress(arg1:number,arg2:number):Promise<void>;
 
-export function SaveConfig():Promise<boolean>;
-
 export function SelectLibrary():Promise<string>;
 
 export function SetOutputDir():Promise<string>;
 
-export function UpdateDownloaderProgress(arg1:number,arg2:number):Promise<void>;
+export function SetProxy(arg1:string):Promise<boolean>;

@@ -7,14 +7,34 @@ import (
 	"os"
 	"path"
 	"time"
+
+	"ImageMaster/core/config"
+	"ImageMaster/core/request"
 )
+
+// DownloadTask 下载任务
+type DownloadTask struct {
+	ID           string    `json:"id"`           // 任务ID
+	URL          string    `json:"url"`          // 下载URL
+	Name         string    `json:"name"`         // 保存名称
+	Status       string    `json:"status"`       // 状态: pending, downloading, completed, failed
+	SavePath     string    `json:"savePath"`     // 保存路径
+	StartTime    time.Time `json:"startTime"`    // 开始时间
+	CompleteTime time.Time `json:"completeTime"` // 完成时间
+	Error        string    `json:"error"`        // 错误信息
+	Progress     struct {
+		Current int `json:"current"` // 当前已下载项目数
+		Total   int `json:"total"`   // 总项目数
+	} `json:"progress"` // 下载进度
+}
 
 // Downloader 下载器
 type Downloader struct {
-	client      *http.Client
-	retryCount  int
-	retryDelay  time.Duration
-	showProcess bool
+	reqClient     *request.Client
+	retryCount    int
+	retryDelay    time.Duration
+	showProcess   bool
+	configManager *config.Manager
 	// 添加进度通知回调
 	progressCallback func(current, total int)
 }
@@ -22,19 +42,36 @@ type Downloader struct {
 // NewDownloader 创建新的下载器
 func NewDownloader(retryCount int, retryDelay int, showProcess bool) *Downloader {
 	return &Downloader{
-		client: &http.Client{
-			Timeout: 30 * time.Second,
-		},
+		reqClient:   request.NewClient(),
 		retryCount:  retryCount,
 		retryDelay:  time.Duration(retryDelay) * time.Second,
 		showProcess: showProcess,
 	}
 }
 
+// SetConfigManager 设置配置管理器
+func (d *Downloader) SetConfigManager(configManager *config.Manager) {
+	d.configManager = configManager
+
+	// 将配置管理器传递给请求客户端
+	d.reqClient.SetConfigManager(configManager)
+}
+
 // SetProgressCallback 设置进度回调函数
 func (d *Downloader) SetProgressCallback(callback func(current, total int)) {
 	fmt.Printf("下载器: 设置进度回调函数, callback 是否为nil: %v\n", callback == nil)
 	d.progressCallback = callback
+}
+
+// SetProxy 设置代理
+func (d *Downloader) SetProxy(proxyURL string) error {
+	// 使用请求客户端设置代理
+	return d.reqClient.SetProxy(proxyURL)
+}
+
+// GetProxy 获取当前代理设置
+func (d *Downloader) GetProxy() string {
+	return d.reqClient.GetProxy()
 }
 
 // DownloadFile 下载文件到指定路径
@@ -63,23 +100,13 @@ func (d *Downloader) DownloadFile(url string, filepath string, headers map[strin
 			time.Sleep(d.retryDelay)
 		}
 
-		// 创建请求
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			lastErr = fmt.Errorf("创建请求失败: %w", err)
-			continue
-		}
-
-		// 设置默认头部
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-
-		// 设置额外头部
-		for key, value := range headers {
-			req.Header.Set(key, value)
+		// 设置请求头
+		if headers != nil {
+			d.reqClient.SetHeaders(headers)
 		}
 
 		// 执行请求
-		resp, err := d.client.Do(req)
+		resp, err := d.reqClient.Get(url)
 		if err != nil {
 			lastErr = fmt.Errorf("请求失败: %w", err)
 			continue

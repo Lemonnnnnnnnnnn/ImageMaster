@@ -2,7 +2,6 @@ package viewer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,15 +9,10 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
+	"ImageMaster/core/config"
 	"ImageMaster/core/crawler"
 	"ImageMaster/core/getter"
 )
-
-// 应用配置
-type Config struct {
-	Libraries []string `json:"libraries"`
-	OutputDir string   `json:"output_dir"`
-}
 
 // 下载进度回调函数类型
 type DownloadProgressCallback func(current int, total int)
@@ -26,9 +20,8 @@ type DownloadProgressCallback func(current int, total int)
 // Viewer 结构体
 type Viewer struct {
 	ctx                  context.Context
-	config               Config
+	configManager        *config.Manager
 	mangas               []getter.Manga
-	configPath           string
 	localGetter          *getter.LocalGetter
 	crawlerFactory       *crawler.CrawlerFactory
 	progressCallbackLock sync.Mutex
@@ -44,14 +37,10 @@ func NewViewer() *Viewer {
 func (v *Viewer) Startup(ctx context.Context) {
 	v.ctx = ctx
 
-	// 设置配置文件路径
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		configDir, _ = os.Getwd()
-	}
-	v.configPath = filepath.Join(configDir, "manga-viewer-config.json")
+	// 创建配置管理器
+	v.configManager = config.NewManager("manga-viewer-config.json")
+	v.configManager.LoadConfig()
 
-	// 初始化 LocalGetter
 	// 设置默认输出目录
 	userDir, err := os.UserHomeDir()
 	if err != nil {
@@ -59,17 +48,13 @@ func (v *Viewer) Startup(ctx context.Context) {
 	}
 	defaultOutputDir := filepath.Join(userDir, "Pictures", "ImageMaster")
 
-	// 加载配置
-	v.LoadConfig()
-
 	// 如果配置中有指定的输出目录，使用配置中的目录，否则使用默认目录
 	outputDir := defaultOutputDir
-	if v.config.OutputDir != "" {
-		outputDir = v.config.OutputDir
+	if cfg := v.configManager.GetConfig(); cfg.OutputDir != "" {
+		outputDir = cfg.OutputDir
 	} else {
 		// 如果是第一次使用，将默认目录保存到配置中
-		v.config.OutputDir = outputDir
-		v.SaveConfig()
+		v.configManager.SetOutputDir(defaultOutputDir)
 	}
 
 	// 确保输出目录存在
@@ -79,41 +64,9 @@ func (v *Viewer) Startup(ctx context.Context) {
 	v.crawlerFactory = crawler.NewCrawlerFactory(ctx)
 
 	// 如果配置中有图书馆，自动加载
-	if len(v.config.Libraries) > 0 {
+	if len(v.configManager.GetLibraries()) > 0 {
 		v.LoadAllLibraries()
 	}
-}
-
-// LoadConfig 加载应用配置
-func (v *Viewer) LoadConfig() bool {
-	data, err := os.ReadFile(v.configPath)
-	if err != nil {
-		v.config = Config{Libraries: []string{}}
-		return false
-	}
-
-	err = json.Unmarshal(data, &v.config)
-	if err != nil {
-		v.config = Config{Libraries: []string{}}
-		return false
-	}
-
-	return true
-}
-
-// SaveConfig 保存应用配置
-func (v *Viewer) SaveConfig() bool {
-	data, err := json.Marshal(v.config)
-	if err != nil {
-		return false
-	}
-
-	err = os.WriteFile(v.configPath, data, 0644)
-	if err != nil {
-		return false
-	}
-
-	return true
 }
 
 // SelectLibrary 选择漫画库文件夹
@@ -126,16 +79,8 @@ func (v *Viewer) SelectLibrary() string {
 		return ""
 	}
 
-	// 检查是否已经添加过该库
-	for _, lib := range v.config.Libraries {
-		if lib == dir {
-			return dir
-		}
-	}
-
 	// 添加到配置中
-	v.config.Libraries = append(v.config.Libraries, dir)
-	v.SaveConfig()
+	v.configManager.AddLibrary(dir)
 
 	// 加载这个新库
 	v.LoadLibrary(dir)
@@ -145,13 +90,13 @@ func (v *Viewer) SelectLibrary() string {
 
 // GetLibraries 获取所有图书馆路径
 func (v *Viewer) GetLibraries() []string {
-	return v.config.Libraries
+	return v.configManager.GetLibraries()
 }
 
 // LoadAllLibraries 加载所有图书馆
 func (v *Viewer) LoadAllLibraries() {
 	v.mangas = []getter.Manga{}
-	for _, lib := range v.config.Libraries {
+	for _, lib := range v.configManager.GetLibraries() {
 		v.LoadLibrary(lib)
 	}
 }
@@ -215,20 +160,6 @@ func (v *Viewer) GetOSType() string {
 	return osType
 }
 
-// SubscribeToDownloadProgress 订阅下载进度更新
-// func (v *Viewer) SubscribeToDownloadProgress(callback DownloadProgressCallback) {
-// 	v.progressCallbackLock.Lock()
-// 	defer v.progressCallbackLock.Unlock()
-// 	v.progressCallback = callback
-// }
-
-// // UnsubscribeFromDownloadProgress 取消订阅下载进度更新
-// func (v *Viewer) UnsubscribeFromDownloadProgress() {
-// 	v.progressCallbackLock.Lock()
-// 	defer v.progressCallbackLock.Unlock()
-// 	v.progressCallback = nil
-// }
-
 // NotifyDownloadProgress 通知下载进度
 func (v *Viewer) NotifyDownloadProgress(current, total int) {
 	fmt.Printf("通知下载进度: %d/%d\n", current, total)
@@ -245,14 +176,11 @@ func (v *Viewer) NotifyDownloadProgress(current, total int) {
 	// }
 }
 
-// UpdateDownloaderProgress 下载器进度回调函数
-func (v *Viewer) UpdateDownloaderProgress(current, total int) {
-	fmt.Printf("更新下载进度: %d/%d\n", current, total)
-	v.NotifyDownloadProgress(current, total)
-}
-
 // CrawlFromWeb 从网页爬取图片
 func (v *Viewer) CrawlFromWeb(url string, saveName string) string {
+	// 设置爬虫工厂的配置管理器
+	v.crawlerFactory.SetConfigManager(v.configManager)
+
 	// 检测网站类型
 	siteType := v.crawlerFactory.DetectSiteType(url)
 	fmt.Printf("检测到网站类型: %s\n", siteType)
@@ -264,6 +192,7 @@ func (v *Viewer) CrawlFromWeb(url string, saveName string) string {
 	downloader := crawler.GetDownloader()
 	if downloader != nil {
 		fmt.Printf("设置进度回调\n")
+
 		// 直接使用匿名函数包装，确保调用是正确的
 		downloader.SetProgressCallback(func(current, total int) {
 			fmt.Printf("进度回调被触发: %d/%d\n", current, total)
@@ -300,8 +229,7 @@ func (v *Viewer) SetOutputDir() string {
 	v.localGetter.SetOutputDir(dir)
 
 	// 更新配置并保存
-	v.config.OutputDir = dir
-	v.SaveConfig()
+	v.configManager.SetOutputDir(dir)
 
 	return dir
 }
@@ -309,4 +237,15 @@ func (v *Viewer) SetOutputDir() string {
 // GetOutputDir 获取当前输出目录
 func (v *Viewer) GetOutputDir() string {
 	return v.localGetter.GetOutputDir()
+}
+
+// SetProxy 设置代理
+func (v *Viewer) SetProxy(proxyURL string) bool {
+	// 更新配置
+	return v.configManager.SetProxy(proxyURL)
+}
+
+// GetProxy 获取当前代理设置
+func (v *Viewer) GetProxy() string {
+	return v.configManager.GetProxy()
 }

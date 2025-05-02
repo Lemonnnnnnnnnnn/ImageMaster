@@ -13,6 +13,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 
 	"ImageMaster/core/downloader"
+	"ImageMaster/core/request"
 )
 
 const PARALLEL = 5
@@ -27,7 +28,24 @@ type EHentaiAlbum struct {
 func ParseEHentai(ctx context.Context, client *http.Client, url string, savePath string, dl *downloader.Downloader) error {
 	fmt.Printf("下载 eHentai 专辑: %s\n", url)
 
-	eHentaiAlbum, err := GetAlbum(client, url)
+	// 创建请求客户端
+	reqClient := request.NewClient()
+
+	// 如果下载器存在，使用相同的代理配置
+	if dl != nil && dl.GetProxy() != "" {
+		reqClient.SetProxy(dl.GetProxy())
+	} else if client != nil {
+		// 保留原有行为，使用传入的client（后续应删除此兼容代码）
+		reqClient.SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+	}
+
+	// 设置ehentai需要的cookie
+	reqClient.AddCookie(&http.Cookie{
+		Name:  "nw",
+		Value: "1",
+	})
+
+	eHentaiAlbum, err := GetAlbumWithClient(reqClient, url)
 	if err != nil {
 		return fmt.Errorf("获取专辑失败: %w", err)
 	}
@@ -73,7 +91,7 @@ func ParseEHentai(ctx context.Context, client *http.Client, url string, savePath
 				}()
 
 				// 解析页面获取真实图片URL
-				imgURL, err := ParsePage(client, linkURL)
+				imgURL, err := ParsePageWithClient(reqClient, linkURL)
 				if err != nil {
 					fmt.Printf("解析页面失败 %s: %v\n", linkURL, err)
 					return
@@ -108,14 +126,14 @@ func ParseEHentai(ctx context.Context, client *http.Client, url string, savePath
 	return nil
 }
 
-// ParsePage 解析EH页面获取真实图片URL
-func ParsePage(client *http.Client, link string) (string, error) {
-	realURL, err := GetRealURL(client, link)
+// ParsePageWithClient 解析EH页面获取真实图片URL，使用request客户端
+func ParsePageWithClient(reqClient *request.Client, link string) (string, error) {
+	realURL, err := GetRealURLWithClient(reqClient, link)
 	if err != nil {
 		return "", fmt.Errorf("获取真实URL失败: %w", err)
 	}
 
-	realPage, err := ParseRealPage(client, realURL)
+	realPage, err := ParseRealPageWithClient(reqClient, realURL)
 	if err != nil {
 		return "", fmt.Errorf("解析真实页面失败: %w", err)
 	}
@@ -123,23 +141,9 @@ func ParsePage(client *http.Client, link string) (string, error) {
 	return realPage, nil
 }
 
-// GetRealURL 获取真实图片URL
-func GetRealURL(client *http.Client, link string) (string, error) {
-	req, err := http.NewRequest("GET", link, nil)
-	if err != nil {
-		return "", err
-	}
-
-	// 设置Cookie
-	req.AddCookie(&http.Cookie{
-		Name:  "nw",
-		Value: "1",
-	})
-
-	// 设置User-Agent
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-
-	resp, err := client.Do(req)
+// GetRealURLWithClient 获取真实图片URL，使用request客户端
+func GetRealURLWithClient(reqClient *request.Client, link string) (string, error) {
+	resp, err := reqClient.Get(link)
 	if err != nil {
 		return "", err
 	}
@@ -179,9 +183,9 @@ func GetRealURL(client *http.Client, link string) (string, error) {
 	return realURL, nil
 }
 
-// ParseRealPage 解析真实页面获取图片URL
-func ParseRealPage(client *http.Client, realURL string) (string, error) {
-	resp, err := client.Get(realURL)
+// ParseRealPageWithClient 解析真实页面获取图片URL，使用request客户端
+func ParseRealPageWithClient(reqClient *request.Client, realURL string) (string, error) {
+	resp, err := reqClient.Get(realURL)
 	if err != nil {
 		return "", err
 	}
@@ -212,47 +216,15 @@ func ParseRealPage(client *http.Client, realURL string) (string, error) {
 	return imgURL, nil
 }
 
-// ParseLinks 解析页面中的图片链接
-func ParseLinks(body string) []string {
-	// 解析HTML
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(body))
-	if err != nil {
-		return nil
-	}
-
-	var links []string
-	doc.Find("#gdt > a").Each(func(i int, s *goquery.Selection) {
-		if href, exists := s.Attr("href"); exists {
-			links = append(links, href)
-		}
-	})
-
-	return links
-}
-
-// GetAlbum 获取整个专辑信息
-func GetAlbum(client *http.Client, url string) (*EHentaiAlbum, error) {
+// GetAlbumWithClient 获取整个专辑信息，使用request客户端
+func GetAlbumWithClient(reqClient *request.Client, url string) (*EHentaiAlbum, error) {
 	var pages []string
 	currentURL := url
 
 	albumName := ""
 
 	for {
-		req, err := http.NewRequest("GET", currentURL, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		// 设置Cookie
-		req.AddCookie(&http.Cookie{
-			Name:  "nw",
-			Value: "1",
-		})
-
-		// 设置User-Agent
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-
-		resp, err := client.Do(req)
+		resp, err := reqClient.Get(currentURL)
 		if err != nil {
 			return nil, err
 		}
@@ -313,4 +285,63 @@ func GetAlbum(client *http.Client, url string) (*EHentaiAlbum, error) {
 		Name:  albumName,
 		Pages: pages,
 	}, nil
+}
+
+// 保留原始方法以兼容性
+func ParsePage(client *http.Client, link string) (string, error) {
+	reqClient := request.NewClient()
+	return ParsePageWithClient(reqClient, link)
+}
+
+func GetRealURL(client *http.Client, link string) (string, error) {
+	reqClient := request.NewClient()
+
+	// 设置Cookie
+	reqClient.AddCookie(&http.Cookie{
+		Name:  "nw",
+		Value: "1",
+	})
+
+	// 设置User-Agent
+	reqClient.SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+
+	return GetRealURLWithClient(reqClient, link)
+}
+
+func ParseRealPage(client *http.Client, realURL string) (string, error) {
+	reqClient := request.NewClient()
+	return ParseRealPageWithClient(reqClient, realURL)
+}
+
+func GetAlbum(client *http.Client, url string) (*EHentaiAlbum, error) {
+	reqClient := request.NewClient()
+
+	// 设置Cookie
+	reqClient.AddCookie(&http.Cookie{
+		Name:  "nw",
+		Value: "1",
+	})
+
+	// 设置User-Agent
+	reqClient.SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+
+	return GetAlbumWithClient(reqClient, url)
+}
+
+// ParseLinks 解析页面中的图片链接
+func ParseLinks(body string) []string {
+	// 解析HTML
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(body))
+	if err != nil {
+		return nil
+	}
+
+	var links []string
+	doc.Find("#gdt > a").Each(func(i int, s *goquery.Selection) {
+		if href, exists := s.Attr("href"); exists {
+			links = append(links, href)
+		}
+	})
+
+	return links
 }

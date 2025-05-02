@@ -8,11 +8,19 @@
   function goToDownloader() {
     push('/downloader');
   }
+  
+  // 用于前往配置页面
+  function goToConfig() {
+    push('/config');
+  }
 </script>
 
 <div class="viewer-container">
   <div class="nav-header">
-    <button on:click={goToDownloader} class="switch-btn">切换到下载器</button>
+    <div class="nav-buttons">
+      <button on:click={goToDownloader} class="nav-btn downloader-btn">前往下载器</button>
+      <button on:click={goToConfig} class="nav-btn config-btn">应用设置</button>
+    </div>
   </div>
   
   <slot>
@@ -37,9 +45,13 @@
     border-bottom: 1px solid #e0e0e0;
   }
   
-  .switch-btn {
+  .nav-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .nav-btn {
     padding: 8px 16px;
-    background-color: #4a6fa5;
     color: white;
     border: none;
     border-radius: 4px;
@@ -47,7 +59,15 @@
     font-size: 14px;
   }
   
-  .switch-btn:hover {
-    background-color: #3a5f95;
+  .downloader-btn {
+    background-color: #4CAF50;
+  }
+  
+  .config-btn {
+    background-color: #3498db;
+  }
+  
+  .nav-btn:hover {
+    opacity: 0.9;
   }
 </style> 

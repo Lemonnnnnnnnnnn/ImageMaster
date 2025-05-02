@@ -3,7 +3,6 @@
   import { push } from 'svelte-spa-router';
   import { 
     CrawlFromWeb,
-    SetOutputDir,
     GetOutputDir
   } from '../../../wailsjs/go/viewer/Viewer';
   import { EventsOn, EventsOff } from '../../../wailsjs/runtime';
@@ -90,22 +89,22 @@
     }
   }
 
-  async function changeOutputDir() {
-    const newDir = await SetOutputDir();
-    if (newDir) {
-      outputDir = newDir;
-    }
-  }
-
   function goToViewer() {
     push('/');
+  }
+  
+  function goToConfig() {
+    push('/config');
   }
 </script>
 
 <div class="downloader-container">
   <div class="header">
     <h1>网页图片下载器</h1>
-    <button on:click={goToViewer} class="nav-btn">返回漫画查看器</button>
+    <div class="nav-buttons">
+      <button on:click={goToViewer} class="nav-btn">返回漫画查看器</button>
+      <button on:click={goToConfig} class="nav-btn config-btn">应用设置</button>
+    </div>
   </div>
 
   <div class="settings-panel">
@@ -113,7 +112,7 @@
       <h3>当前输出目录:</h3>
       <div class="dir-display">
         <span>{outputDir}</span>
-        <button on:click={changeOutputDir}>更改</button>
+        <button on:click={goToConfig}>前往设置更改</button>
       </div>
     </div>
   </div>
@@ -189,6 +188,8 @@
       <li>点击"开始下载"按钮开始抓取并下载网页中的图片</li>
       <li>下载过程中可以实时查看下载进度</li>
       <li>下载完成后，可在漫画查看器中浏览已下载的图片</li>
+      <li>可以在"应用设置"中配置代理服务器和输出目录</li>
+      <li>支持HTTP和SOCKS5代理，格式为 http://host:port 或 socks5://host:port</li>
     </ul>
   </div>
 </div>
@@ -207,6 +208,11 @@
     margin-bottom: 20px;
   }
   
+  .nav-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
   .nav-btn {
     padding: 8px 16px;
     background-color: #4a6fa5;
@@ -214,6 +220,10 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+  }
+  
+  .config-btn {
+    background-color: #3498db;
   }
   
   .settings-panel, .download-panel, .instructions {
