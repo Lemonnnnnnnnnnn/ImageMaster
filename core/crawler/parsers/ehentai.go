@@ -12,8 +12,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 
-	"ImageMaster/core/downloader"
 	"ImageMaster/core/request"
+	"ImageMaster/core/types"
 )
 
 const PARALLEL = 5
@@ -25,18 +25,12 @@ type EHentaiAlbum struct {
 }
 
 // ParseEHentai 解析EH网站
-func ParseEHentai(ctx context.Context, client *http.Client, url string, savePath string, dl *downloader.Downloader) error {
+func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, savePath string, dl types.Downloader) error {
 	fmt.Printf("下载 eHentai 专辑: %s\n", url)
 
-	// 创建请求客户端
-	reqClient := request.NewClient()
-
-	// 如果下载器存在，使用相同的代理配置
+	// 使用下载器的代理配置
 	if dl != nil && dl.GetProxy() != "" {
 		reqClient.SetProxy(dl.GetProxy())
-	} else if client != nil {
-		// 保留原有行为，使用传入的client（后续应删除此兼容代码）
-		reqClient.SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 	}
 
 	// 设置ehentai需要的cookie
@@ -44,6 +38,9 @@ func ParseEHentai(ctx context.Context, client *http.Client, url string, savePath
 		Name:  "nw",
 		Value: "1",
 	})
+
+	// 设置User-Agent
+	reqClient.SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 
 	eHentaiAlbum, err := GetAlbumWithClient(reqClient, url)
 	if err != nil {
@@ -58,13 +55,14 @@ func ParseEHentai(ctx context.Context, client *http.Client, url string, savePath
 	var successMutex sync.Mutex
 	successImages := 0
 
-	// 使用传入的下载器或创建新的下载器
-	localDownloader := dl
-	if localDownloader == nil {
-		localDownloader = downloader.NewDownloader(3, 3, true)
-		fmt.Printf("EHentai解析器创建了新的下载器: %p\n", localDownloader)
+	// 使用传入的下载器
+	var localDownloader types.Downloader
+	if dl != nil {
+		localDownloader = dl
+		fmt.Printf("EHentai解析器使用传入的下载器\n")
 	} else {
-		fmt.Printf("EHentai解析器使用传入的下载器: %p\n", localDownloader)
+		// 未提供下载器，返回错误
+		return fmt.Errorf("未提供下载器")
 	}
 
 	// 保存路径
@@ -116,7 +114,7 @@ func ParseEHentai(ctx context.Context, client *http.Client, url string, savePath
 	// 等待所有URL收集任务完成
 	wg.Wait()
 
-	// 批量下载所有图片并跟踪进度
+	// 批量下载所有图片
 	successImages, err = localDownloader.BatchDownload(imgURLs, filePaths, nil)
 	if err != nil {
 		fmt.Printf("批量下载出错: %v\n", err)
@@ -285,47 +283,6 @@ func GetAlbumWithClient(reqClient *request.Client, url string) (*EHentaiAlbum, e
 		Name:  albumName,
 		Pages: pages,
 	}, nil
-}
-
-// 保留原始方法以兼容性
-func ParsePage(client *http.Client, link string) (string, error) {
-	reqClient := request.NewClient()
-	return ParsePageWithClient(reqClient, link)
-}
-
-func GetRealURL(client *http.Client, link string) (string, error) {
-	reqClient := request.NewClient()
-
-	// 设置Cookie
-	reqClient.AddCookie(&http.Cookie{
-		Name:  "nw",
-		Value: "1",
-	})
-
-	// 设置User-Agent
-	reqClient.SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-
-	return GetRealURLWithClient(reqClient, link)
-}
-
-func ParseRealPage(client *http.Client, realURL string) (string, error) {
-	reqClient := request.NewClient()
-	return ParseRealPageWithClient(reqClient, realURL)
-}
-
-func GetAlbum(client *http.Client, url string) (*EHentaiAlbum, error) {
-	reqClient := request.NewClient()
-
-	// 设置Cookie
-	reqClient.AddCookie(&http.Cookie{
-		Name:  "nw",
-		Value: "1",
-	})
-
-	// 设置User-Agent
-	reqClient.SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-
-	return GetAlbumWithClient(reqClient, url)
 }
 
 // ParseLinks 解析页面中的图片链接

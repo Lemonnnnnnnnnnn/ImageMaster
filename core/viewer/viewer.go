@@ -9,9 +9,9 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"ImageMaster/core/config"
 	"ImageMaster/core/crawler"
 	"ImageMaster/core/getter"
+	"ImageMaster/core/storage"
 )
 
 // 下载进度回调函数类型
@@ -20,26 +20,25 @@ type DownloadProgressCallback func(current int, total int)
 // Viewer 结构体
 type Viewer struct {
 	ctx                  context.Context
-	configManager        *config.Manager
+	configManager        *storage.ConfigManager
 	mangas               []getter.Manga
 	localGetter          *getter.LocalGetter
 	crawlerFactory       *crawler.CrawlerFactory
 	progressCallbackLock sync.Mutex
-	// progressCallback     DownloadProgressCallback
 }
 
 // NewViewer 创建新的 Viewer 实例
-func NewViewer() *Viewer {
-	return &Viewer{}
+func NewViewer(configManager *storage.ConfigManager) *Viewer {
+	return &Viewer{
+		configManager: configManager,
+	}
 }
 
 // Startup 启动应用
 func (v *Viewer) Startup(ctx context.Context) {
 	v.ctx = ctx
 
-	// 创建配置管理器
-	v.configManager = config.NewManager("manga-viewer-config.json")
-	v.configManager.LoadConfig()
+	// 配置管理器已在创建时传入，无需再创建
 
 	// 设置默认输出目录
 	userDir, err := os.UserHomeDir()
@@ -198,54 +197,50 @@ func (v *Viewer) CrawlFromWeb(url string, saveName string) string {
 			fmt.Printf("进度回调被触发: %d/%d\n", current, total)
 			v.NotifyDownloadProgress(current, total)
 		})
-	} else {
-		fmt.Printf("警告: 下载器为nil，无法设置进度回调\n")
 	}
 
-	// 执行爬取
-	saveDir, err := crawler.Crawl(url, v.GetOutputDir())
-	if err != nil {
-		fmt.Printf("爬取失败: %v\n", err)
-		return ""
-	}
+	// 获取输出目录
+	outputDir := v.configManager.GetOutputDir()
 
-	// 刷新库
-	v.LoadAllLibraries()
+	// 创建子目录
+	savePath := filepath.Join(outputDir, saveName)
 
-	fmt.Printf("爬取完成，保存到: %s\n", saveDir)
-	return saveDir
+	// 确保目录存在
+	os.MkdirAll(savePath, 0755)
+
+	// 开始下载
+	return crawler.CrawlAndSave(url, savePath)
 }
 
 // SetOutputDir 设置输出目录
 func (v *Viewer) SetOutputDir() string {
 	dir, err := runtime.OpenDirectoryDialog(v.ctx, runtime.OpenDialogOptions{
-		Title: "选择图片保存目录",
+		Title: "选择保存目录",
 	})
 
 	if err != nil || dir == "" {
-		return ""
+		return v.configManager.GetOutputDir()
 	}
 
-	v.localGetter.SetOutputDir(dir)
-
-	// 更新配置并保存
 	v.configManager.SetOutputDir(dir)
+
+	// 更新本地加载器的输出目录
+	v.localGetter.SetOutputDir(dir)
 
 	return dir
 }
 
-// GetOutputDir 获取当前输出目录
+// GetOutputDir 获取输出目录
 func (v *Viewer) GetOutputDir() string {
-	return v.localGetter.GetOutputDir()
+	return v.configManager.GetOutputDir()
 }
 
 // SetProxy 设置代理
 func (v *Viewer) SetProxy(proxyURL string) bool {
-	// 更新配置
 	return v.configManager.SetProxy(proxyURL)
 }
 
-// GetProxy 获取当前代理设置
+// GetProxy 获取代理设置
 func (v *Viewer) GetProxy() string {
 	return v.configManager.GetProxy()
 }

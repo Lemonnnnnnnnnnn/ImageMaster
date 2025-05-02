@@ -4,6 +4,8 @@ import (
 	"embed"
 	"log"
 
+	"ImageMaster/core/downloader"
+	"ImageMaster/core/storage"
 	"ImageMaster/core/viewer"
 
 	"github.com/wailsapp/wails/v2"
@@ -15,9 +17,23 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+const AppName = "imagemaster"
+
 func main() {
-	// 创建新的查看器实例
-	v := viewer.NewViewer()
+	// 创建存储API
+	storageAPI := storage.NewStorageAPI(AppName)
+
+	// 获取配置管理器
+	configManager := storageAPI.GetStorage().GetConfigManager()
+
+	// 创建新的查看器实例，传入配置管理器
+	v := viewer.NewViewer(configManager)
+
+	// 创建下载管理器API
+	downloaderAPI := downloader.NewDownloaderAPI(configManager)
+
+	// 设置存储API到下载器
+	downloaderAPI.SetStorageAPI(storageAPI)
 
 	// 创建应用
 	err := wails.Run(&options.App{
@@ -31,6 +47,8 @@ func main() {
 		OnStartup:        v.Startup,
 		Bind: []interface{}{
 			v,
+			downloaderAPI,
+			storageAPI, // 注册存储API，可以从前端直接调用
 		},
 		LogLevel:           logger.ERROR,
 		LogLevelProduction: logger.ERROR,

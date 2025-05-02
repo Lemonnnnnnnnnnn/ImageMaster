@@ -1,60 +1,82 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { push } from 'svelte-spa-router';
-  import { 
-    CrawlFromWeb,
-    GetOutputDir
-  } from '../../../wailsjs/go/viewer/Viewer';
-  import { EventsOn, EventsOff } from '../../../wailsjs/runtime';
+  import {
+      CancelDownload,
+      ClearHistory,
+      GetActiveTasks,
+      GetHistoryTasks,
+      StartDownload
+  } from '../../../wailsjs/go/downloader/DownloaderAPI';
+  import type { downloader } from '../../../wailsjs/go/models';
+  import {
+      GetOutputDir
+  } from '../../../wailsjs/go/storage/StorageAPI';
 
   let url = '';
   let saveName = '';
   let loading = false;
   let outputDir = '';
-  let result = '';
   let error = '';
   
-  // 添加下载进度变量
-  let downloadProgress = {
-    current: 0,
-    total: 0,
-    percent: 0
-  };
-  let showProgress = false;
+  // 下载任务列表
+  let activeTasks: downloader.DownloadTask[] = [];
+  let historyTasks: downloader.DownloadTask[] = [];
+  let showHistory = false;
+  
+  // 轮询间隔（毫秒）
+  const POLL_INTERVAL = 1000;
+  let pollTimer: ReturnType<typeof setInterval> | null = null;
 
   onMount(async () => {
     // 获取当前输出目录
     outputDir = await GetOutputDir();
     
-    // 确保在组件挂载时就订阅下载进度更新事件
-    setupEventListener();
-    console.log("组件已挂载，事件监听已设置");
+    // 开始轮询
+    startPolling();
+    
+    console.log("组件已挂载，轮询已开始");
   });
   
   onDestroy(() => {
-    // 组件销毁时取消订阅
-    EventsOff('download:progress');
-    console.log("组件已销毁，事件监听已移除");
+    // 停止轮询
+    stopPolling();
+    console.log("组件已销毁，轮询已停止");
   });
   
-  // 单独的设置事件监听函数，确保可以重新设置
-  function setupEventListener() {
-    // 先移除旧的监听，防止重复
-    EventsOff('download:progress');
-    // 重新设置监听
-    EventsOn('download:progress', updateProgress);
-    console.log("已设置download:progress事件监听");
+  // 开始轮询
+  function startPolling() {
+    // 清除现有轮询
+    stopPolling();
+    
+    // 立即执行一次轮询
+    pollTasks();
+    
+    // 设置定时轮询
+    pollTimer = setInterval(pollTasks, POLL_INTERVAL);
   }
   
-  // 更新下载进度
-  function updateProgress(current: number, total: number) {
-    console.log("更新下载进度", current, total);
-    downloadProgress = {
-      current,
-      total,
-      percent: total > 0 ? Math.round((current / total) * 100) : 0
-    };
-    showProgress = total > 0;
+  // 停止轮询
+  function stopPolling() {
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+  }
+  
+  // 轮询任务状态
+  async function pollTasks() {
+    try {
+      // 获取活跃任务
+      activeTasks = await GetActiveTasks();
+      
+      // 如果显示历史，也获取历史任务
+      if (showHistory) {
+        historyTasks = await GetHistoryTasks();
+      }
+    } catch (err) {
+      console.error("轮询任务状态出错:", err);
+    }
   }
 
   async function handleSubmit() {
@@ -66,19 +88,17 @@
     try {
       loading = true;
       error = '';
-      result = '';
-      showProgress = false;
-      downloadProgress = { current: 0, total: 0, percent: 0 };
       
-      // 确保下载前重新设置事件监听
-      setupEventListener();
-      console.log("准备开始下载，已重新设置事件监听");
+      // 开始下载任务
+      const taskId = await StartDownload(url, saveName);
       
-      // 开始下载
-      const savedDir = await CrawlFromWeb(url, saveName);
-      
-      if (savedDir) {
-        result = `已成功下载图片到: ${savedDir}`;
+      if (taskId) {
+        // 重置表单
+        url = '';
+        saveName = '';
+        
+        // 立即刷新任务列表
+        await pollTasks();
       } else {
         error = '下载失败，请检查网址是否正确';
       }
@@ -87,6 +107,56 @@
     } finally {
       loading = false;
     }
+  }
+  
+  // 取消下载任务
+  async function cancelTask(taskId: string) {
+    try {
+      await CancelDownload(taskId);
+      // 立即刷新任务列表
+      await pollTasks();
+    } catch (err) {
+      console.error("取消任务出错:", err);
+    }
+  }
+  
+  // 切换显示历史记录
+  async function toggleHistory() {
+    showHistory = !showHistory;
+    
+    // 如果显示历史，获取历史任务
+    if (showHistory) {
+      historyTasks = await GetHistoryTasks();
+    }
+  }
+  
+  // 清除历史记录
+  async function handleClearHistory() {
+    try {
+      await ClearHistory();
+      historyTasks = [];
+    } catch (err) {
+      console.error("清除历史出错:", err);
+    }
+  }
+  
+  // 格式化任务状态
+  function formatStatus(status: string): string {
+    const statusMap = {
+      'pending': '等待中',
+      'downloading': '下载中',
+      'completed': '已完成',
+      'failed': '失败',
+      'cancelled': '已取消'
+    };
+    return statusMap[status] || status;
+  }
+  
+  // 格式化时间
+  function formatTime(timeStr: string): string {
+    if (!timeStr) return '';
+    const date = new Date(timeStr);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   }
 
   function goToViewer() {
@@ -144,40 +214,121 @@
       </div>
       
       <button on:click={handleSubmit} disabled={loading} class="download-btn">
-        {loading ? '下载中...' : '开始下载'}
+        {loading ? '添加中...' : '添加下载任务'}
       </button>
-      
-      {#if loading}
-        <div class="loading">
-          <div class="spinner"></div>
-          <p>正在下载图片，请稍候...</p>
-          
-          <!-- 添加下载进度显示 -->
-          {#if showProgress}
-            <div class="progress-container">
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: {downloadProgress.percent}%"></div>
-              </div>
-              <div class="progress-text">
-                已下载: {downloadProgress.current}/{downloadProgress.total} 张图片 ({downloadProgress.percent}%)
-              </div>
-            </div>
-          {/if}
-        </div>
-      {/if}
       
       {#if error}
         <div class="error">
           <p>{error}</p>
         </div>
       {/if}
-      
-      {#if result}
-        <div class="success">
-          <p>{result}</p>
-        </div>
+    </div>
+  </div>
+  
+  <!-- 下载任务列表 -->
+  <div class="tasks-panel">
+    <div class="tasks-header">
+      <h3>下载任务</h3>
+      <button on:click={toggleHistory} class="history-btn">
+        {showHistory ? '隐藏历史记录' : '显示历史记录'}
+      </button>
+      {#if showHistory && historyTasks.length > 0}
+        <button on:click={handleClearHistory} class="clear-btn">
+          清除历史记录
+        </button>
       {/if}
     </div>
+    
+    <!-- 活跃任务列表 -->
+    {#if activeTasks.length > 0}
+      <div class="active-tasks">
+        <h4>当前任务 ({activeTasks.length})</h4>
+        <div class="tasks-list">
+          {#each activeTasks as task (task.id)}
+            <div class="task-item">
+              <div class="task-info">
+                <div class="task-name-url">
+                  <div class="task-name">{task.name || '未命名任务'}</div>
+                  <div class="task-url">{task.url}</div>
+                </div>
+                <div class="task-status">{formatStatus(task.status)}</div>
+                <div class="task-time">
+                  开始于: {formatTime(task.startTime)}
+                </div>
+              </div>
+              
+              {#if task.status === 'downloading' || task.status === 'pending'}
+                <!-- 进度条 -->
+                <div class="progress-container">
+                  <div class="progress-bar">
+                    <div class="progress-fill" style="width: {task.progress.total > 0 ? Math.round((task.progress.current / task.progress.total) * 100) : 0}%"></div>
+                  </div>
+                  <div class="progress-text">
+                    {#if task.progress.total > 0}
+                      已下载: {task.progress.current}/{task.progress.total} 张图片 
+                      ({Math.round((task.progress.current / task.progress.total) * 100)}%)
+                    {:else}
+                      准备下载中...
+                    {/if}
+                  </div>
+                </div>
+                
+                <!-- 取消按钮 -->
+                <button class="cancel-btn" on:click={() => cancelTask(task.id)}>
+                  取消下载
+                </button>
+              {/if}
+              
+              {#if task.status === 'failed'}
+                <div class="task-error">
+                  错误信息: {task.error || '未知错误'}
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      </div>
+    {:else}
+      <div class="no-tasks">
+        当前没有进行中的下载任务
+      </div>
+    {/if}
+    
+    <!-- 历史任务列表 -->
+    {#if showHistory && historyTasks.length > 0}
+      <div class="history-tasks">
+        <h4>历史记录 ({historyTasks.length})</h4>
+        <div class="tasks-list">
+          {#each historyTasks as task (task.id)}
+            <div class="task-item history">
+              <div class="task-info">
+                <div class="task-name-url">
+                  <div class="task-name">{task.name || '未命名任务'}</div>
+                  <div class="task-url">{task.url}</div>
+                </div>
+                <div class="task-status {task.status}">{formatStatus(task.status)}</div>
+                <div class="task-time">
+                  <div>开始于: {formatTime(task.startTime)}</div>
+                  <div>结束于: {formatTime(task.completeTime)}</div>
+                </div>
+              </div>
+              
+              {#if task.status === 'completed' && task.savePath}
+                <div class="task-path">
+                  保存路径: {task.savePath}
+                </div>
+              {/if}
+              
+              {#if task.status === 'failed' && task.error}
+                <div class="task-error">
+                  错误信息: {task.error}
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
   </div>
   
   <div class="instructions">
@@ -185,11 +336,12 @@
     <ul>
       <li>输入包含图片的网页地址</li>
       <li>可以指定自定义保存文件夹名称</li>
-      <li>点击"开始下载"按钮开始抓取并下载网页中的图片</li>
-      <li>下载过程中可以实时查看下载进度</li>
+      <li>点击"添加下载任务"按钮开始抓取并下载网页中的图片</li>
+      <li>可以同时添加多个下载任务，系统会并行处理</li>
+      <li>可以随时取消正在进行的下载任务</li>
+      <li>查看历史记录以了解已完成或失败的任务</li>
       <li>下载完成后，可在漫画查看器中浏览已下载的图片</li>
       <li>可以在"应用设置"中配置代理服务器和输出目录</li>
-      <li>支持HTTP和SOCKS5代理，格式为 http://host:port 或 socks5://host:port</li>
     </ul>
   </div>
 </div>
@@ -226,7 +378,7 @@
     background-color: #3498db;
   }
   
-  .settings-panel, .download-panel, .instructions {
+  .settings-panel, .download-panel, .tasks-panel, .instructions {
     background-color: #f5f5f5;
     border-radius: 8px;
     padding: 20px;
@@ -300,27 +452,134 @@
     cursor: not-allowed;
   }
   
-  .loading {
+  .error {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 4px solid #c62828;
+  }
+  
+  /* 任务列表样式 */
+  .tasks-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .history-btn, .clear-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .history-btn {
+    background-color: #3498db;
+    color: white;
+  }
+  
+  .clear-btn {
+    background-color: #e74c3c;
+    color: white;
+  }
+  
+  .no-tasks {
+    padding: 20px;
+    text-align: center;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    border: 1px dashed #ccc;
+  }
+  
+  .active-tasks, .history-tasks {
+    margin-bottom: 20px;
+  }
+  
+  .tasks-list {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 15px;
+  }
+  
+  .task-item {
+    background-color: white;
+    border-radius: 4px;
     padding: 15px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  
+  .task-item.history {
+    opacity: 0.8;
+  }
+  
+  .task-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
     gap: 10px;
   }
   
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    border-left-color: #4CAF50;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+  .task-name-url {
+    flex: 2;
   }
   
-  /* 添加进度条样式 */
+  .task-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .task-url {
+    font-size: 12px;
+    color: #666;
+    word-break: break-all;
+  }
+  
+  .task-status {
+    flex: 1;
+    text-align: center;
+    font-weight: bold;
+  }
+  
+  .task-status.completed {
+    color: #2e7d32;
+  }
+  
+  .task-status.failed, .task-status.cancelled {
+    color: #c62828;
+  }
+  
+  .task-time {
+    flex: 1;
+    font-size: 12px;
+    color: #666;
+  }
+  
+  .task-path, .task-error {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .task-path {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-left: 4px solid #2e7d32;
+  }
+  
+  .task-error {
+    background-color: #ffebee;
+    color: #c62828;
+    border-left: 4px solid #c62828;
+  }
+  
   .progress-container {
-    width: 100%;
-    margin-top: 15px;
+    margin: 10px 0;
   }
   
   .progress-bar {
@@ -343,24 +602,14 @@
     font-weight: bold;
   }
   
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  
-  .error {
-    background-color: #ffebee;
-    color: #c62828;
-    padding: 10px;
+  .cancel-btn {
+    padding: 8px 16px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
     border-radius: 4px;
-    border-left: 4px solid #c62828;
-  }
-  
-  .success {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-    padding: 10px;
-    border-radius: 4px;
-    border-left: 4px solid #2e7d32;
+    cursor: pointer;
+    margin-top: 10px;
   }
   
   .instructions ul {

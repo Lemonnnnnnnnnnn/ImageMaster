@@ -7,7 +7,8 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 
-	"ImageMaster/core/downloader"
+	"ImageMaster/core/request"
+	"ImageMaster/core/types"
 )
 
 // TelegraphAlbum Telegraph专辑
@@ -23,21 +24,33 @@ type TelegraphImage struct {
 }
 
 // ParseTelegraph 解析Telegraph网站
-func ParseTelegraph(client *http.Client, url string, savePath string, dl *downloader.Downloader) error {
+func ParseTelegraph(client *http.Client, url string, savePath string, dl types.Downloader) error {
 	fmt.Printf("下载 Telegraph 专辑: %s\n", url)
 
-	album, err := GetTelegraphAlbum(client, url)
+	// 创建请求客户端
+	reqClient := request.NewClient()
+
+	// 使用下载器的代理配置
+	if dl != nil && dl.GetProxy() != "" {
+		reqClient.SetProxy(dl.GetProxy())
+	}
+
+	// 设置User-Agent
+	reqClient.SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+
+	album, err := GetTelegraphAlbum(reqClient, url)
 	if err != nil {
 		return fmt.Errorf("获取专辑失败: %w", err)
 	}
 
-	// 使用传入的下载器或创建新的下载器
-	localDownloader := dl
-	if localDownloader == nil {
-		localDownloader = downloader.NewDownloader(3, 2, true)
-		fmt.Printf("Telegraph解析器创建了新的下载器: %p\n", localDownloader)
+	// 使用传入的下载器
+	var localDownloader types.Downloader
+	if dl != nil {
+		localDownloader = dl
+		fmt.Printf("Telegraph解析器使用传入的下载器\n")
 	} else {
-		fmt.Printf("Telegraph解析器使用传入的下载器: %p\n", localDownloader)
+		// 未提供下载器，返回错误
+		return fmt.Errorf("未提供下载器")
 	}
 
 	// 保存路径
@@ -53,7 +66,7 @@ func ParseTelegraph(client *http.Client, url string, savePath string, dl *downlo
 		filePaths = append(filePaths, fullPath)
 	}
 
-	// 批量下载所有图片并跟踪进度
+	// 批量下载所有图片
 	successCount, err := localDownloader.BatchDownload(imgURLs, filePaths, nil)
 	if err != nil {
 		fmt.Printf("批量下载出错: %v\n", err)
@@ -64,8 +77,8 @@ func ParseTelegraph(client *http.Client, url string, savePath string, dl *downlo
 }
 
 // GetTelegraphAlbum 获取Telegraph专辑
-func GetTelegraphAlbum(client *http.Client, url string) (*TelegraphAlbum, error) {
-	resp, err := client.Get(url)
+func GetTelegraphAlbum(reqClient *request.Client, url string) (*TelegraphAlbum, error) {
+	resp, err := reqClient.Get(url)
 	if err != nil {
 		return nil, err
 	}

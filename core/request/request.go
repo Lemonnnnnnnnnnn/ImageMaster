@@ -8,14 +8,14 @@ import (
 	"net/url"
 	"time"
 
-	"ImageMaster/core/config"
+	"ImageMaster/core/types"
 )
 
 // Client HTTP客户端封装
 type Client struct {
 	client        *http.Client
 	proxyURL      string
-	configManager *config.Manager
+	configManager types.ConfigProvider
 	headers       map[string]string
 	cookies       []*http.Cookie
 }
@@ -32,12 +32,13 @@ func NewClient() *Client {
 }
 
 // SetConfigManager 设置配置管理器
-func (c *Client) SetConfigManager(configManager *config.Manager) {
+func (c *Client) SetConfigManager(configManager types.ConfigProvider) {
 	c.configManager = configManager
 
 	// 如果配置管理器不为空，应用其代理设置
 	if configManager != nil {
 		proxyURL := configManager.GetProxy()
+		fmt.Printf("设置代理: %s\n", proxyURL)
 		if proxyURL != "" {
 			c.SetProxy(proxyURL)
 		}
@@ -209,8 +210,7 @@ func (c *Client) DoRequestWithContext(ctx context.Context, method, url string, b
 	return c.client.Do(req)
 }
 
-// GetHTTPClient 获取内部的HTTP客户端
-// 用于兼容旧代码，逐渐迁移到新版请求模块后应删除此方法
+// GetHTTPClient 获取底层HTTP客户端
 func (c *Client) GetHTTPClient() *http.Client {
 	return c.client
 }
