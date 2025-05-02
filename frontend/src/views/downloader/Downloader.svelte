@@ -5,7 +5,7 @@
     CrawlFromWeb,
     SetOutputDir,
     GetOutputDir
-  } from '../../../wailsjs/go/main/Viewer';
+  } from '../../../wailsjs/go/viewer/Viewer';
 
   let url = '';
   let saveName = '';

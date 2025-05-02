@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { push } from 'svelte-spa-router';
-  import { GetAllMangas } from '../../../wailsjs/go/main/Viewer';
+  import { GetAllMangas } from '../../../wailsjs/go/viewer/Viewer';
   import Home from './Home.svelte';
 
   // 用于在 Viewer 和 Downloader 之间切换

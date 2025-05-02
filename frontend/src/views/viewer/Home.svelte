@@ -7,7 +7,7 @@
     GetLibraries, 
     DeleteManga,
     GetImageDataUrl
-  } from '../../../wailsjs/go/main/Viewer';
+  } from '../../../wailsjs/go/viewer/Viewer';
 
   let mangas = [];
   let loading = true;

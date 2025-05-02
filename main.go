@@ -4,6 +4,8 @@ import (
 	"embed"
 	"log"
 
+	"ImageMaster/core/viewer"
+
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -14,8 +16,8 @@ import (
 var assets embed.FS
 
 func main() {
-	// 创建应用实例
-	viewer := NewViewer()
+	// 创建新的查看器实例
+	v := viewer.NewViewer()
 
 	// 创建应用
 	err := wails.Run(&options.App{
@@ -26,9 +28,9 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        viewer.Startup,
+		OnStartup:        v.Startup,
 		Bind: []interface{}{
-			viewer,
+			v,
 		},
 		LogLevel:           logger.ERROR,
 		LogLevelProduction: logger.ERROR,
@@ -37,4 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// 启动查看器
+	// v.Startup(context.Background())
 }

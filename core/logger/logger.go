@@ -1,4 +1,4 @@
-package main
+package logger
 
 import (
 	"fmt"
@@ -137,4 +137,4 @@ func Error(format string, args ...interface{}) {
 
 func Fatal(format string, args ...interface{}) {
 	GetLogger().Fatal(format, args...)
-} 
+}

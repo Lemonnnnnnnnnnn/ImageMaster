@@ -1,4 +1,4 @@
-export namespace main {
+export namespace getter {
 	
 	export class Manga {
 	    name: string;

@@ -6,7 +6,7 @@
     GetAllMangas,
     DeleteManga,
     GetImageDataUrl
-  } from '../../../wailsjs/go/main/Viewer';
+  } from '../../../wailsjs/go/viewer/Viewer';
 
   // 从路由参数获取漫画路径
   export let params: {

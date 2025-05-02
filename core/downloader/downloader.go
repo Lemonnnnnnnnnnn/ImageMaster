@@ -1,4 +1,4 @@
-package main
+package downloader
 
 import (
 	"fmt"
@@ -119,14 +119,4 @@ func (d *Downloader) DownloadFile(url string, filepath string, headers map[strin
 	}
 
 	return nil
-}
-
-// 更新 Getter 中的下载方法
-func (g *Getter) DownloadImage(url string, savePath string) error {
-	downloader := NewDownloader(
-		g.config.MaxRetries,
-		g.config.RetryDelay,
-		false,
-	)
-	return downloader.DownloadFile(url, savePath, nil)
 }

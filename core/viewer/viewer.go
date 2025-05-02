@@ -1,4 +1,4 @@
-package main
+package viewer
 
 import (
 	"context"
@@ -7,16 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-)
 
-// 漫画信息结构
-type Manga struct {
-	Name        string   `json:"name"`
-	Path        string   `json:"path"`
-	PreviewImg  string   `json:"previewImg"`
-	ImagesCount int      `json:"imagesCount"`
-	Images      []string `json:"images,omitempty"`
-}
+	"ImageMaster/core/crawler"
+	"ImageMaster/core/getter"
+)
 
 // 应用配置
 type Config struct {
@@ -25,11 +19,12 @@ type Config struct {
 
 // Viewer 结构体
 type Viewer struct {
-	ctx        context.Context
-	config     Config
-	mangas     []Manga
-	configPath string
-	getter     *Getter
+	ctx            context.Context
+	config         Config
+	mangas         []getter.Manga
+	configPath     string
+	localGetter    *getter.LocalGetter
+	crawlerFactory *crawler.CrawlerFactory
 }
 
 // NewViewer 创建新的 Viewer 实例
@@ -48,8 +43,17 @@ func (v *Viewer) Startup(ctx context.Context) {
 	}
 	v.configPath = filepath.Join(configDir, "manga-viewer-config.json")
 
-	// 初始化 Getter
-	v.getter = NewGetter(ctx)
+	// 初始化 LocalGetter
+	// 设置默认输出目录
+	userDir, err := os.UserHomeDir()
+	if err != nil {
+		userDir, _ = os.Getwd()
+	}
+	outputDir := filepath.Join(userDir, "Pictures", "ImageMaster")
+	os.MkdirAll(outputDir, 0755)
+
+	v.localGetter = getter.NewLocalGetter(outputDir)
+	v.crawlerFactory = crawler.NewCrawlerFactory(ctx)
 
 	// 加载配置
 	v.LoadConfig()
@@ -126,7 +130,7 @@ func (v *Viewer) GetLibraries() []string {
 
 // LoadAllLibraries 加载所有图书馆
 func (v *Viewer) LoadAllLibraries() {
-	v.mangas = []Manga{}
+	v.mangas = []getter.Manga{}
 	for _, lib := range v.config.Libraries {
 		v.LoadLibrary(lib)
 	}
@@ -134,17 +138,17 @@ func (v *Viewer) LoadAllLibraries() {
 
 // LoadLibrary 加载指定图书馆
 func (v *Viewer) LoadLibrary(path string) bool {
-	return v.getter.LoadMangaLibrary(path, &v.mangas)
+	return v.localGetter.LoadMangaLibrary(path, &v.mangas)
 }
 
 // GetAllMangas 获取所有漫画
-func (v *Viewer) GetAllMangas() []Manga {
+func (v *Viewer) GetAllMangas() []getter.Manga {
 	return v.mangas
 }
 
 // GetMangaImages 获取指定漫画的所有图片
 func (v *Viewer) GetMangaImages(path string) []string {
-	return v.getter.GetMangaImages(path)
+	return v.localGetter.GetMangaImages(path)
 }
 
 // DeleteManga 删除漫画（删除文件夹）
@@ -167,7 +171,7 @@ func (v *Viewer) DeleteManga(path string) bool {
 
 // GetImageDataUrl 获取图片的DataURL
 func (v *Viewer) GetImageDataUrl(path string) string {
-	return v.getter.GetImageDataUrl(path)
+	return v.localGetter.GetImageDataUrl(path)
 }
 
 // 辅助函数 - 获取系统分隔符
@@ -193,12 +197,15 @@ func (v *Viewer) GetOSType() string {
 
 // CrawlFromWeb 从网页爬取图片
 func (v *Viewer) CrawlFromWeb(url string, saveName string) string {
-	Info("开始从网页爬取图片: %s", url)
+	// 检测网站类型
+	siteType := v.crawlerFactory.DetectSiteType(url)
+
+	// 创建对应爬虫
+	crawler := v.crawlerFactory.CreateCrawler(siteType)
 
 	// 执行爬取
-	saveDir, err := v.getter.CrawlWebImages(url, saveName)
+	saveDir, err := crawler.Crawl(url, v.GetOutputDir())
 	if err != nil {
-		Error("爬取网页图片失败: %v", err)
 		return ""
 	}
 
@@ -218,11 +225,11 @@ func (v *Viewer) SetOutputDir() string {
 		return ""
 	}
 
-	v.getter.SetOutputDir(dir)
+	v.localGetter.SetOutputDir(dir)
 	return dir
 }
 
 // GetOutputDir 获取当前输出目录
 func (v *Viewer) GetOutputDir() string {
-	return v.getter.config.OutputDir
+	return v.localGetter.GetOutputDir()
 }
