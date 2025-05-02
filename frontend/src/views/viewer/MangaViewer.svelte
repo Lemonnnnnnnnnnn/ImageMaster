@@ -302,14 +302,16 @@
   .center-title h2 {
     margin: 0;
     font-size: 18px;
-    white-space: nowrap;
+    /* white-space: nowrap; */
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   
   .left-controls, .right-controls {
     display: flex;
     gap: 10px;
+    min-width: 240px;
   }
   
   button {
