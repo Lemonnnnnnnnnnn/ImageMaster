@@ -38,8 +38,8 @@ export function SetStorageAPI(arg1) {
   return window['go']['downloader']['DownloaderAPI']['SetStorageAPI'](arg1);
 }
 
-export function StartDownload(arg1, arg2) {
-  return window['go']['downloader']['DownloaderAPI']['StartDownload'](arg1, arg2);
+export function StartDownload(arg1) {
+  return window['go']['downloader']['DownloaderAPI']['StartDownload'](arg1);
 }
 
 export function TryLock() {

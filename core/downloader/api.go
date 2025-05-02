@@ -36,9 +36,9 @@ func (api *DownloaderAPI) SetStorageAPI(storageAPI interface{}) {
 }
 
 // StartDownload 开始下载网页图片
-func (api *DownloaderAPI) StartDownload(url string, saveName string) string {
+func (api *DownloaderAPI) StartDownload(url string) string {
 	// 调用下载管理器创建下载任务
-	return api.manager.CrawlWebImages(url, saveName)
+	return api.manager.CrawlWebImages(url)
 }
 
 // CancelDownload 取消下载任务

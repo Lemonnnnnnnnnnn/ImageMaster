@@ -16,7 +16,6 @@ import (
 type DownloadTask struct {
 	ID           string    `json:"id"`           // 任务ID
 	URL          string    `json:"url"`          // 下载URL
-	Name         string    `json:"name"`         // 保存名称
 	Status       string    `json:"status"`       // 状态: pending, downloading, completed, failed
 	SavePath     string    `json:"savePath"`     // 保存路径
 	StartTime    time.Time `json:"startTime"`    // 开始时间

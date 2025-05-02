@@ -20,7 +20,7 @@ export function Lock():Promise<void>;
 
 export function SetStorageAPI(arg1:any):Promise<void>;
 
-export function StartDownload(arg1:string,arg2:string):Promise<string>;
+export function StartDownload(arg1:string):Promise<string>;
 
 export function TryLock():Promise<boolean>;
 

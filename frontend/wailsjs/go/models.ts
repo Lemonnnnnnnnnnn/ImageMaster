@@ -3,7 +3,6 @@ export namespace downloader {
 	export class DownloadTask {
 	    id: string;
 	    url: string;
-	    name: string;
 	    status: string;
 	    savePath: string;
 	    // Go type: time
@@ -22,7 +21,6 @@ export namespace downloader {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.url = source["url"];
-	        this.name = source["name"];
 	        this.status = source["status"];
 	        this.savePath = source["savePath"];
 	        this.startTime = this.convertValues(source["startTime"], null);

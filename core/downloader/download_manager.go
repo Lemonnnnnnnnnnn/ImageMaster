@@ -60,14 +60,13 @@ func (dm *DownloadManager) SetStorageAPI(storageAPI interface{}) {
 }
 
 // AddTask 添加下载任务并立即开始下载
-func (dm *DownloadManager) AddTask(url string, name string) *DownloadTask {
+func (dm *DownloadManager) AddTask(url string) *DownloadTask {
 	dm.mu.Lock()
 
 	// 创建新任务
 	task := &DownloadTask{
 		ID:        uuid.New().String(),
 		URL:       url,
-		Name:      name,
 		Status:    string(StatusPending),
 		StartTime: time.Now(),
 	}
@@ -93,9 +92,9 @@ func (dm *DownloadManager) AddTask(url string, name string) *DownloadTask {
 }
 
 // CrawlWebImages 从网页下载图片，返回任务ID
-func (dm *DownloadManager) CrawlWebImages(url string, saveName string) string {
+func (dm *DownloadManager) CrawlWebImages(url string) string {
 	// 添加下载任务
-	task := dm.AddTask(url, saveName)
+	task := dm.AddTask(url)
 	return task.ID
 }
 
@@ -162,19 +161,16 @@ func (dm *DownloadManager) executeTask(taskID string, cancelChan chan struct{}) 
 				outputDir = filepath.Join(homeDir, "ImageMaster/downloads")
 			}
 
-			// 创建保存目录
-			dirName := task.Name
-			if dirName == "" {
-				// 如果未指定名称，使用URL的最后一部分或时间戳
-				if path := filepath.Base(task.URL); path != "" && path != "." && path != "/" {
-					dirName = path
-				} else {
-					dirName = fmt.Sprintf("download_%d", time.Now().Unix())
-				}
-			}
+			// 使用URL的最后一部分或时间戳作为目录名
+			// dirName := ""
+			// if path := filepath.Base(task.URL); path != "" && path != "." && path != "/" {
+			// 	dirName = path
+			// } else {
+			// 	dirName = fmt.Sprintf("download_%d", time.Now().Unix())
+			// }
 
 			// 构建完整保存路径
-			savePath := filepath.Join(outputDir, dirName)
+			savePath := filepath.Join(outputDir)
 
 			// 确保目录存在
 			if err = os.MkdirAll(savePath, 0755); err != nil {

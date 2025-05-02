@@ -14,7 +14,6 @@
   } from '../../../wailsjs/go/storage/StorageAPI';
 
   let url = '';
-  let saveName = '';
   let loading = false;
   let outputDir = '';
   let error = '';
@@ -90,12 +89,11 @@
       error = '';
       
       // 开始下载任务
-      const taskId = await StartDownload(url, saveName);
+      const taskId = await StartDownload(url);
       
       if (taskId) {
         // 重置表单
         url = '';
-        saveName = '';
         
         // 立即刷新任务列表
         await pollTasks();
@@ -202,17 +200,6 @@
         />
       </div>
       
-      <div class="form-group">
-        <label for="saveName">保存文件夹名称 (可选)</label>
-        <input 
-          type="text" 
-          id="saveName" 
-          bind:value={saveName} 
-          placeholder="自定义保存的文件夹名称，默认使用网页标题"
-          disabled={loading}
-        />
-      </div>
-      
       <button on:click={handleSubmit} disabled={loading} class="download-btn">
         {loading ? '添加中...' : '添加下载任务'}
       </button>
@@ -248,7 +235,6 @@
             <div class="task-item">
               <div class="task-info">
                 <div class="task-name-url">
-                  <div class="task-name">{task.name || '未命名任务'}</div>
                   <div class="task-url">{task.url}</div>
                 </div>
                 <div class="task-status">{formatStatus(task.status)}</div>
@@ -303,7 +289,6 @@
             <div class="task-item history">
               <div class="task-info">
                 <div class="task-name-url">
-                  <div class="task-name">{task.name || '未命名任务'}</div>
                   <div class="task-url">{task.url}</div>
                 </div>
                 <div class="task-status {task.status}">{formatStatus(task.status)}</div>
@@ -335,7 +320,6 @@
     <h3>使用说明</h3>
     <ul>
       <li>输入包含图片的网页地址</li>
-      <li>可以指定自定义保存文件夹名称</li>
       <li>点击"添加下载任务"按钮开始抓取并下载网页中的图片</li>
       <li>可以同时添加多个下载任务，系统会并行处理</li>
       <li>可以随时取消正在进行的下载任务</li>
