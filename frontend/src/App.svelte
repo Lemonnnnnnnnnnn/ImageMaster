@@ -32,23 +32,14 @@
     await loadMangas();
     loading = false;
 
-    // 监听滚动事件
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    // 监听滚动事件，但只用于主页面的回到顶部按钮
+    window.addEventListener('scroll', handleScrollForMainPage);
+    return () => window.removeEventListener('scroll', handleScrollForMainPage);
   });
 
-  function handleScroll() {
+  function handleScrollForMainPage() {
     scrollY = window.scrollY;
     showScrollTop = scrollY > 300;
-    
-    // 检查是否滚动到底部
-    if (showMangaView) {
-      const content = document.querySelector('.manga-view-content');
-      if (content) {
-        const { scrollTop, scrollHeight, clientHeight } = content;
-        showNavigation = scrollHeight - scrollTop - clientHeight < 50;
-      }
-    }
   }
 
   function scrollToTop() {
@@ -143,6 +134,27 @@
       viewManga(mangas[currentIndex - 1]);
     }
   }
+
+  async function deleteAndViewNextManga() {
+    if (confirm(`确定要删除 "${selectedManga.name}" 并查看下一部漫画吗？`)) {
+      loading = true;
+      const currentIndex = mangas.findIndex(m => m.path === selectedManga.path);
+      const nextManga = currentIndex < mangas.length - 1 ? mangas[currentIndex + 1] : null;
+      
+      const success = await DeleteManga(selectedManga.path);
+      if (success) {
+        mangas = mangas.filter(m => m.path !== selectedManga.path);
+        if (nextManga) {
+          await viewManga(nextManga);
+        } else {
+          backToHome();
+        }
+      } else {
+        alert('删除失败！');
+      }
+      loading = false;
+    }
+  }
 </script>
 
 <main>
@@ -222,31 +234,37 @@
           <p>加载中...</p>
         </div>
       {:else}
-        <div class="manga-view-content" on:scroll={handleScroll}>
+        <div class="manga-view-content">
           {#each selectedImages as image}
             <div class="manga-page">
               <img src={image} alt="漫画页面" />
             </div>
           {/each}
           
-          {#if showNavigation}
-            <div class="manga-navigation">
+          <div class="manga-navigation">
+            <button 
+              class="nav-btn prev-btn" 
+              on:click={navigateToPrevManga}
+              disabled={mangas.findIndex(m => m.path === selectedManga.path) === 0}
+            >
+              ← 上一个
+            </button>
+            <div class="nav-actions">
               <button 
-                class="nav-btn prev-btn" 
-                on:click={navigateToPrevManga}
-                disabled={mangas.findIndex(m => m.path === selectedManga.path) === 0}
+                class="nav-btn delete-next-btn" 
+                on:click={deleteAndViewNextManga}
               >
-                ← 上一个
-              </button>
-              <button 
-                class="nav-btn next-btn" 
-                on:click={navigateToNextManga}
-                disabled={mangas.findIndex(m => m.path === selectedManga.path) === mangas.length - 1}
-              >
-                下一个 →
+                删除并查看下一部
               </button>
             </div>
-          {/if}
+            <button 
+              class="nav-btn next-btn" 
+              on:click={navigateToNextManga}
+              disabled={mangas.findIndex(m => m.path === selectedManga.path) === mangas.length - 1}
+            >
+              下一个 →
+            </button>
+          </div>
         </div>
       {/if}
     </div>
@@ -524,10 +542,27 @@
   .manga-navigation {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     width: 100%;
     max-width: 800px;
-    margin: 20px auto;
-    padding: 0 20px;
+    margin: 20px auto 40px auto;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .delete-next-btn {
+    background-color: #f44336;
+  }
+
+  .delete-next-btn:hover {
+    background-color: #d32f2f;
   }
 
   .nav-btn {
