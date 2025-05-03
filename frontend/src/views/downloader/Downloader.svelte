@@ -12,6 +12,7 @@
   import {
       GetOutputDir
   } from '../../../wailsjs/go/storage/StorageAPI';
+  import Header from '../../components/Header.svelte';
 
   let url = '';
   let loading = false;
@@ -156,31 +157,17 @@
     const date = new Date(timeStr);
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   }
-
-  function goToViewer() {
-    push('/');
-  }
-  
-  function goToConfig() {
-    push('/config');
-  }
 </script>
 
 <div class="downloader-container">
-  <div class="header">
-    <h1>网页图片下载器</h1>
-    <div class="nav-buttons">
-      <button on:click={goToViewer} class="nav-btn">返回漫画查看器</button>
-      <button on:click={goToConfig} class="nav-btn config-btn">应用设置</button>
-    </div>
-  </div>
+  <Header title="网页图片下载器" />
 
   <div class="settings-panel">
     <div class="output-dir">
       <h3>当前输出目录:</h3>
       <div class="dir-display">
         <span>{outputDir}</span>
-        <button on:click={goToConfig}>前往设置更改</button>
+        <button on:click={()=>push('/config')}>前往设置更改</button>
       </div>
     </div>
   </div>

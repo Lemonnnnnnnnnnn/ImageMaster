@@ -9,6 +9,7 @@
     SetProxy,
     GetProxy
   } from '../../../wailsjs/go/viewer/Viewer';
+  import Header from '../../components/Header.svelte';
   
   let libraries = [];
   let outputDir = '';
@@ -92,24 +93,10 @@
       loading = false;
     }
   }
-
-  function goToHome() {
-    push('/');
-  }
-  
-  function goToDownloader() {
-    push('/downloader');
-  }
 </script>
 
 <div class="config-container">
-  <div class="header">
-    <h1>应用设置</h1>
-    <div class="nav-buttons">
-      <button on:click={goToHome} class="nav-btn">返回主页</button>
-      <button on:click={goToDownloader} class="nav-btn">前往下载器</button>
-    </div>
-  </div>
+  <Header title="应用设置" />
 
   {#if loading}
     <div class="loading">
