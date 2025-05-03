@@ -331,41 +331,87 @@
 </div>
 
 <style>
+  :root {
+    --primary-color: #4361ee;
+    --secondary-color: #3a0ca3;
+    --success-color: #4CAF50;
+    --danger-color: #e63946;
+    --warning-color: #ff9f1c;
+    --light-bg: #f8f9fa;
+    --dark-bg: #212529;
+    --border-color: #dee2e6;
+    --box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    --border-radius: 8px;
+  }
+
   .downloader-container {
     padding: 20px;
     max-width: 1000px;
     margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    color: #333;
   }
   
   .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 15px;
+  }
+  
+  .header h1 {
+    color: var(--primary-color);
+    margin: 0;
+    font-size: 28px;
   }
   
   .nav-buttons {
     display: flex;
-    gap: 10px;
+    gap: 12px;
   }
   
   .nav-btn {
-    padding: 8px 16px;
-    background-color: #4a6fa5;
+    padding: 10px 18px;
+    background-color: var(--primary-color);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: var(--box-shadow);
+  }
+  
+  .nav-btn:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
   }
   
   .config-btn {
-    background-color: #3498db;
+    background-color: var(--secondary-color);
+  }
+  
+  .config-btn:hover {
+    background-color: #2a0a73;
   }
   
   .settings-panel, .download-panel, .tasks-panel, .instructions {
-    background-color: #f5f5f5;
-    border-radius: 8px;
-    padding: 20px;
+    background-color: var(--light-bg);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--border-color);
+  }
+  
+  .settings-panel h3, .download-panel h3, .tasks-panel h3, .instructions h3 {
+    margin-top: 0;
+    color: var(--primary-color);
+    font-size: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
     margin-bottom: 20px;
   }
   
@@ -376,71 +422,95 @@
   .dir-display {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 15px;
     background-color: white;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
   }
   
   .dir-display span {
     flex: 1;
     word-break: break-all;
+    color: #555;
   }
   
   .dir-display button {
-    padding: 5px 10px;
-    background-color: #4CAF50;
+    padding: 8px 15px;
+    background-color: var(--success-color);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+  }
+  
+  .dir-display button:hover {
+    background-color: #3d8b40;
+    transform: translateY(-2px);
   }
   
   .form {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 20px;
   }
   
   .form-group {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
   }
   
   .form-group label {
-    font-weight: bold;
+    font-weight: 600;
+    color: #555;
   }
   
   .form-group input {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
     font-size: 16px;
+    transition: border-color 0.2s;
+  }
+  
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
   }
   
   .download-btn {
-    padding: 12px;
-    background-color: #4CAF50;
+    padding: 14px;
+    background-color: var(--success-color);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     cursor: pointer;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: var(--box-shadow);
+  }
+  
+  .download-btn:hover:not(:disabled) {
+    background-color: #3d8b40;
+    transform: translateY(-2px);
   }
   
   .download-btn:disabled {
     background-color: #a5a5a5;
     cursor: not-allowed;
+    box-shadow: none;
   }
   
   .error {
     background-color: #ffebee;
     color: #c62828;
-    padding: 10px;
-    border-radius: 4px;
+    padding: 12px 15px;
+    border-radius: var(--border-radius);
     border-left: 4px solid #c62828;
   }
   
@@ -448,64 +518,94 @@
   .tasks-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .tasks-header h3 {
+    margin: 0;
+    padding: 0;
+    border: none;
   }
   
   .history-btn, .clear-btn {
-    padding: 6px 12px;
+    padding: 8px 15px;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     cursor: pointer;
     font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
   }
   
   .history-btn {
-    background-color: #3498db;
+    background-color: var(--primary-color);
     color: white;
+  }
+  
+  .history-btn:hover {
+    background-color: var(--secondary-color);
   }
   
   .clear-btn {
-    background-color: #e74c3c;
+    background-color: var(--danger-color);
     color: white;
   }
   
+  .clear-btn:hover {
+    background-color: #c62828;
+  }
+  
   .no-tasks {
-    padding: 20px;
+    padding: 30px;
     text-align: center;
-    background-color: #f9f9f9;
-    border-radius: 4px;
-    border: 1px dashed #ccc;
+    background-color: white;
+    border-radius: var(--border-radius);
+    border: 1px dashed var(--border-color);
+    color: #666;
+    font-style: italic;
   }
   
   .active-tasks, .history-tasks {
-    margin-bottom: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .active-tasks h4, .history-tasks h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    font-size: 18px;
   }
   
   .tasks-list {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 20px;
   }
   
   .task-item {
     background-color: white;
-    border-radius: 4px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--box-shadow);
+    transition: transform 0.2s ease;
+  }
+  
+  .task-item:hover {
+    transform: translateY(-2px);
   }
   
   .task-item.history {
-    opacity: 0.8;
+    opacity: 0.85;
   }
   
   .task-info {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 15px;
   }
   
   .task-name-url {
@@ -514,39 +614,52 @@
   
   .task-name {
     font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    color: #333;
   }
   
   .task-url {
-    font-size: 12px;
+    font-size: 13px;
     color: #666;
     word-break: break-all;
+    padding: 5px 0;
   }
   
   .task-status {
     flex: 1;
     text-align: center;
     font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 20px;
+    align-self: flex-start;
   }
   
   .task-status.completed {
-    color: #2e7d32;
+    color: white;
+    background-color: var(--success-color);
+  }
+  
+  .task-status.downloading, .task-status.pending {
+    color: white;
+    background-color: var(--primary-color);
   }
   
   .task-status.failed, .task-status.cancelled {
-    color: #c62828;
+    color: white;
+    background-color: var(--danger-color);
   }
   
   .task-time {
     flex: 1;
-    font-size: 12px;
+    font-size: 13px;
     color: #666;
+    line-height: 1.6;
   }
   
   .task-path, .task-error {
-    margin-top: 10px;
-    padding: 10px;
-    border-radius: 4px;
+    margin-top: 15px;
+    padding: 12px 15px;
+    border-radius: var(--border-radius);
     font-size: 14px;
   }
   
@@ -563,7 +676,7 @@
   }
   
   .progress-container {
-    margin: 10px 0;
+    margin: 15px 0;
   }
   
   .progress-bar {
@@ -572,32 +685,88 @@
     background-color: #e0e0e0;
     border-radius: 10px;
     overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
   }
   
   .progress-fill {
     height: 100%;
-    background-color: #4CAF50;
+    background-color: var(--primary-color);
     transition: width 0.3s ease;
+    background-image: linear-gradient(45deg, 
+                      rgba(255,255,255,.15) 25%, transparent 25%, 
+                      transparent 50%, rgba(255,255,255,.15) 50%, 
+                      rgba(255,255,255,.15) 75%, transparent 75%, 
+                      transparent);
+    background-size: 40px 40px;
+    animation: progress-animation 1s linear infinite;
+  }
+  
+  @keyframes progress-animation {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 40px 0;
+    }
   }
   
   .progress-text {
     text-align: center;
-    margin-top: 5px;
-    font-weight: bold;
+    margin-top: 8px;
+    font-weight: 600;
+    color: #555;
   }
   
   .cancel-btn {
-    padding: 8px 16px;
-    background-color: #e74c3c;
+    padding: 10px 18px;
+    background-color: var(--danger-color);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     cursor: pointer;
-    margin-top: 10px;
+    margin-top: 15px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .cancel-btn:hover {
+    background-color: #c62828;
+    transform: translateY(-2px);
   }
   
   .instructions ul {
-    padding-left: 20px;
-    line-height: 1.6;
+    padding-left: 25px;
+    line-height: 1.8;
+    color: #555;
+  }
+  
+  .instructions li {
+    margin-bottom: 8px;
+  }
+  
+  /* 响应式调整 */
+  @media (max-width: 768px) {
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .nav-buttons {
+      margin-top: 15px;
+      width: 100%;
+    }
+    
+    .nav-btn {
+      flex: 1;
+      text-align: center;
+    }
+    
+    .task-info {
+      flex-direction: column;
+    }
+    
+    .task-status {
+      align-self: flex-start;
+    }
   }
 </style> 
