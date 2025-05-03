@@ -17,6 +17,7 @@
   let loading = false;
   let error = '';
   let success = '';
+  let successTimeout;
 
   onMount(async () => {
     await loadLibraries();
@@ -52,7 +53,7 @@
       const newLib = await SelectLibrary();
       if (newLib) {
         await loadLibraries();
-        success = '成功添加新的漫画库';
+        showSuccessMessage('成功添加新的漫画库');
       }
     } catch (err) {
       error = `添加漫画库失败: ${err.message || '未知错误'}`;
@@ -70,7 +71,7 @@
       const newDir = await SetOutputDir();
       if (newDir) {
         outputDir = newDir;
-        success = '成功更改输出目录';
+        showSuccessMessage('成功更改输出目录');
       }
     } catch (err) {
       error = `更改输出目录失败: ${err.message || '未知错误'}`;
@@ -86,79 +87,115 @@
     
     try {
       await SetProxy(proxyURL);
-      success = '成功保存代理设置';
+      showSuccessMessage('成功保存代理设置');
     } catch (err) {
       error = `保存代理设置失败: ${err.message || '未知错误'}`;
     } finally {
       loading = false;
     }
   }
+
+  function showSuccessMessage(message) {
+    success = message;
+    if (successTimeout) clearTimeout(successTimeout);
+    successTimeout = setTimeout(() => {
+      success = '';
+    }, 3000);
+  }
 </script>
 
 <div class="config-container">
   <Header title="应用设置" />
 
-  {#if loading}
-    <div class="loading">
-      <div class="spinner"></div>
-      <p>加载中...</p>
-    </div>
-  {/if}
+  <div class="notification-area">
+    {#if loading}
+      <div class="loading-indicator">
+        <div class="spinner"></div>
+        <p>加载中...</p>
+      </div>
+    {/if}
 
-  {#if error}
-    <div class="error">
-      <p>{error}</p>
-    </div>
-  {/if}
+    {#if error}
+      <div class="notification error">
+        <div class="icon">✕</div>
+        <p>{error}</p>
+      </div>
+    {/if}
 
-  {#if success}
-    <div class="success">
-      <p>{success}</p>
-    </div>
-  {/if}
-
-  <div class="config-section">
-    <h2>漫画库设置</h2>
-    <div class="section-content">
-      {#if libraries.length === 0}
-        <p>当前未添加任何漫画库。</p>
-      {:else}
-        <h3>已添加的漫画库：</h3>
-        <ul class="libraries-list">
-          {#each libraries as lib}
-            <li>{lib}</li>
-          {/each}
-        </ul>
-      {/if}
-      <button on:click={addLibrary} disabled={loading} class="action-btn">添加漫画库</button>
-    </div>
+    {#if success}
+      <div class="notification success">
+        <div class="icon">✓</div>
+        <p>{success}</p>
+      </div>
+    {/if}
   </div>
 
-  <div class="config-section">
-    <h2>下载设置</h2>
-    <div class="section-content">
-      <div class="setting-group">
-        <h3>当前输出目录:</h3>
-        <div class="setting-value">
-          <span>{outputDir || '未设置'}</span>
-        </div>
-        <button on:click={changeOutputDir} disabled={loading} class="action-btn">更改输出目录</button>
+  <div class="cards-container">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">📚</span>
+        <h2>漫画库设置</h2>
       </div>
+      <div class="card-content">
+        {#if libraries.length === 0}
+          <div class="empty-state">
+            <span class="empty-icon">📁</span>
+            <p>当前未添加任何漫画库</p>
+          </div>
+        {:else}
+          <h3>已添加的漫画库：</h3>
+          <ul class="libraries-list">
+            {#each libraries as lib}
+              <li>
+                <span class="folder-icon">📂</span>
+                <span class="lib-path">{lib}</span>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+        <button on:click={addLibrary} disabled={loading} class="action-btn">
+          <span class="btn-icon">+</span>
+          <span>添加漫画库</span>
+        </button>
+      </div>
+    </div>
 
-      <div class="setting-group">
-        <h3>代理设置:</h3>
-        <div class="input-group">
-          <label for="proxy">代理服务器 URL (例如: http://127.0.0.1:7890)</label>
-          <input 
-            type="text" 
-            id="proxy" 
-            bind:value={proxyURL} 
-            placeholder="代理服务器地址，留空表示不使用代理"
-            disabled={loading}
-          />
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">⚙️</span>
+        <h2>下载设置</h2>
+      </div>
+      <div class="card-content">
+        <div class="setting-group">
+          <h3>输出目录</h3>
+          <div class="setting-value">
+            <span class="folder-icon">📂</span>
+            <span>{outputDir || '未设置'}</span>
+          </div>
+          <button on:click={changeOutputDir} disabled={loading} class="action-btn">
+            <span class="btn-icon">📂</span>
+            <span>更改输出目录</span>
+          </button>
         </div>
-        <p class="hint">支持 HTTP 和 SOCKS 代理，格式为 http://host:port 或 socks5://host:port</p>
-        <button on:click={saveProxySettings} disabled={loading} class="action-btn">保存代理设置</button>
+
+        <div class="setting-group">
+          <h3>代理设置</h3>
+          <div class="input-wrapper">
+            <label for="proxy">代理服务器 URL</label>
+            <input 
+              type="text" 
+              id="proxy" 
+              bind:value={proxyURL} 
+              placeholder="例如: http://127.0.0.1:7890"
+              disabled={loading}
+            />
+          </div>
+          <p class="hint">支持 HTTP 和 SOCKS 代理，格式为 http://host:port 或 socks5://host:port</p>
+          <button on:click={saveProxySettings} disabled={loading} class="action-btn">
+            <span class="btn-icon">💾</span>
+            <span>保存代理设置</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -167,46 +204,75 @@
 <style>
   .config-container {
     padding: 20px;
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   
-  .header {
+  .notification-area {
+    margin-bottom: 20px;
+  }
+  
+  .cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  
+  .card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+  
+  .card-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    padding: 16px 20px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #eee;
   }
   
-  .nav-buttons {
-    display: flex;
-    gap: 10px;
+  .card-icon {
+    font-size: 24px;
+    margin-right: 12px;
   }
   
-  .nav-btn {
-    padding: 8px 16px;
-    background-color: #4a6fa5;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+  .card-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
   }
   
-  .config-section {
-    background-color: #f5f5f5;
-    border-radius: 8px;
+  .card-content {
     padding: 20px;
-    margin-bottom: 20px;
   }
   
-  .section-content {
-    margin-top: 15px;
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 0;
+    color: #888;
+  }
+  
+  .empty-icon {
+    font-size: 40px;
+    margin-bottom: 15px;
+    opacity: 0.7;
   }
   
   .setting-group {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #ddd;
+    margin-bottom: 25px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid #eee;
   }
   
   .setting-group:last-child {
@@ -215,92 +281,200 @@
     padding-bottom: 0;
   }
   
+  .setting-group h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: #444;
+    font-weight: 600;
+  }
+  
   .setting-value {
-    background-color: white;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    margin: 10px 0;
+    background-color: #f8f9fa;
+    padding: 12px 15px;
+    border-radius: 6px;
+    border: 1px solid #eaeaea;
+    margin: 10px 0 15px 0;
     word-break: break-all;
-  }
-  
-  .input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin-bottom: 10px;
-  }
-  
-  .input-group input {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-  }
-  
-  .hint {
-    font-size: 14px;
-    color: #666;
-    margin: 5px 0 15px 0;
-  }
-  
-  .action-btn {
-    padding: 10px 15px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  
-  .action-btn:disabled {
-    background-color: #a5a5a5;
-    cursor: not-allowed;
-  }
-  
-  .libraries-list {
-    margin: 10px 0;
-    padding-left: 20px;
-    line-height: 1.6;
-  }
-  
-  .loading {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px;
+  }
+  
+  .folder-icon {
+    margin-right: 8px;
+  }
+  
+  .input-wrapper {
     margin-bottom: 15px;
   }
   
+  .input-wrapper label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #555;
+  }
+  
+  .input-wrapper input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  
+  .input-wrapper input:focus {
+    border-color: #4a6fa5;
+    box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.15);
+    outline: none;
+  }
+  
+  .input-wrapper input::placeholder {
+    color: #aaa;
+  }
+  
+  .hint {
+    font-size: 13px;
+    color: #888;
+    margin: 5px 0 15px 0;
+    line-height: 1.5;
+  }
+  
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 18px;
+    background-color: #4a6fa5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    transition: background-color 0.2s, transform 0.1s;
+  }
+  
+  .action-btn:hover {
+    background-color: #3e5d8a;
+  }
+  
+  .action-btn:active {
+    transform: scale(0.98);
+  }
+  
+  .action-btn:disabled {
+    background-color: #b0bec5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  .btn-icon {
+    margin-right: 8px;
+  }
+  
+  .libraries-list {
+    margin: 10px 0 20px 0;
+    padding: 0;
+    list-style-type: none;
+  }
+  
+  .libraries-list li {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+  
+  .lib-path {
+    word-break: break-all;
+  }
+  
+  .loading-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background-color: #e3f2fd;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    animation: fadeIn 0.3s;
+  }
+  
   .spinner {
-    width: 24px;
-    height: 24px;
-    border: 3px solid rgba(0, 0, 0, 0.1);
-    border-left-color: #4CAF50;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(74, 111, 165, 0.2);
+    border-left-color: #4a6fa5;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+  }
+  
+  .notification {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    animation: slideIn 0.3s;
+  }
+  
+  .notification .icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-right: 12px;
+    font-weight: bold;
+  }
+  
+  .notification.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border-left: 4px solid #c62828;
+  }
+  
+  .notification.error .icon {
+    background-color: #c62828;
+    color: white;
+  }
+  
+  .notification.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-left: 4px solid #2e7d32;
+  }
+  
+  .notification.success .icon {
+    background-color: #2e7d32;
+    color: white;
   }
   
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
   
-  .error {
-    background-color: #ffebee;
-    color: #c62828;
-    padding: 10px;
-    border-radius: 4px;
-    border-left: 4px solid #c62828;
-    margin-bottom: 15px;
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
   
-  .success {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-    padding: 10px;
-    border-radius: 4px;
-    border-left: 4px solid #2e7d32;
-    margin-bottom: 15px;
+  @keyframes slideIn {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  @media (max-width: 768px) {
+    .cards-container {
+      grid-template-columns: 1fr;
+    }
+    
+    .card-content {
+      padding: 15px;
+    }
   }
 </style> 
