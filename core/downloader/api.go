@@ -1,6 +1,7 @@
 package downloader
 
 import (
+	"sort"
 	"sync"
 
 	"ImageMaster/core/types"
@@ -61,7 +62,28 @@ func (api *DownloaderAPI) GetHistoryTasks() []*DownloadTask {
 	// 如果有存储API，优先从存储获取
 	if api.storageAPI != nil {
 		if storage, ok := api.storageAPI.(interface{ GetDownloadHistory() []*DownloadTask }); ok {
-			return storage.GetDownloadHistory()
+			tasks := storage.GetDownloadHistory()
+
+			// 确保从存储获取的任务也按时间倒序排序
+			if len(tasks) > 0 {
+				sort.Slice(tasks, func(i, j int) bool {
+					// 如果completeTime为空，使用startTime
+					timeI := tasks[i].CompleteTime
+					if timeI.IsZero() {
+						timeI = tasks[i].StartTime
+					}
+
+					timeJ := tasks[j].CompleteTime
+					if timeJ.IsZero() {
+						timeJ = tasks[j].StartTime
+					}
+
+					// 倒序排列
+					return timeI.After(timeJ)
+				})
+			}
+
+			return tasks
 		}
 	}
 

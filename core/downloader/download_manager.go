@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -329,6 +330,23 @@ func (dm *DownloadManager) GetHistoryTasks() []*DownloadTask {
 	// 返回历史任务的副本
 	history := make([]*DownloadTask, len(dm.history))
 	copy(history, dm.history)
+
+	// 按完成时间倒序排序（最新的任务在前面）
+	sort.Slice(history, func(i, j int) bool {
+		// 如果completeTime为空，使用startTime
+		timeI := history[i].CompleteTime
+		if timeI.IsZero() {
+			timeI = history[i].StartTime
+		}
+
+		timeJ := history[j].CompleteTime
+		if timeJ.IsZero() {
+			timeJ = history[j].StartTime
+		}
+
+		// 倒序排列，所以是timeI在后返回true
+		return timeI.After(timeJ)
+	})
 
 	return history
 }
