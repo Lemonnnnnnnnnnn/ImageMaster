@@ -5,7 +5,8 @@
     GetMangaImages, 
     GetAllMangas,
     DeleteManga,
-    GetImageDataUrl
+    GetImageDataUrl,
+    LoadAllLibraries
   } from '../../../wailsjs/go/viewer/Viewer';
 
   // 从路由参数获取漫画路径
@@ -35,6 +36,9 @@
       
       // 解码路径参数
       mangaPath = decodeURIComponent(path);
+      
+      // 先重新加载所有漫画库，确保能识别新下载的漫画
+      await LoadAllLibraries();
       
       // 获取所有漫画以支持导航功能
       mangas = await GetAllMangas();
