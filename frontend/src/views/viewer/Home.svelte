@@ -5,7 +5,10 @@
     GetAllMangas, 
     GetLibraries, 
     DeleteManga,
-    GetImageDataUrl
+    GetImageDataUrl,
+
+    LoadAllLibraries
+
   } from '../../../wailsjs/go/viewer/Viewer';
 
   let mangas = [];
@@ -17,6 +20,7 @@
 
   onMount(async () => {
     // 加载库和漫画
+    await LoadAllLibraries();
     await loadLibraries();
     await loadMangas();
     loading = false;
