@@ -31,7 +31,8 @@ type DownloadManager struct {
 	tasks         map[string]*DownloadTask // 所有任务，包括活跃和历史
 	activeTasks   map[string]bool          // 活跃任务集合
 	taskCancelMap map[string]chan struct{} // 任务取消通道
-	downloader    *Downloader              // 下载器实例
+	downloaders   map[string]*Downloader   // 每个任务对应的下载器实例
+	downloader    *Downloader              // 默认下载器实例（用于创建新的下载器）
 	mu            sync.RWMutex             // 并发控制锁
 	history       []*DownloadTask          // 历史任务记录
 	storageAPI    interface{}              // 存储API
@@ -39,11 +40,13 @@ type DownloadManager struct {
 
 // NewDownloadManager 创建下载管理器
 func NewDownloadManager() *DownloadManager {
+	defaultDownloader := NewDownloader(3, 2, true)
 	return &DownloadManager{
 		tasks:         make(map[string]*DownloadTask),
 		activeTasks:   make(map[string]bool),
 		taskCancelMap: make(map[string]chan struct{}),
-		downloader:    NewDownloader(3, 2, true),
+		downloaders:   make(map[string]*Downloader),
+		downloader:    defaultDownloader,
 		history:       make([]*DownloadTask, 0),
 	}
 }
@@ -99,10 +102,34 @@ func (dm *DownloadManager) CrawlWebImages(url string) string {
 	return task.ID
 }
 
+// createDownloaderForTask 为任务创建专用的下载器实例
+func (dm *DownloadManager) createDownloaderForTask(taskID string) *Downloader {
+	// 创建新的下载器实例
+	newDownloader := NewDownloader(dm.downloader.retryCount, int(dm.downloader.retryDelay.Seconds()), dm.downloader.showProcess)
+
+	// 复制配置
+	if dm.downloader.configManager != nil {
+		newDownloader.SetConfigManager(dm.downloader.configManager)
+	}
+
+	// 设置进度回调函数
+	newDownloader.SetProgressCallback(func(current, total int) {
+		dm.updateTaskProgress(taskID, current, total)
+	})
+
+	// 保存到下载器映射
+	dm.downloaders[taskID] = newDownloader
+
+	return newDownloader
+}
+
 // executeTask 执行下载任务
 func (dm *DownloadManager) executeTask(taskID string, cancelChan chan struct{}) {
 	dm.mu.Lock()
 	task := dm.tasks[taskID]
+
+	// 为此任务创建专用的下载器
+	taskDownloader := dm.createDownloaderForTask(taskID)
 	dm.mu.Unlock()
 
 	if task == nil {
@@ -130,7 +157,7 @@ func (dm *DownloadManager) executeTask(taskID string, cancelChan chan struct{}) 
 			factory := crawler.NewCrawlerFactory(context.Background())
 
 			// 2. 如果有配置管理器，设置到爬虫工厂
-			if cm, ok := dm.downloader.GetConfigManager().(types.ConfigProvider); ok {
+			if cm, ok := taskDownloader.GetConfigManager().(types.ConfigProvider); ok {
 				factory.SetConfigManager(cm)
 			}
 
@@ -138,17 +165,14 @@ func (dm *DownloadManager) executeTask(taskID string, cancelChan chan struct{}) 
 			siteType := factory.DetectSiteType(task.URL)
 			imageCrawler := factory.CreateCrawler(siteType)
 
-			// 4. 设置下载器到爬虫
-			imageCrawler.SetDownloader(dm.downloader)
+			// 4. 设置任务专用的下载器到爬虫
+			imageCrawler.SetDownloader(taskDownloader)
 
-			// 5. 设置下载进度回调函数
-			dm.downloader.SetProgressCallback(func(current, total int) {
-				dm.updateTaskProgress(taskID, current, total)
-			})
+			// 5. 设置下载进度回调函数已在createDownloaderForTask中设置
 
 			// 获取配置的输出目录
 			var outputDir string
-			if cm, ok := dm.downloader.GetConfigManager().(types.ConfigProvider); ok {
+			if cm, ok := taskDownloader.GetConfigManager().(types.ConfigProvider); ok {
 				outputDir = cm.GetOutputDir()
 				if outputDir == "" {
 					// 如果配置中未设置输出目录，使用用户home目录下的默认位置
@@ -243,7 +267,6 @@ func (dm *DownloadManager) updateTaskProgress(taskID string, current, total int)
 		task.Progress.Total = total
 	}
 
-	fmt.Println("updateTaskProgress", taskID, current, total)
 }
 
 // markTaskComplete 标记任务完成，移出活跃任务列表
@@ -253,6 +276,9 @@ func (dm *DownloadManager) markTaskComplete(taskID string) {
 
 	// 从活跃任务中移除
 	delete(dm.activeTasks, taskID)
+
+	// 从下载器映射中移除
+	delete(dm.downloaders, taskID)
 
 	// 关闭取消通道
 	if cancelChan, exists := dm.taskCancelMap[taskID]; exists {
@@ -329,7 +355,6 @@ func (dm *DownloadManager) GetActiveTasks() []*DownloadTask {
 		return tasks[i].StartTime.After(tasks[j].StartTime)
 	})
 
-	fmt.Println("GetActiveTasks", tasks)
 	return tasks
 }
 
