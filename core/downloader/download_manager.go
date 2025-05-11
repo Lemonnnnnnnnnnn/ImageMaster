@@ -242,6 +242,8 @@ func (dm *DownloadManager) updateTaskProgress(taskID string, current, total int)
 		task.Progress.Current = current
 		task.Progress.Total = total
 	}
+
+	fmt.Println("updateTaskProgress", taskID, current, total)
 }
 
 // markTaskComplete 标记任务完成，移出活跃任务列表
@@ -304,6 +306,10 @@ func (dm *DownloadManager) GetAllTasks() []*DownloadTask {
 		tasks = append(tasks, task)
 	}
 
+	sort.Slice(tasks, func(i, j int) bool {
+		return tasks[i].StartTime.After(tasks[j].StartTime)
+	})
+
 	return tasks
 }
 
@@ -319,6 +325,11 @@ func (dm *DownloadManager) GetActiveTasks() []*DownloadTask {
 		}
 	}
 
+	sort.Slice(tasks, func(i, j int) bool {
+		return tasks[i].StartTime.After(tasks[j].StartTime)
+	})
+
+	fmt.Println("GetActiveTasks", tasks)
 	return tasks
 }
 

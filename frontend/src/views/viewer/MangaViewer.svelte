@@ -72,15 +72,21 @@
       // 获取所有图片路径
       const imagePaths = await GetMangaImages(mangaPath);
       
-      // 加载图片
-      for (let imagePath of imagePaths) {
+      // 并行加载所有图片，保持顺序
+      const imagePromises = imagePaths.map(async (imagePath) => {
         try {
-          const imageData = await GetImageDataUrl(imagePath);
-          selectedImages = [...selectedImages, imageData];
+          return await GetImageDataUrl(imagePath);
         } catch (error) {
-          console.error("加载图片失败:", error);
+          console.error(`加载图片失败: ${imagePath}`, error);
+          return null; // 返回 null 表示加载失败
         }
-      }
+      });
+
+      // 等待所有图片加载完成
+      const loadedImages = await Promise.all(imagePromises);
+      
+      // 过滤掉加载失败的图片（null值）
+      selectedImages = loadedImages.filter(img => img !== null);
     } catch (error) {
       console.error("获取图片路径失败:", error);
     }
@@ -226,7 +232,8 @@
       </button>
     </div>
     <div class="center-title">
-      <h2>{mangaName} ({currentImageIndex + 1}/{selectedImages.length})</h2>
+      <!-- <h2>{mangaName} ({currentImageIndex + 1}/{selectedImages.length})</h2> -->
+      <h2>{mangaName} ({selectedImages.length})</h2>
     </div>
     <div class="right-controls">
       <button on:click={toggleNavigation}>
