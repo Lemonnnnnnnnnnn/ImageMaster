@@ -22,7 +22,7 @@
   // 下载任务列表
   let activeTasks: downloader.DownloadTask[] = [];
   let historyTasks: downloader.DownloadTask[] = [];
-  let showHistory = false;
+  let activeTab = 'downloading'; // 'downloading' or 'history'
   
   // 轮询间隔（毫秒）
   const POLL_INTERVAL = 1000;
@@ -70,8 +70,8 @@
       // 获取活跃任务
       activeTasks = await GetActiveTasks();
       
-      // 如果显示历史，也获取历史任务
-      if (showHistory) {
+      // 如果当前显示历史标签，也获取历史任务
+      if (activeTab === 'history') {
         historyTasks = await GetHistoryTasks();
       }
     } catch (err) {
@@ -96,7 +96,8 @@
         // 重置表单
         url = '';
         
-        // 立即刷新任务列表
+        // 切换到下载中标签并刷新任务列表
+        activeTab = 'downloading';
         await pollTasks();
       } else {
         error = '下载失败，请检查网址是否正确';
@@ -119,12 +120,12 @@
     }
   }
   
-  // 切换显示历史记录
-  async function toggleHistory() {
-    showHistory = !showHistory;
+  // 切换标签
+  async function switchTab(tab: string) {
+    activeTab = tab;
     
-    // 如果显示历史，获取历史任务
-    if (showHistory) {
+    // 如果切换到历史标签，获取历史任务
+    if (tab === 'history') {
       historyTasks = await GetHistoryTasks();
     }
   }
@@ -162,158 +163,146 @@
 <div class="downloader-container">
   <Header title="网页图片下载器" />
 
-  <div class="settings-panel">
-    <div class="output-dir">
-      <h3>当前输出目录:</h3>
+  <!-- 顶部面板：输出目录 + 下载表单 -->
+  <div class="top-panel">
+    <!-- 输出目录 -->
+    <div class="output-section">
+      <label>输出目录:</label>
       <div class="dir-display">
         <span>{outputDir}</span>
-        <button on:click={()=>push('/config')}>前往设置更改</button>
+        <button on:click={()=>push('/config')} class="config-btn">设置</button>
       </div>
     </div>
-  </div>
-  
-  <div class="download-panel">
-    <h3>从网页下载图片</h3>
     
-    <div class="form">
-      <div class="form-group">
-        <label for="url">网页地址</label>
+    <!-- 下载表单 -->
+    <div class="download-section">
+      <div class="form-row">
         <input 
           type="text" 
-          id="url" 
           bind:value={url} 
           placeholder="输入网页完整地址，例如: https://example.com/gallery"
           disabled={loading}
+          class="url-input"
         />
+        <button on:click={handleSubmit} disabled={loading} class="download-btn">
+          {loading ? '添加中...' : '添加任务'}
+        </button>
       </div>
-      
-      <button on:click={handleSubmit} disabled={loading} class="download-btn">
-        {loading ? '添加中...' : '添加下载任务'}
-      </button>
       
       {#if error}
         <div class="error">
-          <p>{error}</p>
+          {error}
         </div>
       {/if}
     </div>
   </div>
   
-  <!-- 下载任务列表 -->
+  <!-- 任务管理面板 -->
   <div class="tasks-panel">
-    <div class="tasks-header">
-      <h3>下载任务</h3>
-      <button on:click={toggleHistory} class="history-btn">
-        {showHistory ? '隐藏历史记录' : '显示历史记录'}
+    <!-- Tab导航 -->
+    <div class="tab-nav">
+      <button 
+        class="tab-btn {activeTab === 'downloading' ? 'active' : ''}"
+        on:click={() => switchTab('downloading')}
+      >
+        下载中 ({activeTasks.length})
       </button>
-      {#if showHistory && historyTasks.length > 0}
+      <button 
+        class="tab-btn {activeTab === 'history' ? 'active' : ''}"
+        on:click={() => switchTab('history')}
+      >
+        历史记录
+      </button>
+      {#if activeTab === 'history' && historyTasks.length > 0}
         <button on:click={handleClearHistory} class="clear-btn">
-          清除历史记录
+          清除历史
         </button>
       {/if}
     </div>
     
-    <!-- 活跃任务列表 -->
-    {#if activeTasks.length > 0}
-      <div class="active-tasks">
-        <h4>当前任务 ({activeTasks.length})</h4>
-        <div class="tasks-list">
-          {#each activeTasks as task (task.id)}
-            <div class="task-item">
-              <div class="task-info">
-                <div class="task-name-url">
+    <!-- Tab内容 -->
+    <div class="tab-content">
+      {#if activeTab === 'downloading'}
+        <!-- 下载中任务 -->
+        {#if activeTasks.length > 0}
+          <div class="tasks-list">
+            {#each activeTasks as task (task.id)}
+              <div class="task-item">
+                <div class="task-header">
                   <div class="task-url">{task.url}</div>
+                  <div class="task-status downloading">{formatStatus(task.status)}</div>
+                  <div class="task-time">{formatTime(task.startTime)}</div>
                 </div>
-                <div class="task-status">{formatStatus(task.status)}</div>
-                <div class="task-time">
-                  开始于: {formatTime(task.startTime)}
-                </div>
-              </div>
-              
-              {#if task.status === 'downloading' || task.status === 'pending'}
-                <!-- 进度条 -->
-                <div class="progress-container">
-                  <div class="progress-bar">
-                    <div class="progress-fill" style="width: {task.progress.total > 0 ? Math.round((task.progress.current / task.progress.total) * 100) : 0}%"></div>
+                
+                {#if task.status === 'downloading' || task.status === 'pending'}
+                  <!-- 进度条 -->
+                  <div class="progress-container">
+                    <div class="progress-bar">
+                      <div class="progress-fill" style="width: {task.progress.total > 0 ? Math.round((task.progress.current / task.progress.total) * 100) : 0}%"></div>
+                    </div>
+                    <div class="progress-info">
+                      <span class="progress-text">
+                        {#if task.progress.total > 0}
+                          {task.progress.current}/{task.progress.total} 张图片 ({Math.round((task.progress.current / task.progress.total) * 100)}%)
+                        {:else}
+                          准备下载中...
+                        {/if}
+                      </span>
+                      <button class="cancel-btn" on:click={() => cancelTask(task.id)}>
+                        取消
+                      </button>
+                    </div>
                   </div>
-                  <div class="progress-text">
-                    {#if task.progress.total > 0}
-                      已下载: {task.progress.current}/{task.progress.total} 张图片 
-                      ({Math.round((task.progress.current / task.progress.total) * 100)}%)
-                    {:else}
-                      准备下载中...
-                    {/if}
+                {/if}
+                
+                {#if task.status === 'failed'}
+                  <div class="task-error">
+                    错误: {task.error || '未知错误'}
+                  </div>
+                {/if}
+              </div>
+            {/each}
+          </div>
+        {:else}
+          <div class="no-tasks">
+            当前没有进行中的下载任务
+          </div>
+        {/if}
+      {:else if activeTab === 'history'}
+        <!-- 历史任务 -->
+        {#if historyTasks.length > 0}
+          <div class="tasks-list">
+            {#each historyTasks as task (task.id)}
+              <div class="task-item history">
+                <div class="task-header">
+                  <div class="task-url">{task.url}</div>
+                  <div class="task-status {task.status}">{formatStatus(task.status)}</div>
+                  <div class="task-time">
+                    {formatTime(task.startTime)} - {formatTime(task.completeTime)}
                   </div>
                 </div>
                 
-                <!-- 取消按钮 -->
-                <button class="cancel-btn" on:click={() => cancelTask(task.id)}>
-                  取消下载
-                </button>
-              {/if}
-              
-              {#if task.status === 'failed'}
-                <div class="task-error">
-                  错误信息: {task.error || '未知错误'}
-                </div>
-              {/if}
-            </div>
-          {/each}
-        </div>
-      </div>
-    {:else}
-      <div class="no-tasks">
-        当前没有进行中的下载任务
-      </div>
-    {/if}
-    
-    <!-- 历史任务列表 -->
-    {#if showHistory && historyTasks.length > 0}
-      <div class="history-tasks">
-        <h4>历史记录 ({historyTasks.length})</h4>
-        <div class="tasks-list">
-          {#each historyTasks as task (task.id)}
-            <div class="task-item history">
-              <div class="task-info">
-                <div class="task-name-url">
-                  <div class="task-url">{task.url}</div>
-                </div>
-                <div class="task-status {task.status}">{formatStatus(task.status)}</div>
-                <div class="task-time">
-                  <div>开始于: {formatTime(task.startTime)}</div>
-                  <div>结束于: {formatTime(task.completeTime)}</div>
-                </div>
+                {#if task.status === 'completed' && task.savePath}
+                  <div class="task-path">
+                    保存路径: {task.savePath}
+                  </div>
+                {/if}
+                
+                {#if task.status === 'failed' && task.error}
+                  <div class="task-error">
+                    错误: {task.error}
+                  </div>
+                {/if}
               </div>
-              
-              {#if task.status === 'completed' && task.savePath}
-                <div class="task-path">
-                  保存路径: {task.savePath}
-                </div>
-              {/if}
-              
-              {#if task.status === 'failed' && task.error}
-                <div class="task-error">
-                  错误信息: {task.error}
-                </div>
-              {/if}
-            </div>
-          {/each}
-        </div>
-      </div>
-    {/if}
-  </div>
-  
-  <div class="instructions">
-    <h3>使用说明</h3>
-    <ul>
-      <li>输入包含图片的网页地址</li>
-      <li>点击"添加下载任务"按钮开始抓取并下载网页中的图片</li>
-      <li>可以同时添加多个下载任务，系统会并行处理</li>
-      <li>可以随时取消正在进行的下载任务</li>
-      <li>查看历史记录以了解已完成或失败的任务</li>
-      <li>下载完成后，可在漫画查看器中浏览已下载的图片</li>
-      <li>可以在"应用设置"中配置代理服务器和输出目录</li>
-    </ul>
+            {/each}
+          </div>
+        {:else}
+          <div class="no-tasks">
+            暂无历史记录
+          </div>
+        {/if}
+      {/if}
+    </div>
   </div>
 </div>
 
@@ -325,435 +314,402 @@
     --danger-color: #e63946;
     --warning-color: #ff9f1c;
     --light-bg: #f8f9fa;
-    --dark-bg: #212529;
     --border-color: #dee2e6;
-    --box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    --border-radius: 8px;
+    --box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    --border-radius: 6px;
   }
 
   .downloader-container {
     padding: 20px;
-    max-width: 1000px;
+    max-width: 95%;
+    width: 100%;
     margin: 0 auto;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     color: #333;
-  }
-  
-  .header {
+    height: 100vh;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 15px;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
   }
   
-  .header h1 {
-    color: var(--primary-color);
-    margin: 0;
-    font-size: 28px;
-  }
-  
-  .nav-buttons {
-    display: flex;
-    gap: 12px;
-  }
-  
-  .nav-btn {
-    padding: 10px 18px;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
+  /* 顶部面板 */
+  .top-panel {
+    background: white;
     border-radius: var(--border-radius);
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    box-shadow: var(--box-shadow);
-  }
-  
-  .nav-btn:hover {
-    background-color: var(--secondary-color);
-    transform: translateY(-2px);
-  }
-  
-  .config-btn {
-    background-color: var(--secondary-color);
-  }
-  
-  .config-btn:hover {
-    background-color: #2a0a73;
-  }
-  
-  .settings-panel, .download-panel, .tasks-panel, .instructions {
-    background-color: var(--light-bg);
-    border-radius: var(--border-radius);
-    padding: 25px;
-    margin-bottom: 25px;
-    box-shadow: var(--box-shadow);
+    padding: 20px;
     border: 1px solid var(--border-color);
+    box-shadow: var(--box-shadow);
+    flex-shrink: 0;
   }
   
-  .settings-panel h3, .download-panel h3, .tasks-panel h3, .instructions h3 {
-    margin-top: 0;
-    color: var(--primary-color);
-    font-size: 20px;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 10px;
+  .output-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
     margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
   }
   
-  .output-dir {
-    margin-bottom: 10px;
+  .output-section label {
+    font-weight: 500;
+    color: #555;
+    white-space: nowrap;
+    min-width: 80px;
   }
   
   .dir-display {
     display: flex;
     align-items: center;
-    gap: 15px;
-    background-color: white;
-    padding: 15px;
+    gap: 12px;
+    flex: 1;
+    background: var(--light-bg);
+    padding: 12px 15px;
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
   }
   
   .dir-display span {
     flex: 1;
-    word-break: break-all;
-    color: #555;
+    font-size: 14px;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
-  .dir-display button {
-    padding: 8px 15px;
-    background-color: var(--success-color);
+  .config-btn {
+    padding: 8px 16px;
+    background: var(--primary-color);
     color: white;
     border: none;
     border-radius: var(--border-radius);
     cursor: pointer;
-    transition: all 0.2s ease;
+    font-size: 13px;
     font-weight: 500;
+    white-space: nowrap;
   }
   
-  .dir-display button:hover {
-    background-color: #3d8b40;
-    transform: translateY(-2px);
+  .config-btn:hover {
+    background: var(--secondary-color);
   }
   
-  .form {
+  .download-section {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
   }
   
-  .form-group {
+  .form-row {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    gap: 15px;
+    align-items: center;
   }
   
-  .form-group label {
-    font-weight: 600;
-    color: #555;
-  }
-  
-  .form-group input {
+  .url-input {
+    flex: 1;
     padding: 12px 15px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    font-size: 16px;
-    transition: border-color 0.2s;
+    font-size: 15px;
   }
   
-  .form-group input:focus {
+  .url-input:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
   }
   
   .download-btn {
-    padding: 14px;
-    background-color: var(--success-color);
+    padding: 12px 24px;
+    background: var(--success-color);
     color: white;
     border: none;
     border-radius: var(--border-radius);
     cursor: pointer;
-    font-size: 16px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    box-shadow: var(--box-shadow);
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
   }
   
   .download-btn:hover:not(:disabled) {
-    background-color: #3d8b40;
-    transform: translateY(-2px);
+    background: #3d8b40;
   }
   
   .download-btn:disabled {
-    background-color: #a5a5a5;
+    background: #a5a5a5;
     cursor: not-allowed;
-    box-shadow: none;
   }
   
   .error {
-    background-color: #ffebee;
+    background: #ffebee;
     color: #c62828;
-    padding: 12px 15px;
+    padding: 10px 15px;
     border-radius: var(--border-radius);
-    border-left: 4px solid #c62828;
+    border-left: 3px solid #c62828;
+    font-size: 14px;
   }
   
-  /* 任务列表样式 */
-  .tasks-header {
+  /* 任务面板 */
+  .tasks-panel {
+    background: white;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--box-shadow);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  
+  .tab-nav {
     display: flex;
     align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
+    gap: 6px;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--light-bg);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    flex-shrink: 0;
   }
   
-  .tasks-header h3 {
-    margin: 0;
-    padding: 0;
+  .tab-btn {
+    padding: 10px 20px;
     border: none;
-  }
-  
-  .history-btn, .clear-btn {
-    padding: 8px 15px;
-    border: none;
-    border-radius: var(--border-radius);
+    background: none;
     cursor: pointer;
-    font-size: 14px;
+    border-radius: var(--border-radius);
+    font-size: 15px;
     font-weight: 500;
-    transition: all 0.2s ease;
+    color: #666;
+    transition: all 0.2s;
   }
   
-  .history-btn {
-    background-color: var(--primary-color);
+  .tab-btn.active {
+    background: var(--primary-color);
     color: white;
   }
   
-  .history-btn:hover {
-    background-color: var(--secondary-color);
+  .tab-btn:not(.active):hover {
+    background: #e9ecef;
   }
   
   .clear-btn {
-    background-color: var(--danger-color);
+    padding: 8px 16px;
+    background: var(--danger-color);
     color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: auto;
   }
   
   .clear-btn:hover {
-    background-color: #c62828;
+    background: #c62828;
+  }
+  
+  .tab-content {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
   }
   
   .no-tasks {
-    padding: 30px;
     text-align: center;
-    background-color: white;
-    border-radius: var(--border-radius);
-    border: 1px dashed var(--border-color);
     color: #666;
     font-style: italic;
-  }
-  
-  .active-tasks, .history-tasks {
-    margin-bottom: 30px;
-  }
-  
-  .active-tasks h4, .history-tasks h4 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: var(--primary-color);
-    font-size: 18px;
+    padding: 60px 20px;
+    font-size: 16px;
   }
   
   .tasks-list {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-  }
-  
-  .task-item {
-    background-color: white;
-    border-radius: var(--border-radius);
-    padding: 20px;
-    border: 1px solid var(--border-color);
-    box-shadow: var(--box-shadow);
-    transition: transform 0.2s ease;
-  }
-  
-  .task-item:hover {
-    transform: translateY(-2px);
-  }
-  
-  .task-item.history {
-    opacity: 0.85;
-  }
-  
-  .task-info {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
     gap: 15px;
   }
   
-  .task-name-url {
-    flex: 2;
+  .task-item {
+    background: var(--light-bg);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    transition: box-shadow 0.2s ease;
   }
   
-  .task-name {
-    font-weight: bold;
-    margin-bottom: 8px;
-    color: #333;
+  .task-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  
+  .task-item.history {
+    opacity: 0.9;
+  }
+  
+  .task-header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 10px;
   }
   
   .task-url {
-    font-size: 13px;
+    font-size: 14px;
     color: #666;
-    word-break: break-all;
-    padding: 5px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
   .task-status {
-    flex: 1;
-    text-align: center;
-    font-weight: bold;
-    padding: 5px 10px;
-    border-radius: 20px;
-    align-self: flex-start;
-  }
-  
-  .task-status.completed {
-    color: white;
-    background-color: var(--success-color);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 15px;
+    white-space: nowrap;
   }
   
   .task-status.downloading, .task-status.pending {
+    background: var(--primary-color);
     color: white;
-    background-color: var(--primary-color);
+  }
+  
+  .task-status.completed {
+    background: var(--success-color);
+    color: white;
   }
   
   .task-status.failed, .task-status.cancelled {
+    background: var(--danger-color);
     color: white;
-    background-color: var(--danger-color);
   }
   
   .task-time {
-    flex: 1;
     font-size: 13px;
     color: #666;
-    line-height: 1.6;
-  }
-  
-  .task-path, .task-error {
-    margin-top: 15px;
-    padding: 12px 15px;
-    border-radius: var(--border-radius);
-    font-size: 14px;
-  }
-  
-  .task-path {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-    border-left: 4px solid #2e7d32;
-  }
-  
-  .task-error {
-    background-color: #ffebee;
-    color: #c62828;
-    border-left: 4px solid #c62828;
+    white-space: nowrap;
   }
   
   .progress-container {
-    margin: 15px 0;
+    margin-top: 12px;
   }
   
   .progress-bar {
     width: 100%;
-    height: 20px;
-    background-color: #e0e0e0;
-    border-radius: 10px;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
     overflow: hidden;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 8px;
   }
   
   .progress-fill {
     height: 100%;
-    background-color: var(--primary-color);
+    background: var(--primary-color);
     transition: width 0.3s ease;
-    background-image: linear-gradient(45deg, 
-                      rgba(255,255,255,.15) 25%, transparent 25%, 
-                      transparent 50%, rgba(255,255,255,.15) 50%, 
-                      rgba(255,255,255,.15) 75%, transparent 75%, 
-                      transparent);
-    background-size: 40px 40px;
-    animation: progress-animation 1s linear infinite;
   }
   
-  @keyframes progress-animation {
-    0% {
-      background-position: 0 0;
-    }
-    100% {
-      background-position: 40px 0;
-    }
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   
   .progress-text {
-    text-align: center;
-    margin-top: 8px;
-    font-weight: 600;
-    color: #555;
+    font-size: 13px;
+    color: #666;
   }
   
   .cancel-btn {
-    padding: 10px 18px;
-    background-color: var(--danger-color);
+    padding: 6px 12px;
+    background: var(--danger-color);
     color: white;
     border: none;
     border-radius: var(--border-radius);
     cursor: pointer;
-    margin-top: 15px;
+    font-size: 13px;
     font-weight: 500;
-    transition: all 0.2s ease;
   }
   
   .cancel-btn:hover {
-    background-color: #c62828;
-    transform: translateY(-2px);
+    background: #c62828;
   }
   
-  .instructions ul {
-    padding-left: 25px;
-    line-height: 1.8;
-    color: #555;
+  .task-path, .task-error {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: var(--border-radius);
+    font-size: 13px;
   }
   
-  .instructions li {
-    margin-bottom: 8px;
+  .task-path {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-left: 3px solid #2e7d32;
   }
   
-  /* 响应式调整 */
+  .task-error {
+    background: #ffebee;
+    color: #c62828;
+    border-left: 3px solid #c62828;
+  }
+  
+  /* 响应式 */
+  @media (max-width: 1200px) {
+    .downloader-container {
+      max-width: 98%;
+      padding: 15px;
+    }
+  }
+  
   @media (max-width: 768px) {
-    .header {
-      flex-direction: column;
-      align-items: flex-start;
+    .downloader-container {
+      padding: 12px;
+      gap: 15px;
     }
     
-    .nav-buttons {
-      margin-top: 15px;
+    .top-panel {
+      padding: 15px;
+    }
+    
+    .output-section {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding-bottom: 12px;
+    }
+    
+    .output-section label {
+      min-width: auto;
+    }
+    
+    .task-header {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    
+    .task-status, .task-time {
+      justify-self: start;
+    }
+    
+    .form-row {
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .url-input, .download-btn {
       width: 100%;
     }
     
-    .nav-btn {
-      flex: 1;
-      text-align: center;
+    .tab-nav {
+      padding: 12px 15px;
     }
     
-    .task-info {
-      flex-direction: column;
-    }
-    
-    .task-status {
-      align-self: flex-start;
+    .tab-content {
+      padding: 15px;
     }
   }
-</style> 
+</style>
