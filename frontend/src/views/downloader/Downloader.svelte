@@ -183,6 +183,7 @@
           placeholder="输入网页完整地址，例如: https://example.com/gallery"
           disabled={loading}
           class="url-input"
+          on:keydown={(e) => e.key === 'Enter' && handleSubmit()}
         />
         <button on:click={handleSubmit} disabled={loading} class="download-btn">
           {loading ? '添加中...' : '添加任务'}
