@@ -50,8 +50,9 @@ func main() {
 			downloaderAPI,
 			storageAPI, // 注册存储API，可以从前端直接调用
 		},
-		LogLevel:           logger.ERROR,
-		LogLevelProduction: logger.ERROR,
+		LogLevel:                 logger.ERROR,
+		LogLevelProduction:       logger.ERROR,
+		EnableDefaultContextMenu: true,
 	})
 
 	if err != nil {
