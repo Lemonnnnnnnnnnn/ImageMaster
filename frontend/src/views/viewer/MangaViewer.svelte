@@ -8,6 +8,7 @@
     GetImageDataUrl,
     LoadAllLibraries
   } from '../../../wailsjs/go/viewer/Viewer';
+  import QuickDownloader from '../../components/QuickDownloader.svelte';
 
   // 从路由参数获取漫画路径
   export let params: {
@@ -221,6 +222,13 @@
       }
     }
   }
+
+  // 处理快速下载成功事件
+  function handleDownloadStarted(event) {
+    const { taskId, url } = event.detail;
+    console.log(`下载任务已创建: ${taskId}, URL: ${url}`);
+    // 可以在这里添加通知或其他处理逻辑
+  }
 </script>
 
 <div class="manga-viewer">
@@ -283,6 +291,9 @@
       </button>
     </div>
   {/if}
+  
+  <!-- 快速下载组件 -->
+  <QuickDownloader on:downloadStarted={handleDownloadStarted} />
 </div>
 
 <style>
@@ -424,4 +435,4 @@
     padding: 10px;
     border-radius: 8px;
   }
-</style> 
+</style>

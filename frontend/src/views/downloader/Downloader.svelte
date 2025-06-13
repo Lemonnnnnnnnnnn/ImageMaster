@@ -5,19 +5,41 @@
       CancelDownload,
       ClearHistory,
       GetActiveTasks,
-      GetHistoryTasks,
-      StartDownload
+      GetHistoryTasks
   } from '../../../wailsjs/go/downloader/DownloaderAPI';
   import type { downloader } from '../../../wailsjs/go/models';
   import {
       GetOutputDir
   } from '../../../wailsjs/go/storage/StorageAPI';
   import Header from '../../components/Header.svelte';
+  import { createDownloadHandler } from '../../utils/downloadUtils';
 
   let url = '';
   let loading = false;
   let outputDir = '';
   let error = '';
+  
+  // 创建下载处理器
+  const downloadHandler = createDownloadHandler({
+    onStart: () => {
+      loading = true;
+      error = '';
+    },
+    onSuccess: async (taskId, downloadUrl) => {
+      // 重置表单
+      url = '';
+      
+      // 切换到下载中标签并刷新任务列表
+      activeTab = 'downloading';
+      await pollTasks();
+    },
+    onError: (errorMsg) => {
+      error = errorMsg;
+    },
+    onFinally: () => {
+      loading = false;
+    }
+  });
   
   // 下载任务列表
   let activeTasks: downloader.DownloadTask[] = [];
@@ -80,33 +102,12 @@
   }
 
   async function handleSubmit() {
-    if (!url) {
+    if (!url.trim()) {
       error = '请输入网址';
       return;
     }
 
-    try {
-      loading = true;
-      error = '';
-      
-      // 开始下载任务
-      const taskId = await StartDownload(url);
-      
-      if (taskId) {
-        // 重置表单
-        url = '';
-        
-        // 切换到下载中标签并刷新任务列表
-        activeTab = 'downloading';
-        await pollTasks();
-      } else {
-        error = '下载失败，请检查网址是否正确';
-      }
-    } catch (err) {
-      error = `下载出错: ${err.message || '未知错误'}`;
-    } finally {
-      loading = false;
-    }
+    await downloadHandler(url.trim());
   }
   
   // 取消下载任务
