@@ -67,12 +67,21 @@ func ParseTelegraph(client *http.Client, url string, savePath string, dl types.D
 	}
 
 	// 批量下载所有图片
+	totalImages := len(imgURLs)
 	successCount, err := localDownloader.BatchDownload(imgURLs, filePaths, nil)
 	if err != nil {
 		fmt.Printf("批量下载出错: %v\n", err)
+		return fmt.Errorf("批量下载出错: %w", err)
 	}
 
-	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", len(imgURLs), successCount)
+	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", totalImages, successCount)
+	
+	// 如果有图片下载失败，返回错误
+	if successCount < totalImages {
+		failedCount := totalImages - successCount
+		return fmt.Errorf("下载未完全成功，总共 %d 张图片，成功 %d 张，失败 %d 张", totalImages, successCount, failedCount)
+	}
+	
 	return nil
 }
 

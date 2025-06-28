@@ -122,9 +122,17 @@ func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, sa
 	successImages, err = localDownloader.BatchDownload(imgURLs, filePaths, nil)
 	if err != nil {
 		fmt.Printf("批量下载出错: %v\n", err)
+		return fmt.Errorf("批量下载出错: %w", err)
 	}
 
 	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", totalImages, successImages)
+	
+	// 如果有图片下载失败，返回错误
+	if successImages < totalImages {
+		failedCount := totalImages - successImages
+		return fmt.Errorf("下载未完全成功，总共 %d 张图片，成功 %d 张，失败 %d 张", totalImages, successImages, failedCount)
+	}
+	
 	return nil
 }
 
