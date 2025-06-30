@@ -10,6 +10,7 @@ import (
 
 	"ImageMaster/core/request"
 	"ImageMaster/core/types"
+	"ImageMaster/core/utils"
 )
 
 // DownloadTask 下载任务
@@ -76,6 +77,7 @@ func (d *Downloader) GetConfigManager() interface{} {
 
 // DownloadFile 下载文件到指定路径
 func (d *Downloader) DownloadFile(url string, filepath string, headers map[string]string) error {
+	filepath = utils.NormalizePath(filepath)
 	// 确保目录存在
 	dir := path.Dir(filepath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -171,6 +173,8 @@ func (d *Downloader) BatchDownload(urls []string, filepaths []string, headers ma
 			if d.progressCallback != nil {
 				d.progressCallback(successCount, total)
 			}
+		} else {
+			fmt.Printf("下载失败: %s, 错误: %v\n", url, err)
 		}
 	}
 
