@@ -4,7 +4,7 @@ import { wrap } from 'svelte-spa-router/wrap';
 import NotFound from './views/NotFound.svelte';
 
 // 导入漫画查看器组件
-import MangaViewer from './views/viewer/MangaViewer.svelte';
+import MangaViewer from './views/viewer/MangaViewer/index.svelte';
 import ViewerContainer from './views/viewer/ViewerContainer.svelte';
 
 // 导入下载器组件
@@ -45,4 +45,4 @@ const routes = {
   '*': NotFound,
 };
 
-export default routes; 
+export default routes;
