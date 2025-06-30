@@ -50,99 +50,17 @@
   });
 </script>
 
-<div class="header-wrapper" class:visible={isVisible} bind:this={headerElement}>
-  <div class="header">
-    <h1>{title}</h1>
-    <div class="nav-buttons">
+<div class="fixed top-0 left-0 right-0 z-[1000] transition-transform duration-300 ease-in-out bg-gray-100 border-b border-gray-300 shadow-md" class:translate-y-0={isVisible} class:-translate-y-full={!isVisible} bind:this={headerElement}>
+  <div class="flex justify-between items-center px-5 py-2.5 max-w-6xl mx-auto sm:gap-2.5">
+    <h1 class="m-0 text-2xl text-gray-800">{title}</h1>
+    <div class="flex gap-2.5">
       <!-- 始终显示所有按钮 -->
-      <button on:click={goToViewer} class="nav-btn viewer-btn">漫画查看器</button>
-      <button on:click={goToDownloader} class="nav-btn downloader-btn">图片下载器</button> 
-      <button on:click={goToConfig} class="nav-btn config-btn">应用设置</button>
+      <button on:click={goToViewer} class="px-4 py-2 text-white border-none rounded cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out bg-purple-600 hover:opacity-90 hover:-translate-y-0.5">漫画查看器</button>
+      <button on:click={goToDownloader} class="px-4 py-2 text-white border-none rounded cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out bg-green-500 hover:opacity-90 hover:-translate-y-0.5">图片下载器</button> 
+      <button on:click={goToConfig} class="px-4 py-2 text-white border-none rounded cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out bg-blue-500 hover:opacity-90 hover:-translate-y-0.5">应用设置</button>
     </div>
   </div>
 </div>
 
 <!-- 提供占位空间，防止内容被固定定位的header覆盖 -->
-<div class="header-placeholder"></div>
-
-<style>
-  .header-wrapper {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    transform: translateY(0); /* 默认显示 */
-    transition: transform 0.3s ease;
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #e0e0e0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .header-wrapper:not(.visible) {
-    transform: translateY(-100%); /* 隐藏时向上移动 */
-  }
-  
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  .header-placeholder {
-    height: 65px; /* 与header高度相匹配 */
-  }
-  
-  h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    color: #333;
-  }
-  
-  .nav-buttons {
-    display: flex;
-    gap: 10px;
-  }
-  
-  .nav-btn {
-    padding: 8px 16px;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-  }
-  
-  .viewer-btn {
-    background-color: #9C27B0;
-  }
-  
-  .downloader-btn {
-    background-color: #4CAF50;
-  }
-  
-  .config-btn {
-    background-color: #3498db;
-  }
-  
-  .nav-btn:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
-  }
-  
-  @media (max-width: 600px) {
-    .header {
-      flex-direction: column;
-      gap: 10px;
-    }
-    
-    .header-placeholder {
-      height: 100px;
-    }
-  }
-</style> 
+<div class="h-16 sm:h-25"></div>
