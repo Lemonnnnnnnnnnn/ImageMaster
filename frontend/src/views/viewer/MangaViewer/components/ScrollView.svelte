@@ -4,34 +4,10 @@
   $: ({ selectedImages } = $mangaStore);
 </script>
 
-<div class="scroll-view">
+<div class="flex-grow overflow-y-auto p-5 flex flex-col items-center gap-5">
   {#each selectedImages as image, i}
-    <div class="scroll-image-container">
-      <img src={image} alt="Manga page {i + 1}" />
+    <div class="max-w-[800px] w-full">
+      <img src={image} alt="Manga page {i + 1}" class="w-full h-auto block rounded" />
     </div>
   {/each}
 </div>
-
-<style>
-  .scroll-view {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-  }
-  
-  .scroll-image-container {
-    max-width: 800px;
-    width: 100%;
-  }
-  
-  .scroll-image-container img {
-    width: 100%;
-    height: auto;
-    display: block;
-    border-radius: 4px;
-  }
-</style>

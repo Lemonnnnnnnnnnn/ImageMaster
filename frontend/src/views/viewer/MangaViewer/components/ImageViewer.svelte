@@ -10,35 +10,10 @@
 {#if loading}
   <LoadingSpinner />
 {:else if selectedImages.length === 0}
-  <div class="no-images">
-    <p>未找到图片</p>
-    <button on:click={MangaService.backToHome}>返回</button>
+  <div class="flex-grow flex flex-col items-center justify-center h-full">
+    <p class="text-gray-100 mb-5">未找到图片</p>
+    <button on:click={MangaService.backToHome} class="px-3 py-2 bg-blue-600 text-white border-none rounded cursor-pointer">返回</button>
   </div>
 {:else}
   <ScrollView />
 {/if}
-
-<style>
-  .no-images {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-  }
-  
-  .no-images button {
-    padding: 8px 12px;
-    background-color: #4a6fa5;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .no-images p {
-    color: #f0f0f0;
-    margin-bottom: 20px;
-  }
-</style>

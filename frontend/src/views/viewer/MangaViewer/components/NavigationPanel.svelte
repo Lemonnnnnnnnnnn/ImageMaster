@@ -5,39 +5,11 @@
   $: ({ currentMangaIndex, mangas } = $mangaStore);
 </script>
 
-<div class="navigation-panel">
-  <button on:click={MangaService.navigateToPrevManga} disabled={currentMangaIndex <= 0}>
+<div class="fixed bottom-5 right-5 flex flex-col gap-2 bg-gray-700 bg-opacity-80 p-2 rounded-lg">
+  <button on:click={MangaService.navigateToPrevManga} disabled={currentMangaIndex <= 0} class="px-3 py-2 bg-blue-600 text-white border-none rounded cursor-pointer disabled:bg-gray-600 disabled:cursor-not-allowed">
     上一部漫画
   </button>
-  <button on:click={MangaService.navigateToNextManga} disabled={currentMangaIndex >= mangas.length - 1}>
+  <button on:click={MangaService.navigateToNextManga} disabled={currentMangaIndex >= mangas.length - 1} class="px-3 py-2 bg-blue-600 text-white border-none rounded cursor-pointer disabled:bg-gray-600 disabled:cursor-not-allowed">
     下一部漫画
   </button>
 </div>
-
-<style>
-  .navigation-panel {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background-color: rgba(42, 42, 42, 0.8);
-    padding: 10px;
-    border-radius: 8px;
-  }
-  
-  button {
-    padding: 8px 12px;
-    background-color: #4a6fa5;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  button:disabled {
-    background-color: #555;
-    cursor: not-allowed;
-  }
-</style>

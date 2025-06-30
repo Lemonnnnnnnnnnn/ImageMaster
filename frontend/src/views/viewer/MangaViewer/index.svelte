@@ -26,14 +26,14 @@
   });
 
   // 处理快速下载成功事件
-  function handleDownloadStarted(event) {
+  function handleDownloadStarted(event:any) {
     const { taskId, url } = event.detail;
     console.log(`下载任务已创建: ${taskId}, URL: ${url}`);
     // 可以在这里添加通知或其他处理逻辑
   }
 </script>
 
-<div class="manga-viewer">
+<div class="h-full flex flex-col bg-gray-900 text-gray-100">
   <ViewerHeader />
   <ImageViewer />
   
@@ -44,13 +44,3 @@
   <!-- 快速下载组件 -->
   <QuickDownloader on:downloadStarted={handleDownloadStarted} />
 </div>
-
-<style>
-  .manga-viewer {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background-color: #1a1a1a;
-    color: #f0f0f0;
-  }
-</style>

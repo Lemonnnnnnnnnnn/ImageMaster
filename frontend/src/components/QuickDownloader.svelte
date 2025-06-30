@@ -64,7 +64,7 @@
   }
   
   // 处理键盘事件
-  function handleKeydown(event) {
+  function handleKeydown(event: any) {
     if (event.key === 'Enter') {
       handleDownload();
     } else if (event.key === 'Escape') {
@@ -75,12 +75,12 @@
 
 <!-- 悬浮图标容器 -->
 <div 
-  class="quick-downloader-container"
+  class="fixed bottom-5 right-5 z-[1000]"
   on:mouseenter={handleMouseEnter}
   on:mouseleave={handleMouseLeave}
 >
   <!-- 快捷下载图标 -->
-  <div class="download-icon {showIcon ? 'visible' : ''}" on:click={openModal}>
+  <div class="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white cursor-pointer shadow-lg transition-all duration-300 ease-in-out {showIcon ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-2.5 pointer-events-none'} hover:bg-purple-700 hover:scale-110 hover:shadow-xl" on:click={openModal}>
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 2V16M12 16L8 12M12 16L16 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M3 17V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -90,20 +90,20 @@
 
 <!-- 下载弹窗 -->
 {#if showModal}
-  <div class="modal-overlay" on:click={closeModal}>
-    <div class="modal-content" on:click|stopPropagation>
-      <div class="modal-header">
-        <h3>快速下载</h3>
-        <button class="close-btn" on:click={closeModal}>
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[2000] backdrop-blur-sm" on:click={closeModal}>
+    <div class="bg-white rounded-xl w-[90%] max-w-lg shadow-2xl animate-in slide-in-from-bottom-4 duration-300" on:click|stopPropagation>
+      <div class="flex justify-between items-center px-6 py-5 border-b border-gray-200">
+        <h3 class="m-0 text-lg font-semibold text-gray-800">快速下载</h3>
+        <button class="bg-none border-none cursor-pointer p-1 rounded-md text-gray-500 transition-all duration-200 hover:bg-gray-100 hover:text-gray-700" on:click={closeModal}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
       </div>
       
-      <div class="modal-body">
-        <div class="input-group">
-          <label for="download-url">网页地址:</label>
+      <div class="px-6 py-5">
+        <div class="flex flex-col gap-2">
+          <label for="download-url" class="text-sm font-medium text-gray-700">网页地址:</label>
           <input 
             id="download-url"
             type="text" 
@@ -111,215 +111,25 @@
             placeholder="输入网页完整地址，例如: https://example.com/gallery"
             disabled={loading}
             on:keydown={handleKeydown}
-            class="url-input"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm transition-colors duration-200 box-border focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50 disabled:text-gray-500"
           />
         </div>
         
         {#if error}
-          <div class="error-message">
+          <div class="mt-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
             {error}
           </div>
         {/if}
       </div>
       
-      <div class="modal-footer">
-        <button class="cancel-btn" on:click={closeModal} disabled={loading}>
+      <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
+        <button class="px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 border-none bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed" on:click={closeModal} disabled={loading}>
           取消
         </button>
-        <button class="download-btn" on:click={handleDownload} disabled={loading}>
+        <button class="px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 border-none bg-blue-600 text-white hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed" on:click={handleDownload} disabled={loading}>
           {loading ? '添加中...' : '开始下载'}
         </button>
       </div>
     </div>
   </div>
 {/if}
-
-<style>
-  .quick-downloader-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-  }
-  
-  .download-icon {
-    width: 56px;
-    height: 56px;
-    background: #4361ee;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
-    transition: all 0.3s ease;
-    opacity: 0;
-    transform: translateY(10px);
-    pointer-events: none;
-  }
-  
-  .download-icon.visible {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-  
-  .download-icon:hover {
-    background: #3a0ca3;
-    transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(67, 97, 238, 0.4);
-  }
-  
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    backdrop-filter: blur(4px);
-  }
-  
-  .modal-content {
-    background: white;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-    animation: modalSlideIn 0.3s ease;
-  }
-  
-  @keyframes modalSlideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-20px) scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-  
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 24px 16px;
-    border-bottom: 1px solid #e5e7eb;
-  }
-  
-  .modal-header h3 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #1f2937;
-  }
-  
-  .close-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 6px;
-    color: #6b7280;
-    transition: all 0.2s;
-  }
-  
-  .close-btn:hover {
-    background: #f3f4f6;
-    color: #374151;
-  }
-  
-  .modal-body {
-    padding: 20px 24px;
-  }
-  
-  .input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .input-group label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #374151;
-  }
-  
-  .url-input {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 14px;
-    transition: border-color 0.2s;
-    box-sizing: border-box;
-  }
-  
-  .url-input:focus {
-    outline: none;
-    border-color: #4361ee;
-    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-  }
-  
-  .url-input:disabled {
-    background: #f9fafb;
-    color: #6b7280;
-  }
-  
-  .error-message {
-    margin-top: 12px;
-    padding: 12px 16px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: 8px;
-    color: #dc2626;
-    font-size: 14px;
-  }
-  
-  .modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 16px 24px 20px;
-    border-top: 1px solid #e5e7eb;
-  }
-  
-  .cancel-btn, .download-btn {
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-  }
-  
-  .cancel-btn {
-    background: #f3f4f6;
-    color: #374151;
-  }
-  
-  .cancel-btn:hover:not(:disabled) {
-    background: #e5e7eb;
-  }
-  
-  .download-btn {
-    background: #4361ee;
-    color: white;
-  }
-  
-  .download-btn:hover:not(:disabled) {
-    background: #3a0ca3;
-  }
-  
-  .cancel-btn:disabled, .download-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-</style>

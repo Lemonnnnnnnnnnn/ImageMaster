@@ -8,7 +8,7 @@
   // 删除不再需要的导航函数，因为已由Header组件提供
 </script>
 
-<div class="viewer-container">
+<div class="w-full h-full flex flex-col">
   <Header title="漫画查看器" />
   
   <slot>
@@ -16,12 +16,3 @@
     <Home />
   </slot>
 </div>
-
-<style>
-  .viewer-container {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-</style> 
