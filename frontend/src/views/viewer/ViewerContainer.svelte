@@ -1,9 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { push } from 'svelte-spa-router';
-  import { GetAllMangas } from '../../../wailsjs/go/viewer/Viewer';
-  import Home from './Home.svelte';
   import Header from '../../components/Header.svelte';
+  import Home from './Home/index.svelte';
 
   // 删除不再需要的导航函数，因为已由Header组件提供
 </script>
