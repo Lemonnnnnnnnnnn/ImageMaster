@@ -27,7 +27,7 @@ const routes = {
     conditions: [
       (detail) => {
         try {
-          return !!detail.params.path;
+          return !!detail.params?.path;
         } catch (e) {
           return false;
         }
