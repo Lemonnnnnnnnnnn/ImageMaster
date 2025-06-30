@@ -33,8 +33,7 @@ export class MangaService {
         mangaName,
         mangas,
         currentMangaIndex,
-        selectedImages: [],
-        currentImageIndex: 0
+        selectedImages: []
       });
       
       // 获取所有图片
@@ -74,49 +73,12 @@ export class MangaService {
   }
 
   static handleKeyDown(event: KeyboardEvent) {
-    const state = get(mangaStore);
-    
-    if (state.viewMode === 'single') {
-      if (event.key === 'ArrowRight' || event.key === ' ') {
-        this.nextImage();
-      } else if (event.key === 'ArrowLeft') {
-        this.prevImage();
-      } else if (event.key === 'Escape') {
-        this.backToHome();
-      }
-    } else {
-      if (event.key === 'Escape') {
-        this.backToHome();
-      }
+    if (event.key === 'Escape') {
+      this.backToHome();
     }
   }
 
-  static toggleViewMode() {
-    const state = get(mangaStore);
-    const newViewMode = state.viewMode === 'single' ? 'scroll' : 'single';
-    updateMangaStore({ viewMode: newViewMode });
-  }
 
-  static nextImage() {
-    const state = get(mangaStore);
-    
-    if (state.currentImageIndex < state.selectedImages.length - 1) {
-      updateMangaStore({ currentImageIndex: state.currentImageIndex + 1 });
-    } else if (state.currentMangaIndex < state.mangas.length - 1) {
-      // 当前漫画已浏览完，询问是否进入下一部
-      if (confirm('已浏览完当前漫画，是否查看下一部？')) {
-        this.navigateToNextManga();
-      }
-    }
-  }
-
-  static prevImage() {
-    const state = get(mangaStore);
-    
-    if (state.currentImageIndex > 0) {
-      updateMangaStore({ currentImageIndex: state.currentImageIndex - 1 });
-    }
-  }
 
   static backToHome() {
     push('/');

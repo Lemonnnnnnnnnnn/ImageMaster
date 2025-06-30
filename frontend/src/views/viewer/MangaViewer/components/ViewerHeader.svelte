@@ -2,15 +2,12 @@
   import { MangaService } from '../services/mangaService';
   import { mangaStore } from '../stores/mangaStore';
 
-  $: ({ mangaName, selectedImages, viewMode, showNavigation } = $mangaStore);
+  $: ({ mangaName, selectedImages, showNavigation } = $mangaStore);
 </script>
 
 <div class="viewer-header">
   <div class="left-controls">
     <button on:click={MangaService.backToHome}>返回</button>
-    <button on:click={MangaService.toggleViewMode}>
-      {viewMode === 'single' ? '切换为滚动模式' : '切换为单图模式'}
-    </button>
   </div>
   <div class="center-title">
     <h2>{mangaName} ({selectedImages.length})</h2>
