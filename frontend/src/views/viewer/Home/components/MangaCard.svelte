@@ -19,7 +19,7 @@
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div
-  class="border border-gray-300 rounded-lg overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+  class="card overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:shadow-lg"
   on:click={handleView}
 >
   <div class="h-48 overflow-hidden">
@@ -29,16 +29,16 @@
       class="w-full h-full object-cover"
     />
   </div>
-  <div class="p-2">
+  <div class="p-4">
     <h3
-      class="m-0 mb-1 whitespace-nowrap overflow-hidden text-ellipsis"
+      class="card-header mb-2 whitespace-nowrap overflow-hidden text-ellipsis"
     >
       {manga.name}
     </h3>
-    <p class="m-0 mb-2 text-gray-600">{manga.imagesCount} 张图片</p>
+    <p class="mb-4 text-surface-500">{manga.imagesCount} 张图片</p>
     <button
+      class="btn variant-filled-error btn-sm"
       on:click={handleDelete}
-      class="px-2 py-1 bg-red-600 text-white border-none rounded cursor-pointer"
     >
       删除
     </button>

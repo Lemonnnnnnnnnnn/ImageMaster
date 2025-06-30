@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { createDownloadHandler, formatDownloadError } from '../utils/downloadUtils';
+  import Button from './Button.svelte';
   
   const dispatch = createEventDispatcher();
   
@@ -94,11 +95,11 @@
     <div class="bg-white rounded-xl w-[90%] max-w-lg shadow-2xl animate-in slide-in-from-bottom-4 duration-300" on:click|stopPropagation>
       <div class="flex justify-between items-center px-6 py-5 border-b border-gray-200">
         <h3 class="m-0 text-lg font-semibold text-gray-800">快速下载</h3>
-        <button class="bg-none border-none cursor-pointer p-1 rounded-md text-gray-500 transition-all duration-200 hover:bg-gray-100 hover:text-gray-700" on:click={closeModal}>
+        <Button variant="tonal" color="surface" size="sm" classes="p-1 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700" on:click={closeModal}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        </button>
+        </Button>
       </div>
       
       <div class="px-6 py-5">
@@ -123,12 +124,12 @@
       </div>
       
       <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
-        <button class="px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 border-none bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-60 disabled:cursor-not-allowed" on:click={closeModal} disabled={loading}>
+        <Button variant="tonal" color="surface" disabled={loading} on:click={closeModal}>
           取消
-        </button>
-        <button class="px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 border-none bg-blue-600 text-white hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed" on:click={handleDownload} disabled={loading}>
+        </Button>
+        <Button variant="filled" color="primary" disabled={loading} loading={loading} on:click={handleDownload}>
           {loading ? '添加中...' : '开始下载'}
-        </button>
+        </Button>
       </div>
     </div>
   </div>

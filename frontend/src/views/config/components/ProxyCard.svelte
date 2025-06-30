@@ -32,31 +32,37 @@
   export { loadProxySettings };
 </script>
 
-<div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
-  <div class="flex items-center p-3 bg-gray-50 border-b border-gray-200">
+<div class="card p-4 preset-outlined-surface-500 overflow-hidden flex flex-col">
+  <header class="card-header flex items-center">
     <span class="text-xl mr-2">⚙️</span>
-    <h2 class="m-0 text-base font-semibold text-gray-800">代理设置</h2>
-  </div>
-  <div class="p-4 flex-1 flex">
+    <h2 class="text-base font-semibold">代理设置</h2>
+  </header>
+  <section class="p-4 flex-1 flex">
     <div class="w-full">
       <div class="flex gap-2 items-end">
         <div class="flex-1 mb-2">
-          <label for="proxy" class="block mb-1 text-sm text-gray-600">代理服务器 URL</label>
+          <label for="proxy" class="label">
+            <span>代理服务器 URL</span>
+          </label>
           <input 
             type="text" 
             id="proxy" 
             bind:value={proxyURL} 
             placeholder="例如: http://127.0.0.1:7890"
             disabled={loading}
-            class="w-full px-3 py-2 border border-gray-300 rounded text-sm transition-all duration-200 focus:border-blue-500 focus:shadow-md focus:outline-none placeholder-gray-400"
+            class="input"
           />
         </div>
-        <button on:click={saveProxySettings} disabled={loading} class="flex items-center justify-center px-4 py-2 bg-blue-600 text-white border-none rounded cursor-pointer text-sm font-medium transition-all duration-200 whitespace-nowrap hover:bg-blue-700 active:scale-95 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
+        <button 
+          class="btn variant-filled flex items-center" 
+          on:click={saveProxySettings} 
+          disabled={loading}
+        >
           <span class="mr-1">💾</span>
           <span>保存</span>
         </button>
       </div>
-      <p class="text-xs text-gray-500 my-1 leading-relaxed">支持 HTTP 和 SOCKS 代理，格式为 http://host:port 或 socks5://host:port</p>
+      <p class="text-xs text-surface-500 my-1 leading-relaxed">支持 HTTP 和 SOCKS 代理，格式为 http://host:port 或 socks5://host:port</p>
     </div>
-  </div>
+  </section>
 </div>

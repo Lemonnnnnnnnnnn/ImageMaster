@@ -1,6 +1,8 @@
 <script lang="ts">
   import { push } from 'svelte-spa-router';
+  // import { QuickDownloaderService } from '../views/downloader/services/quickDownloaderService';
   import { onMount } from 'svelte';
+  import Button from './Button.svelte';
 
   // 删除activeView参数，只保留标题
   export let title: string = '图像大师';
@@ -17,6 +19,10 @@
   function goToConfig() {
     push('/config');
   }
+
+  // function openQuickDownloader() {
+  //   QuickDownloaderService.openModal();
+  // }
 
   // 控制顶部导航栏的显示和隐藏
   let isVisible = true;
@@ -55,9 +61,9 @@
     <h1 class="m-0 text-2xl text-gray-800">{title}</h1>
     <div class="flex gap-2.5">
       <!-- 始终显示所有按钮 -->
-      <button on:click={goToViewer} class="px-4 py-2 text-white border-none rounded cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out bg-purple-600 hover:opacity-90 hover:-translate-y-0.5">漫画查看器</button>
-      <button on:click={goToDownloader} class="px-4 py-2 text-white border-none rounded cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out bg-green-500 hover:opacity-90 hover:-translate-y-0.5">图片下载器</button> 
-      <button on:click={goToConfig} class="px-4 py-2 text-white border-none rounded cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out bg-blue-500 hover:opacity-90 hover:-translate-y-0.5">应用设置</button>
+      <Button variant="filled" color="primary" on:click={goToViewer}>漫画查看器</Button>
+      <Button variant="filled" color="success" on:click={goToDownloader}>图片下载器</Button>
+      <Button variant="filled" color="secondary" on:click={goToConfig}>应用设置</Button>
     </div>
   </div>
 </div>
