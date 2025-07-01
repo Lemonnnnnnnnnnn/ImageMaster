@@ -1,11 +1,13 @@
 <script lang="ts">
   import Router from 'svelte-spa-router';
   import routes from './routes';
+  import { Toaster } from 'svelte-sonner'
 </script>
 
 <main>
   <Router {routes} />
 </main>
+<Toaster />
 
 <style>
   :global(body) {

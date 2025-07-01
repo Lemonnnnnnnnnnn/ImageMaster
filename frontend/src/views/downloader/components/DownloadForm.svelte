@@ -49,7 +49,7 @@
       on:keydown={(e) => e.key === 'Enter' && handleSubmit()}
     />
     <Button 
-      on:click={handleSubmit} 
+      onclick={handleSubmit} 
       disabled={$loading}
       loading={$loading}
       variant="filled"

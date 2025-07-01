@@ -56,7 +56,7 @@
           />
         </div>
         <Button 
-          on:click={saveProxySettings} 
+          onclick={saveProxySettings} 
           disabled={loading}
           loading={loading}
           variant="filled"

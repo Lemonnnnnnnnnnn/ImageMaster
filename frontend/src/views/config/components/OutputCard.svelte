@@ -44,7 +44,7 @@
         <span>{outputDir || '未设置'}</span>
       </div>
       <Button 
-        on:click={changeOutputDir} 
+        onclick={changeOutputDir} 
         disabled={loading}
         loading={loading}
         variant="filled"

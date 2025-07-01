@@ -1,4 +1,5 @@
 import { StartDownload } from "../../wailsjs/go/downloader/DownloaderAPI";
+ import { toast  } from 'svelte-sonner'
 
 /**
  * 下载结果接口
@@ -91,7 +92,7 @@ export function createDownloadHandler(callbacks: {
     
     try {
       onStart?.();
-      
+      toast.info('下载任务已添加到队列')
       const result = await executeDownload({
         url,
         onError,

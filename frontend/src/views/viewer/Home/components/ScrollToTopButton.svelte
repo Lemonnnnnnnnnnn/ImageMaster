@@ -10,7 +10,7 @@
 
 {#if $showScrollTop}
   <Button
-    on:click={handleScrollToTop}
+    onclick={handleScrollToTop}
     classes="fixed bottom-8 right-8 w-12 h-12 rounded-full! text-2xl shadow-lg"
     color="primary"
   >

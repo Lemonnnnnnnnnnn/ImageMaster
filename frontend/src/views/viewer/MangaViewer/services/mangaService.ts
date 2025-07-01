@@ -7,6 +7,7 @@ import {
   GetImageDataUrl
 } from '../../../../../wailsjs/go/viewer/Viewer';
 import { mangaStore, updateMangaStore, type MangaState } from '../stores/mangaStore';
+import { toast } from 'svelte-sonner';
 
 export class MangaService {
   static async loadManga(path: string) {
@@ -148,6 +149,7 @@ export class MangaService {
         const success = await DeleteManga(state.mangaPath);
         
         if (success) {
+          toast.success('删除成功');
           if (nextMangaPath) {
             // 重要：在导航前设置 loading 为 false，防止新页面保持加载状态
             updateMangaStore({ loading: false });

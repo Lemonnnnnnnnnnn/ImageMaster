@@ -17,7 +17,7 @@
 
 <div class="flex items-center gap-1.5 px-5 py-4 border-b border-gray-300 bg-gray-50 rounded-t-md flex-shrink-0">
   <Button 
-    on:click={() => handleTabSwitch('downloading')}
+    onclick={() => handleTabSwitch('downloading')}
     variant={$activeTab === 'downloading' ? 'filled' : 'ghost'}
     color="gray"
     size="md"
@@ -25,7 +25,7 @@
     下载中 ({$activeTasksCount})
   </Button>
   <Button 
-    on:click={() => handleTabSwitch('history')}
+    onclick={() => handleTabSwitch('history')}
     variant={$activeTab === 'history' ? 'filled' : 'ghost'}
     color="secondary"
     size="md"
@@ -35,7 +35,7 @@
   </Button>
   {#if $activeTab === 'history' && $historyTasks.length > 0}
     <Button 
-      on:click={handleClearHistory}
+      onclick={handleClearHistory}
       variant="filled"
       color="error"
       size="sm"

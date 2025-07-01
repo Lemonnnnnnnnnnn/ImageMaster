@@ -49,7 +49,7 @@
           variant="filled"
           color="error"
           size="sm"
-          on:click={handleCancel}
+          onclick={handleCancel}
         >
           取消
         </Button>

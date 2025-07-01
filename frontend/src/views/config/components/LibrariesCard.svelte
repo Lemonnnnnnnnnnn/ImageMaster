@@ -62,7 +62,7 @@
     </div>
     <footer class="card-footer flex justify-end">
       <Button 
-        on:click={addLibrary} 
+        onclick={addLibrary} 
         disabled={loading}
         loading={loading}
         variant="outlined"

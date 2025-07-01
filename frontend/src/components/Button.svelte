@@ -96,8 +96,8 @@
     {download}
     class={allClasses}
     class:pointer-events-none={loading}
-    on:click={handleClick}
-    on:keydown={handleKeydown}
+    onclick={handleClick}
+    onkeydown={handleKeydown}
     role="button"
     tabindex={disabled ? -1 : 0}
     aria-disabled={disabled}
@@ -118,8 +118,8 @@
     {disabled}
     class={allClasses}
     class:pointer-events-none={loading}
-    on:click={handleClick}
-    on:keydown={handleKeydown}
+    onclick={handleClick}
+    onkeydown={handleKeydown}
     aria-disabled={disabled}
     {...$$restProps}
   >
