@@ -19,9 +19,8 @@
   <Button 
     on:click={() => handleTabSwitch('downloading')}
     variant={$activeTab === 'downloading' ? 'filled' : 'ghost'}
-    color="secondary"
+    color="gray"
     size="md"
-    classes="text-gray-600"
   >
     下载中 ({$activeTasksCount})
   </Button>

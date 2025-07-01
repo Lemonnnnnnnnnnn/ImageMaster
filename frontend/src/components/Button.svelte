@@ -26,34 +26,34 @@
   $: variantClasses = (() => {
     const colorMap = {
       primary: {
-        filled: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-        outlined: 'border border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500',
-        ghost: 'text-blue-600 hover:bg-blue-50 focus:ring-blue-500'
+        filled: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
+        outlined: 'border border-primary-600 text-primary-600 hover:bg-primary-50 focus:ring-primary-500',
+        ghost: 'text-primary-600 hover:bg-primary-50 focus:ring-primary-500'
       },
       secondary: {
-        filled: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500',
-        outlined: 'border border-gray-600 text-gray-600 hover:bg-gray-50 focus:ring-gray-500',
-        ghost: 'text-gray-600 hover:bg-gray-50 focus:ring-gray-500'
+        filled: 'bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500',
+        outlined: 'border border-secondary-600 text-secondary-600 hover:bg-secondary-50 focus:ring-secondary-500',
+        ghost: 'text-secondary-600 hover:bg-secondary-50 focus:ring-secondary-500'
       },
       success: {
-        filled: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
-        outlined: 'border border-green-600 text-green-600 hover:bg-green-50 focus:ring-green-500',
-        ghost: 'text-green-600 hover:bg-green-50 focus:ring-green-500'
+        filled: 'bg-success-600 text-white hover:bg-success-700 focus:ring-success-500',
+        outlined: 'border border-success-600 text-success-600 hover:bg-success-50 focus:ring-success-500',
+        ghost: 'text-success-600 hover:bg-success-50 focus:ring-success-500'
       },
       warning: {
-        filled: 'bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500',
-        outlined: 'border border-yellow-600 text-yellow-600 hover:bg-yellow-50 focus:ring-yellow-500',
-        ghost: 'text-yellow-600 hover:bg-yellow-50 focus:ring-yellow-500'
+        filled: 'bg-warning-600 text-white hover:bg-warning-700 focus:ring-warning-500',
+        outlined: 'border border-warning-600 text-warning-600 hover:bg-warning-50 focus:ring-warning-500',
+        ghost: 'text-warning-600 hover:bg-warning-50 focus:ring-warning-500'
       },
       error: {
-        filled: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-        outlined: 'border border-red-600 text-red-600 hover:bg-red-50 focus:ring-red-500',
-        ghost: 'text-red-600 hover:bg-red-50 focus:ring-red-500'
+        filled: 'bg-error-600 text-white hover:bg-error-700 focus:ring-error-500',
+        outlined: 'border border-error-600 text-error-600 hover:bg-error-50 focus:ring-error-500',
+        ghost: 'text-error-600 hover:bg-error-50 focus:ring-error-500'
       },
       gray: {
-        filled: 'bg-gray-500 text-white hover:bg-gray-600 focus:ring-gray-400',
-        outlined: 'border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-400',
-        ghost: 'text-gray-700 hover:bg-gray-50 focus:ring-gray-400'
+        filled: 'bg-neutral-500 text-white hover:bg-neutral-600 focus:ring-neutral-400',
+        outlined: 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 focus:ring-neutral-400',
+        ghost: 'text-neutral-700 hover:bg-neutral-50 focus:ring-neutral-400'
       }
     };
     

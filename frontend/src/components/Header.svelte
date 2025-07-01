@@ -62,7 +62,7 @@
     <div class="flex gap-2.5">
       <!-- 始终显示所有按钮 -->
       <Button variant="filled" color="primary" on:click={goToViewer}>漫画查看器</Button>
-      <Button variant="filled" color="success" on:click={goToDownloader}>图片下载器</Button>
+      <Button variant="filled" color="gray" on:click={goToDownloader}>图片下载器</Button>
       <Button variant="filled" color="secondary" on:click={goToConfig}>应用设置</Button>
     </div>
   </div>
