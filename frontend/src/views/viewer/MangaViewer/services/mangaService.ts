@@ -37,7 +37,7 @@ export class MangaService {
       });
       
       // 获取所有图片
-      await this.loadImages(mangaPath);
+      await MangaService.loadImages(mangaPath);
       
     } catch (error) {
       console.error('加载漫画失败:', error);
@@ -74,7 +74,7 @@ export class MangaService {
 
   static handleKeyDown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
-      this.backToHome();
+      MangaService.backToHome();
     }
   }
 
@@ -100,7 +100,7 @@ export class MangaService {
       const currentLocation = get(location);
       if (currentLocation.includes('/manga/')) {
         // 如果当前已经在漫画页面，采用直接加载新数据的方式
-        this.loadManga(nextManga.path);
+        MangaService.loadManga(nextManga.path);
         
         // 更新 URL 但不触发导航事件
         window.history.pushState(null, '', `/#/manga/${encodedPath}`);
@@ -122,7 +122,7 @@ export class MangaService {
       const currentLocation = get(location);
       if (currentLocation.includes('/manga/')) {
         // 如果当前已经在漫画页面，采用直接加载新数据的方式
-        this.loadManga(prevManga.path);
+        MangaService.loadManga(prevManga.path);
         
         // 更新 URL 但不触发导航事件
         window.history.pushState(null, '', `/#/manga/${encodedPath}`);
@@ -157,7 +157,7 @@ export class MangaService {
             const currentLocation = get(location);
             if (currentLocation.includes('/manga/')) {
               // 如果当前已经在漫画页面，采用直接加载新数据的方式
-              this.loadManga(nextMangaPath);
+              MangaService.loadManga(nextMangaPath);
               
               // 更新 URL 但不触发导航事件
               window.history.pushState(null, '', `/#/manga/${encodedPath}`);
