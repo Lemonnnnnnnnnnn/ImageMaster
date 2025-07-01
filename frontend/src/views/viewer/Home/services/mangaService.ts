@@ -14,6 +14,7 @@ export class MangaService {
    * 初始化数据加载
    */
   static async initialize(): Promise<void> {
+     loading.set(true);
     await LoadAllLibraries();
     await this.loadLibraries();
     await this.loadMangas();
