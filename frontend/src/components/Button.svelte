@@ -4,9 +4,9 @@
   const dispatch = createEventDispatcher();
   
   // Props
-  export let variant: 'filled' | 'tonal' | 'outlined' = 'filled';
-  export let color: 'primary' | 'secondary' | 'tertiary' | 'success' | 'warning' | 'error' | 'surface' = 'primary';
-  export let size: 'sm' | 'md' | 'lg' | 'xl' = 'md';
+  export let variant: 'filled' | 'outlined' | 'ghost' = 'filled';
+  export let color: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'gray' = 'primary';
+  export let size: 'sm' | 'md' | 'lg' = 'md';
   export let disabled: boolean = false;
   export let loading: boolean = false;
   export let type: 'button' | 'submit' | 'reset' = 'button';
@@ -18,57 +18,62 @@
   // Additional classes
   export let classes: string = '';
   
-  // 构建基础类名
-  $: baseClasses = 'btn';
+  // 基础样式
+  $: baseClasses = 'inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
   
-  // 构建变体类名 - 使用静态类名映射避免动态生成
+  // 构建变体和颜色类名
   $: variantClasses = (() => {
-    const classMap = {
-      // Filled variants
-      'filled-primary': 'preset-filled-primary-500',
-      'filled-secondary': 'preset-filled-secondary-500',
-      'filled-tertiary': 'preset-filled-tertiary-500',
-      'filled-success': 'preset-filled-success-500',
-      'filled-warning': 'preset-filled-warning-500',
-      'filled-error': 'preset-filled-error-500',
-      'filled-surface': 'preset-filled-surface-500',
-      
-      // Tonal variants
-      'tonal-primary': 'preset-tonal-primary',
-      'tonal-secondary': 'preset-tonal-secondary',
-      'tonal-tertiary': 'preset-tonal-tertiary',
-      'tonal-success': 'preset-tonal-success',
-      'tonal-warning': 'preset-tonal-warning',
-      'tonal-error': 'preset-tonal-error',
-      'tonal-surface': 'preset-tonal-surface',
-      
-      // Outlined variants
-      'outlined-primary': 'preset-outlined-primary-500',
-      'outlined-secondary': 'preset-outlined-secondary-500',
-      'outlined-tertiary': 'preset-outlined-tertiary-500',
-      'outlined-success': 'preset-outlined-success-500',
-      'outlined-warning': 'preset-outlined-warning-500',
-      'outlined-error': 'preset-outlined-error-500',
-      'outlined-surface': 'preset-outlined-surface-500'
+    const colorMap = {
+      primary: {
+        filled: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
+        outlined: 'border border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500',
+        ghost: 'text-blue-600 hover:bg-blue-50 focus:ring-blue-500'
+      },
+      secondary: {
+        filled: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500',
+        outlined: 'border border-gray-600 text-gray-600 hover:bg-gray-50 focus:ring-gray-500',
+        ghost: 'text-gray-600 hover:bg-gray-50 focus:ring-gray-500'
+      },
+      success: {
+        filled: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
+        outlined: 'border border-green-600 text-green-600 hover:bg-green-50 focus:ring-green-500',
+        ghost: 'text-green-600 hover:bg-green-50 focus:ring-green-500'
+      },
+      warning: {
+        filled: 'bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500',
+        outlined: 'border border-yellow-600 text-yellow-600 hover:bg-yellow-50 focus:ring-yellow-500',
+        ghost: 'text-yellow-600 hover:bg-yellow-50 focus:ring-yellow-500'
+      },
+      error: {
+        filled: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+        outlined: 'border border-red-600 text-red-600 hover:bg-red-50 focus:ring-red-500',
+        ghost: 'text-red-600 hover:bg-red-50 focus:ring-red-500'
+      },
+      gray: {
+        filled: 'bg-gray-500 text-white hover:bg-gray-600 focus:ring-gray-400',
+        outlined: 'border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-400',
+        ghost: 'text-gray-700 hover:bg-gray-50 focus:ring-gray-400'
+      }
     };
     
-    const key = `${variant}-${color}` as keyof typeof classMap;
-    return classMap[key] || 'preset-filled-primary-500'; // 默认值
+    return colorMap[color][variant] || colorMap.primary.filled;
   })();
   
   // 构建大小类名
   $: sizeClasses = (() => {
     switch (size) {
-      case 'sm': return 'btn-sm';
-      case 'md': return 'btn-md';
-      case 'lg': return 'btn-lg';
-      case 'xl': return 'btn-xl';
-      default: return 'btn-md';
+      case 'sm': return 'px-3 py-1.5 text-sm';
+      case 'md': return 'px-4 py-2 text-sm';
+      case 'lg': return 'px-6 py-3 text-base';
+      default: return 'px-4 py-2 text-sm';
     }
   })();
   
+  // 禁用状态样式
+  $: disabledClasses = disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
+  
   // 组合所有类名
-  $: allClasses = [baseClasses, variantClasses, sizeClasses, classes].filter(Boolean).join(' ');
+  $: allClasses = [baseClasses, variantClasses, sizeClasses, disabledClasses, classes].filter(Boolean).join(' ');
   
   // 处理点击事件
   function handleClick(event: MouseEvent) {
@@ -94,9 +99,7 @@
     {rel}
     {download}
     class={allClasses}
-    class:opacity-50={disabled}
-    class:cursor-not-allowed={disabled}
-    class:pointer-events-none={disabled || loading}
+    class:pointer-events-none={loading}
     on:click={handleClick}
     on:keydown={handleKeydown}
     role="button"
@@ -118,8 +121,6 @@
     {type}
     {disabled}
     class={allClasses}
-    class:opacity-50={disabled}
-    class:cursor-not-allowed={disabled}
     class:pointer-events-none={loading}
     on:click={handleClick}
     on:keydown={handleKeydown}
