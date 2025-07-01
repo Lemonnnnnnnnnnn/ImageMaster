@@ -2,6 +2,7 @@
   import type { Manga } from '../stores/homeStore';
   import { MangaService } from '../services/mangaService';
   import { NavigationService } from '../services/navigationService';
+  import Button from '../../../../components/Button.svelte';
 
   export let manga: Manga;
 
@@ -36,11 +37,13 @@
       {manga.name}
     </h3>
     <p class="mb-4 text-surface-500">{manga.imagesCount} 张图片</p>
-    <button
-      class="btn variant-filled-error btn-sm"
+    <Button
+      variant="filled"
+      color="error"
+      size="sm"
       on:click={handleDelete}
     >
       删除
-    </button>
+    </Button>
   </div>
 </div>

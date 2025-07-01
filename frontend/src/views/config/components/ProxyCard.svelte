@@ -1,5 +1,6 @@
 <script lang="ts">
   import { SetProxy, GetProxy } from '../../../../wailsjs/go/viewer/Viewer';
+  import Button from '../../../components/Button.svelte';
   
   export let proxyURL = '';
   export let loading = false;
@@ -53,14 +54,17 @@
             class="input"
           />
         </div>
-        <button 
-          class="btn variant-filled flex items-center" 
+        <Button 
           on:click={saveProxySettings} 
           disabled={loading}
+          loading={loading}
+          variant="filled"
+          color="primary"
+          classes="flex items-center"
         >
           <span class="mr-1">💾</span>
           <span>保存</span>
-        </button>
+        </Button>
       </div>
       <p class="text-xs text-surface-500 my-1 leading-relaxed">支持 HTTP 和 SOCKS 代理，格式为 http://host:port 或 socks5://host:port</p>
     </div>

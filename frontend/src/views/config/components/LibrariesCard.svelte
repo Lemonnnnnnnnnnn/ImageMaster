@@ -1,5 +1,6 @@
 <script lang="ts">
   import { SelectLibrary, GetLibraries } from '../../../../wailsjs/go/viewer/Viewer';
+  import Button from '../../../components/Button.svelte';
   
   export let libraries : string[] = [];
   export let loading = false;
@@ -59,14 +60,17 @@
       {/if}
     </div>
     <footer class="card-footer flex justify-end">
-      <button 
-        class="btn preset-outlined-surface-500 flex items-center" 
+      <Button 
         on:click={addLibrary} 
         disabled={loading}
+        loading={loading}
+        variant="outlined"
+        color="secondary"
+        classes="flex items-center"
       >
         <span class="mr-1.5">+</span>
         <span>添加漫画库</span>
-      </button>
+      </Button>
     </footer>
   </section>
 </div>

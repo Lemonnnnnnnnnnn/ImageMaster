@@ -2,6 +2,7 @@
   import type { downloader } from '../../../../wailsjs/go/models';
   import { formatStatus, formatTime, formatProgress, calculateProgressPercentage, getStatusClass } from '../utils/taskFormatter';
   import { cancelTask } from '../stores/downloadStore';
+  import Button from '../../../components/Button.svelte';
 
   export let task: downloader.DownloadTask;
   export let showProgress = false;
@@ -44,12 +45,14 @@
         <span class="text-xs text-gray-600">
           {formatProgress(task.progress.current, task.progress.total)}
         </span>
-        <button 
-          class="px-3 py-1.5 bg-red-600 text-white border-none rounded-md cursor-pointer text-xs font-medium hover:bg-red-700" 
+        <Button 
+          variant="filled"
+          color="error"
+          size="sm"
           on:click={handleCancel}
         >
           取消
-        </button>
+        </Button>
       </div>
     </div>
   {/if}

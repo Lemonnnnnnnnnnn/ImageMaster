@@ -1,5 +1,6 @@
 <script lang="ts">
   import { SetOutputDir, GetOutputDir } from '../../../../wailsjs/go/viewer/Viewer';
+  import Button from '../../../components/Button.svelte';
   
   export let outputDir = '';
   export let loading = false;
@@ -41,14 +42,17 @@
         <span class="mr-2 flex-shrink-0">📂</span>
         <span>{outputDir || '未设置'}</span>
       </div>
-      <button 
-        class="btn variant-filled flex items-center" 
+      <Button 
         on:click={changeOutputDir} 
         disabled={loading}
+        loading={loading}
+        variant="filled"
+        color="primary"
+        classes="flex items-center"
       >
         <span class="mr-1">📂</span>
         <span>更改输出目录</span>
-      </button>
+      </Button>
     </div>
   </section>
 </div>

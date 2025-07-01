@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createDownloadHandler } from '../../../utils/downloadUtils';
   import { loading, activeTab, pollTasks } from '../stores/downloadStore';
+  import Button from '../../../components/Button.svelte';
 
   let url = '';
   let error = '';
@@ -47,13 +48,17 @@
       class="flex-1 px-4 py-3 border border-gray-300 rounded-md text-base focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 md:w-full"
       on:keydown={(e) => e.key === 'Enter' && handleSubmit()}
     />
-    <button 
+    <Button 
       on:click={handleSubmit} 
-      disabled={$loading} 
-      class="px-6 py-3 bg-green-500 text-white border-none rounded-md cursor-pointer text-base font-medium whitespace-nowrap hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed md:w-full"
+      disabled={$loading}
+      loading={$loading}
+      variant="filled"
+      color="success"
+      size="lg"
+      classes="whitespace-nowrap md:w-full"
     >
       {$loading ? '添加中...' : '添加任务'}
-    </button>
+    </Button>
   </div>
   
   {#if error}
