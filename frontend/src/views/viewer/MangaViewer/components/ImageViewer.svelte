@@ -13,7 +13,7 @@
 {:else if selectedImages.length === 0}
   <div class="flex-grow flex flex-col items-center justify-center h-full">
     <p class="text-gray-100 mb-5">未找到图片</p>
-    <Button on:click={MangaService.backToHome} variant="filled" color="primary">返回</Button>
+    <Button onclick={MangaService.backToHome} variant="filled" color="primary">返回</Button>
   </div>
 {:else}
   <ScrollView />

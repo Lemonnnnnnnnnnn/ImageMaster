@@ -1,9 +1,6 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import { twMerge } from 'tailwind-merge';
   import { componentStyles } from '../utils/designTokens';
-  
-  const dispatch = createEventDispatcher();
   
   // Props
   export let variant: 'filled' | 'outlined' | 'ghost' = 'filled';
@@ -70,19 +67,23 @@
   // 组合所有类名，使用 twMerge 确保外部传入的 classes 具有更高优先级
   $: allClasses = twMerge(baseClasses, variantClasses, sizeClasses, disabledClasses, classes);
   
+  // 回调props - 替代createEventDispatcher
+  export let onclick: ((event: MouseEvent) => void) | undefined = undefined;
+  export let onkeydown: ((event: KeyboardEvent) => void) | undefined = undefined;
+  
   // 处理点击事件
   function handleClick(event: MouseEvent) {
     if (disabled || loading) {
       event.preventDefault();
       return;
     }
-    dispatch('click', event);
+    onclick?.(event);
   }
   
   // 处理键盘事件
   function handleKeydown(event: KeyboardEvent) {
     if (disabled || loading) return;
-    dispatch('keydown', event);
+    onkeydown?.(event);
   }
 </script>
 

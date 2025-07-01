@@ -1,14 +1,13 @@
 <script lang="ts">
   import { componentStyles } from '../utils/designTokens';
   import { twMerge } from 'tailwind-merge';
-  import { createEventDispatcher } from 'svelte';
   
   // Additional classes
   export let classes: string = '';
   export let hover: boolean = false;
   
-  // 创建事件分发器
-  const dispatch = createEventDispatcher();
+  // 回调props - 替代createEventDispatcher
+  export let onclick: ((event: MouseEvent) => void) | undefined = undefined;
   
   // 使用设计令牌中的卡片样式
   $: baseClasses = componentStyles.card.base;
@@ -19,7 +18,7 @@
   
   // 处理点击事件，确保事件能够正确传递
   function handleClick(event: MouseEvent) {
-    dispatch('click', event);
+    onclick?.(event);
   }
 </script>
 

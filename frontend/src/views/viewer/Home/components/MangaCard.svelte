@@ -22,7 +22,7 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <Card
   classes="overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:shadow-lg"
-  on:click={handleView}
+  onclick={handleView}
 >
   <div class="h-48 overflow-hidden">
     <img
@@ -42,7 +42,7 @@
       variant="filled"
       color="error"
       size="sm"
-      on:click={handleDelete}
+      onclick={handleDelete}
     >
       删除
     </Button>
