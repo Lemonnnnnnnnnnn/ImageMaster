@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { twMerge } from 'tailwind-merge';
   
   const dispatch = createEventDispatcher();
   
@@ -72,8 +73,8 @@
   // 禁用状态样式
   $: disabledClasses = disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
   
-  // 组合所有类名
-  $: allClasses = [baseClasses, variantClasses, sizeClasses, disabledClasses, classes].filter(Boolean).join(' ');
+  // 组合所有类名，使用 twMerge 确保外部传入的 classes 具有更高优先级
+  $: allClasses = twMerge(baseClasses, variantClasses, sizeClasses, disabledClasses, classes);
   
   // 处理点击事件
   function handleClick(event: MouseEvent) {
