@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import Header from '../../components/Header.svelte';
+  import Card from '../../components/Card.svelte';
   import OutputDirectory from './components/OutputDirectory.svelte';
   import DownloadForm from './components/DownloadForm.svelte';
   import TaskTabs from './components/TaskTabs.svelte';
@@ -23,13 +24,13 @@
   <Header title="网页图片下载器" />
 
   <!-- 顶部面板：输出目录 + 下载表单 -->
-  <div class="bg-white rounded-md p-5 border border-gray-300 shadow-sm flex-shrink-0">
+  <Card classes="p-5 border border-gray-300 shadow-sm flex-shrink-0">
     <OutputDirectory />
     <DownloadForm />
-  </div>
+  </Card>
   
   <!-- 任务管理面板 -->
-  <div class="bg-white rounded-md border border-gray-300 shadow-sm flex-1 flex flex-col min-h-0">
+  <Card classes="border border-gray-300 shadow-sm flex-1 flex flex-col min-h-0">
     <TaskTabs />
     
     <!-- Tab内容 -->
@@ -40,5 +41,5 @@
         <HistoryTaskList />
       {/if}
     </div>
-  </div>
+  </Card>
 </div>

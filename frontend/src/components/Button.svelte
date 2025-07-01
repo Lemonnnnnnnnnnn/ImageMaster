@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { twMerge } from 'tailwind-merge';
+  import { componentStyles } from '../utils/designTokens';
   
   const dispatch = createEventDispatcher();
   
@@ -19,8 +20,8 @@
   // Additional classes
   export let classes: string = '';
   
-  // 基础样式
-  $: baseClasses = 'inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
+  // 使用设计令牌中的按钮基础样式
+  $: baseClasses = componentStyles.button.base;
   
   // 构建变体和颜色类名
   $: variantClasses = (() => {
@@ -60,15 +61,8 @@
     return colorMap[color][variant] || colorMap.primary.filled;
   })();
   
-  // 构建大小类名
-  $: sizeClasses = (() => {
-    switch (size) {
-      case 'sm': return 'px-3 py-1.5 text-sm';
-      case 'md': return 'px-4 py-2 text-sm';
-      case 'lg': return 'px-6 py-3 text-base';
-      default: return 'px-4 py-2 text-sm';
-    }
-  })();
+  // 使用设计令牌中的按钮大小样式
+  $: sizeClasses = componentStyles.button.sizes[size] || componentStyles.button.sizes.md;
   
   // 禁用状态样式
   $: disabledClasses = disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';

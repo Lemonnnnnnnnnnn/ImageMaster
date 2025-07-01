@@ -3,6 +3,7 @@
   import { MangaService } from '../services/mangaService';
   import { NavigationService } from '../services/navigationService';
   import Button from '../../../../components/Button.svelte';
+  import Card from '../../../../components/Card.svelte';
 
   export let manga: Manga;
 
@@ -19,8 +20,8 @@
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
-<div
-  class="card overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+<Card
+  classes="overflow-hidden transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:shadow-lg"
   on:click={handleView}
 >
   <div class="h-48 overflow-hidden">
@@ -46,4 +47,4 @@
       删除
     </Button>
   </div>
-</div>
+</Card>

@@ -104,9 +104,14 @@ const buttonColors = {
 
 ```html
 <!-- 标准卡片样式 -->
-<div class="bg-white border border-neutral-200 rounded-lg shadow-sm">
+<div class="bg-white rounded-xl shadow-lg">
   <!-- 卡片内容 -->
 </div>
+
+<!-- 推荐使用Card组件 -->
+<Card classes="额外的样式类">
+  <!-- 卡片内容 -->
+</Card>
 ```
 
 ### 表单元素

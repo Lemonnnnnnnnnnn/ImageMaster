@@ -1,6 +1,7 @@
 <script lang="ts">
   import { SetOutputDir, GetOutputDir } from '../../../../wailsjs/go/viewer/Viewer';
   import Button from '../../../components/Button.svelte';
+  import Card from '../../../components/Card.svelte';
   
   export let outputDir = '';
   export let loading = false;
@@ -31,7 +32,7 @@
   export { loadOutputDir };
 </script>
 
-<div class="card p-4 preset-outlined-surface-500 overflow-hidden flex flex-col">
+<Card classes="p-4 preset-outlined-surface-500 overflow-hidden flex flex-col">
   <header class="card-header flex items-center">
     <span class="text-xl mr-2">📂</span>
     <h2 class="text-base font-semibold">输出目录</h2>
@@ -55,4 +56,4 @@
       </Button>
     </div>
   </section>
-</div>
+</Card>

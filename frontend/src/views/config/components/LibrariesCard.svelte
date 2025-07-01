@@ -1,6 +1,7 @@
 <script lang="ts">
   import { SelectLibrary, GetLibraries } from '../../../../wailsjs/go/viewer/Viewer';
   import Button from '../../../components/Button.svelte';
+  import Card from '../../../components/Card.svelte';
   
   export let libraries : string[] = [];
   export let loading = false;
@@ -33,7 +34,7 @@
   export { loadLibraries };
 </script>
 
-<div class="card p-4 preset-outlined-surface-500 overflow-hidden flex flex-col">
+<Card classes="p-4 preset-outlined-surface-500 overflow-hidden flex flex-col">
   <header class="card-header flex items-center">
     <span class="text-xl mr-2.5">📚</span>
     <h2 class="text-base font-semibold">漫画库设置</h2>
@@ -73,4 +74,4 @@
       </Button>
     </footer>
   </section>
-</div>
+</Card>

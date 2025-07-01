@@ -1,6 +1,7 @@
 <script lang="ts">
   import { SetProxy, GetProxy } from '../../../../wailsjs/go/viewer/Viewer';
   import Button from '../../../components/Button.svelte';
+  import Card from '../../../components/Card.svelte';
   
   export let proxyURL = '';
   export let loading = false;
@@ -33,7 +34,7 @@
   export { loadProxySettings };
 </script>
 
-<div class="card p-4 preset-outlined-surface-500 overflow-hidden flex flex-col">
+<Card classes="p-4 preset-outlined-surface-500 overflow-hidden flex flex-col">
   <header class="card-header flex items-center">
     <span class="text-xl mr-2">⚙️</span>
     <h2 class="text-base font-semibold">代理设置</h2>
@@ -69,4 +70,4 @@
       <p class="text-xs text-surface-500 my-1 leading-relaxed">支持 HTTP 和 SOCKS 代理，格式为 http://host:port 或 socks5://host:port</p>
     </div>
   </section>
-</div>
+</Card>
