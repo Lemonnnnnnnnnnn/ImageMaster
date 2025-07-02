@@ -1,38 +1,21 @@
-package downloader
+package core
 
 import (
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"path"
+	"path/filepath"
+	"sync"
 	"time"
 
+	"ImageMaster/core/proxy"
 	"ImageMaster/core/request"
 	"ImageMaster/core/types"
 	"ImageMaster/core/utils"
 )
 
-// DownloadTask 下载任务
-type DownloadTask struct {
-	ID           string    `json:"id"`           // 任务ID
-	URL          string    `json:"url"`          // 下载URL
-	Status       string    `json:"status"`       // 状态: pending, downloading, completed, failed
-	SavePath     string    `json:"savePath"`     // 保存路径
-	StartTime    time.Time `json:"startTime"`    // 开始时间
-	CompleteTime time.Time `json:"completeTime"` // 完成时间
-	UpdatedAt    time.Time `json:"updatedAt"`    // 更新时间
-	Error        string    `json:"error"`        // 错误信息
-	Name         string    `json:"name"`         // 任务名
-	Progress     struct {
-		Current int `json:"current"` // 当前已下载项目数
-		Total   int `json:"total"`   // 总项目数
-	} `json:"progress"` // 下载进度
-}
-
-
-
-// Downloader 下载器
+// Downloader 核心下载器
 type Downloader struct {
 	reqClient     *request.Client
 	retryCount    int
@@ -40,35 +23,82 @@ type Downloader struct {
 	showProcess   bool
 	configManager types.ConfigProvider
 	taskUpdater   types.TaskUpdater // 任务更新器
+	proxyManager  *proxy.ProxyManager
+	mu            sync.RWMutex
+}
+
+// Config 下载器配置
+type Config struct {
+	RetryCount  int
+	RetryDelay  int // 秒
+	ShowProcess bool
 }
 
 // NewDownloader 创建新的下载器
-func NewDownloader(retryCount int, retryDelay int, showProcess bool) *Downloader {
+func NewDownloader(config Config) *Downloader {
 	return &Downloader{
 		reqClient:   request.NewClient(),
-		retryCount:  retryCount,
-		retryDelay:  time.Duration(retryDelay) * time.Second,
-		showProcess: showProcess,
+		retryCount:  config.RetryCount,
+		retryDelay:  time.Duration(config.RetryDelay) * time.Second,
+		showProcess: config.ShowProcess,
 	}
 }
 
 // SetConfigManager 设置配置管理器
 func (d *Downloader) SetConfigManager(configManager types.ConfigProvider) {
 	d.configManager = configManager
-
 	// 将配置管理器传递给请求客户端
 	d.reqClient.SetConfigManager(configManager)
+
+	// 创建代理管理器
+	if configManager != nil {
+		d.proxyManager = proxy.NewProxyManager(configManager)
+	}
+}
+
+// SetTaskUpdater 设置任务更新器
+func (d *Downloader) SetTaskUpdater(updater types.TaskUpdater) {
+	d.taskUpdater = updater
+}
+
+// GetTaskUpdater 获取任务更新器
+func (d *Downloader) GetTaskUpdater() types.TaskUpdater {
+	return d.taskUpdater
 }
 
 // SetProxy 设置代理
 func (d *Downloader) SetProxy(proxyURL string) error {
-	// 使用请求客户端设置代理
-	return d.reqClient.SetProxy(proxyURL)
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	// 如果没有代理管理器，创建一个
+	if d.proxyManager == nil {
+		d.proxyManager = proxy.NewProxyManager(d.configManager)
+	}
+	
+	// 设置代理
+	err := d.proxyManager.SetProxy(proxyURL)
+	if err != nil {
+		return fmt.Errorf("设置代理失败: %w", err)
+	}
+
+	// 设置请求客户端的代理
+	if err := d.reqClient.SetProxy(proxyURL); err != nil {
+		return fmt.Errorf("设置请求客户端代理失败: %w", err)
+	}
+
+	fmt.Printf("下载器代理已设置为: %s\n", proxyURL)
+	return nil
 }
 
 // GetProxy 获取当前代理设置
 func (d *Downloader) GetProxy() string {
-	return d.reqClient.GetProxy()
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	if d.proxyManager == nil {
+		return ""
+	}
+	return d.proxyManager.GetProxy()
 }
 
 // GetConfigManager 获取配置管理器
@@ -77,16 +107,16 @@ func (d *Downloader) GetConfigManager() interface{} {
 }
 
 // DownloadFile 下载文件到指定路径
-func (d *Downloader) DownloadFile(url string, filepath string, headers map[string]string) error {
-	filepath = utils.NormalizePath(filepath)
+func (d *Downloader) DownloadFile(url string, filePath string, headers map[string]string) error {
+	filePath = utils.NormalizePath(filePath)
 	// 确保目录存在
-	dir := path.Dir(filepath)
+	dir := filepath.Dir(filePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("创建目录失败: %w", err)
 	}
 
 	// 直接创建最终文件
-	out, err := os.Create(filepath)
+	out, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("创建文件失败: %w", err)
 	}
@@ -146,7 +176,7 @@ func (d *Downloader) DownloadFile(url string, filepath string, headers map[strin
 
 	if !success {
 		// 下载失败时删除文件
-		os.Remove(filepath)
+		os.Remove(filePath)
 		return fmt.Errorf("下载失败: %w", lastErr)
 	}
 
@@ -189,16 +219,4 @@ func (d *Downloader) BatchDownload(urls []string, filepaths []string, headers ma
 	}
 
 	return successCount, nil
-}
-
-
-
-// GetTaskUpdater 获取任务更新器
-func (d *Downloader) GetTaskUpdater() types.TaskUpdater {
-	return d.taskUpdater
-}
-
-// SetTaskUpdater 设置任务更新器
-func (d *Downloader) SetTaskUpdater(updater types.TaskUpdater) {
-	d.taskUpdater = updater
 }

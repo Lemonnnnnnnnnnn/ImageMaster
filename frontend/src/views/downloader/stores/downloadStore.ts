@@ -1,17 +1,17 @@
 import { writable, derived } from 'svelte/store';
-import type { downloader } from '../../../../wailsjs/go/models';
+import type { models } from '../../../../wailsjs/go/models';
 import {
   GetActiveTasks,
   GetHistoryTasks,
   CancelDownload,
   ClearHistory
-} from '../../../../wailsjs/go/downloader/DownloaderAPI';
+} from '../../../../wailsjs/go/api/DownloadAPI';
 import { GetOutputDir } from '../../../../wailsjs/go/storage/StorageAPI';
 import { toast } from 'svelte-sonner';
 
 // 基础状态
-export const activeTasks = writable<downloader.DownloadTask[]>([]);
-export const historyTasks = writable<downloader.DownloadTask[]>([]);
+export const activeTasks = writable<models.DownloadTask[]>([]);
+export const historyTasks = writable<models.DownloadTask[]>([]);
 export const activeTab = writable<'downloading' | 'history'>('downloading');
 export const outputDir = writable<string>('');
 export const loading = writable<boolean>(false);

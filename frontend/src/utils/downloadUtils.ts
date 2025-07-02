@@ -1,4 +1,4 @@
-import { StartDownload } from "../../wailsjs/go/downloader/DownloaderAPI";
+import { StartDownload } from "../../wailsjs/go/api/DownloadAPI";
  import { toast  } from 'svelte-sonner'
 
 /**

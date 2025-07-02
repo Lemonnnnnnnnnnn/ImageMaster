@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"ImageMaster/core/downloader"
+	"ImageMaster/core/download/models"
 )
 
 // Storage 存储管理器
@@ -16,7 +16,7 @@ type Storage struct {
 	configManager   *ConfigManager
 	dataDir         string
 	mu              sync.RWMutex
-	downloadHistory []*downloader.DownloadTask
+	downloadHistory []*models.DownloadTask
 }
 
 // NewStorage 创建存储管理器
@@ -42,7 +42,7 @@ func NewStorage(configName string) *Storage {
 	storage := &Storage{
 		configManager:   configManager,
 		dataDir:         dataDir,
-		downloadHistory: make([]*downloader.DownloadTask, 0),
+		downloadHistory: make([]*models.DownloadTask, 0),
 	}
 
 	// 加载历史记录
@@ -57,24 +57,29 @@ func (s *Storage) GetConfigManager() *ConfigManager {
 }
 
 // AddDownloadRecord 添加下载记录
-func (s *Storage) AddDownloadRecord(task *downloader.DownloadTask) {
+func (s *Storage) AddDownloadRecord(task interface{}) {
+	// 类型断言
+	downloadTask, ok := task.(*models.DownloadTask)
+	if !ok {
+		return
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	// 添加到历史记录
-	s.downloadHistory = append(s.downloadHistory, task)
+	s.downloadHistory = append(s.downloadHistory, downloadTask)
 
 	// 保存历史记录
 	s.saveDownloadHistory()
 }
 
 // GetDownloadHistory 获取下载历史
-func (s *Storage) GetDownloadHistory() []*downloader.DownloadTask {
+func (s *Storage) GetDownloadHistory() []*models.DownloadTask {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	// 返回历史记录的副本
-	history := make([]*downloader.DownloadTask, len(s.downloadHistory))
+	history := make([]*models.DownloadTask, len(s.downloadHistory))
 	copy(history, s.downloadHistory)
 
 	return history
@@ -86,7 +91,7 @@ func (s *Storage) ClearDownloadHistory() {
 	defer s.mu.Unlock()
 
 	// 清空历史记录
-	s.downloadHistory = make([]*downloader.DownloadTask, 0)
+	s.downloadHistory = make([]*models.DownloadTask, 0)
 
 	// 保存历史记录
 	s.saveDownloadHistory()

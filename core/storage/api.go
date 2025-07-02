@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"ImageMaster/core/downloader"
+	"ImageMaster/core/download/models"
 	"fmt"
 )
 
@@ -39,12 +39,12 @@ func (api *StorageAPI) SetProxy(proxyURL string) bool {
 }
 
 // GetDownloadHistory 获取下载历史
-func (api *StorageAPI) GetDownloadHistory() []*downloader.DownloadTask {
+func (api *StorageAPI) GetDownloadHistory() []*models.DownloadTask {
 	return api.storage.GetDownloadHistory()
 }
 
 // AddDownloadRecord 添加下载记录
-func (api *StorageAPI) AddDownloadRecord(task *downloader.DownloadTask) {
+func (api *StorageAPI) AddDownloadRecord(task interface{}) {
 	api.storage.AddDownloadRecord(task)
 }
 

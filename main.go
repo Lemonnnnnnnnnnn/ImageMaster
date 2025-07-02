@@ -5,7 +5,7 @@ import (
 	"embed"
 	"log"
 
-	"ImageMaster/core/downloader"
+	"ImageMaster/core/download/api"
 	"ImageMaster/core/storage"
 	"ImageMaster/core/viewer"
 
@@ -30,11 +30,11 @@ func main() {
 	// 创建新的查看器实例，传入配置管理器
 	v := viewer.NewViewer(configManager)
 
-	// 创建下载管理器API
-	downloaderAPI := downloader.NewDownloaderAPI(configManager)
+	// 创建下载API
+	downloadAPI := api.NewDownloadAPI(configManager)
 
 	// 设置存储API到下载器
-	downloaderAPI.SetStorageAPI(storageAPI)
+	downloadAPI.SetStorageAPI(storageAPI)
 
 	// 创建应用
 	err := wails.Run(&options.App{
@@ -48,11 +48,11 @@ func main() {
 		OnStartup: func(ctx context.Context) {
 			// 设置context到各个组件
 			v.Startup(ctx)
-			downloaderAPI.SetContext(ctx)
+			downloadAPI.SetContext(ctx)
 		},
 		Bind: []interface{}{
 			v,
-			downloaderAPI,
+			downloadAPI,
 			storageAPI, // 注册存储API，可以从前端直接调用
 		},
 		LogLevel:                 logger.ERROR,

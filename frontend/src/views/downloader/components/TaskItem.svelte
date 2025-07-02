@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { downloader } from '../../../../wailsjs/go/models';
+  import type { models } from '../../../../wailsjs/go/models';
   import { formatStatus, formatTime, formatProgress, calculateProgressPercentage, getStatusClass } from '../utils/taskFormatter';
   import { cancelTask } from '../stores/downloadStore';
   import Button from '../../../components/Button.svelte';
 
-  export let task: downloader.DownloadTask;
+  export let task: models.DownloadTask;
   export let showProgress = false;
   export let showTimeRange = false;
 

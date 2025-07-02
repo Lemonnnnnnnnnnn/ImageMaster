@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"time"
 
+	"ImageMaster/core/proxy"
 	"ImageMaster/core/types"
 )
 
 // Client HTTP客户端封装
 type Client struct {
 	client        *http.Client
-	proxyURL      string
+	proxyManager  *proxy.ProxyManager
 	configManager types.ConfigProvider
 	headers       map[string]string
 	cookies       []*http.Cookie
@@ -35,51 +35,37 @@ func NewClient() *Client {
 func (c *Client) SetConfigManager(configManager types.ConfigProvider) {
 	c.configManager = configManager
 
-	// 如果配置管理器不为空，应用其代理设置
+	// 创建代理管理器并应用代理设置
 	if configManager != nil {
-		proxyURL := configManager.GetProxy()
-		fmt.Printf("设置代理: %s\n", proxyURL)
-		if proxyURL != "" {
-			c.SetProxy(proxyURL)
-		}
+		c.proxyManager = proxy.NewProxyManager(configManager)
+		// 应用代理设置到当前客户端
+		c.proxyManager.ApplyToClient(c.client)
 	}
 }
 
 // SetProxy 设置代理
 func (c *Client) SetProxy(proxyURL string) error {
-	c.proxyURL = proxyURL
-
-	// 如果代理URL为空，使用默认客户端
-	if proxyURL == "" {
-		c.client = &http.Client{
-			Timeout: 30 * time.Second,
-		}
-		return nil
+	// 如果没有代理管理器，创建一个
+	if c.proxyManager == nil {
+		c.proxyManager = proxy.NewProxyManager(c.configManager)
 	}
-
+	
 	// 设置代理
-	proxyURLParsed, err := url.Parse(proxyURL)
+	err := c.proxyManager.SetProxy(proxyURL)
 	if err != nil {
-		return fmt.Errorf("解析代理URL失败: %w", err)
+		return err
 	}
-
-	// 创建带代理的Transport
-	transport := &http.Transport{
-		Proxy: http.ProxyURL(proxyURLParsed),
-	}
-
-	// 更新客户端
-	c.client = &http.Client{
-		Transport: transport,
-		Timeout:   30 * time.Second,
-	}
-
-	return nil
+	
+	// 应用到当前客户端
+	return c.proxyManager.ApplyToClient(c.client)
 }
 
 // GetProxy 获取当前代理设置
 func (c *Client) GetProxy() string {
-	return c.proxyURL
+	if c.proxyManager == nil {
+		return ""
+	}
+	return c.proxyManager.GetProxy()
 }
 
 // SetHeader 设置请求头
@@ -133,11 +119,9 @@ func (c *Client) PostWithContext(ctx context.Context, url string, body io.Reader
 // DoRequest 执行HTTP请求
 func (c *Client) DoRequest(method, url string, body io.Reader, extraHeaders map[string]string) (*http.Response, error) {
 	// 尝试从配置中应用代理（如果尚未设置代理且配置管理器存在）
-	if c.proxyURL == "" && c.configManager != nil {
-		proxyURL := c.configManager.GetProxy()
-		if proxyURL != "" {
-			c.SetProxy(proxyURL)
-		}
+	if c.proxyManager == nil && c.configManager != nil {
+		c.proxyManager = proxy.NewProxyManager(c.configManager)
+		c.proxyManager.ApplyToClient(c.client)
 	}
 
 	// 创建请求
@@ -173,11 +157,9 @@ func (c *Client) DoRequest(method, url string, body io.Reader, extraHeaders map[
 // DoRequestWithContext 执行带上下文的HTTP请求
 func (c *Client) DoRequestWithContext(ctx context.Context, method, url string, body io.Reader, extraHeaders map[string]string) (*http.Response, error) {
 	// 尝试从配置中应用代理（如果尚未设置代理且配置管理器存在）
-	if c.proxyURL == "" && c.configManager != nil {
-		proxyURL := c.configManager.GetProxy()
-		if proxyURL != "" {
-			c.SetProxy(proxyURL)
-		}
+	if c.proxyManager == nil && c.configManager != nil {
+		c.proxyManager = proxy.NewProxyManager(c.configManager)
+		c.proxyManager.ApplyToClient(c.client)
 	}
 
 	// 创建请求
