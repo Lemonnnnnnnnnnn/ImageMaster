@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"ImageMaster/core/crawler"
 	"ImageMaster/core/download/core"
-	"ImageMaster/core/download/crawler"
 	"ImageMaster/core/download/models"
 	"ImageMaster/core/download/updater"
 	"ImageMaster/core/types"
@@ -151,8 +151,15 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 	// 创建下载器
 	downloader := tm.createDownloaderForTask(taskID)
 
-	// 创建爬虫并执行下载
-	crawlerInstance := crawler.NewSimpleCrawler()
+	// 创建爬虫工厂
+	crawlerFactory := crawler.NewCrawlerFactory(tm.ctx)
+	if tm.configManager != nil {
+		crawlerFactory.SetConfigManager(tm.configManager)
+	}
+
+	// 检测网站类型并创建对应的爬虫
+	siteType := crawlerFactory.DetectSiteType(task.URL)
+	crawlerInstance := crawlerFactory.CreateCrawler(siteType)
 	crawlerInstance.SetDownloader(downloader)
 
 	// 设置输出目录
@@ -164,7 +171,7 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 	}
 
 	// 执行爬取
-	result, err := crawlerInstance.CrawlImages(task.URL, outputDir)
+	savePath, err := crawlerInstance.Crawl(task.URL, outputDir)
 	if err != nil {
 		// 下载失败
 		tm.UpdateTask(taskID, func(task *models.DownloadTask) {
@@ -177,7 +184,7 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 		// 下载成功
 		tm.UpdateTask(taskID, func(task *models.DownloadTask) {
 			task.Status = string(models.StatusCompleted)
-			task.SavePath = result.SavePath
+			task.SavePath = savePath
 			task.CompleteTime = time.Now()
 			task.UpdatedAt = time.Now()
 		})
