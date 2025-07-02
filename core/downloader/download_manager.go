@@ -13,6 +13,7 @@ import (
 	"ImageMaster/core/types"
 
 	"github.com/google/uuid"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // taskUpdater 实现TaskUpdater接口
@@ -113,6 +114,7 @@ type DownloadManager struct {
 	mu            sync.RWMutex             // 并发控制锁
 	history       []*DownloadTask          // 历史任务记录
 	storageAPI    interface{}              // 存储API
+	ctx           context.Context          // Wails上下文
 }
 
 // NewDownloadManager 创建下载管理器
@@ -138,6 +140,11 @@ func (dm *DownloadManager) SetConfigManager(configManager interface{}) {
 // SetStorageAPI 设置存储API
 func (dm *DownloadManager) SetStorageAPI(storageAPI interface{}) {
 	dm.storageAPI = storageAPI
+}
+
+// SetContext 设置Wails上下文
+func (dm *DownloadManager) SetContext(ctx context.Context) {
+	dm.ctx = ctx
 }
 
 // AddTask 添加下载任务并立即开始下载
@@ -334,6 +341,35 @@ func (dm *DownloadManager) updateTaskStatus(taskID string, status DownloadStatus
 
 		if status == StatusCompleted || status == StatusFailed || status == StatusCancelled {
 			task.CompleteTime = time.Now()
+
+			// 发送Wails事件通知前端
+			if dm.ctx != nil {
+				switch status {
+				case StatusCompleted:
+					runtime.EventsEmit(dm.ctx, "download:completed", map[string]interface{}{
+						"taskId":     taskID,
+						"url":        task.URL,
+						"name":       task.Name,
+						"totalCount": task.Progress.Total,
+						"savedPath":  task.SavePath,
+						"message":    errorMsg,
+					})
+				case StatusFailed:
+					runtime.EventsEmit(dm.ctx, "download:failed", map[string]interface{}{
+						"taskId":  taskID,
+						"name":    task.Name,
+						"url":     task.URL,
+						"message": errorMsg,
+					})
+				case StatusCancelled:
+					runtime.EventsEmit(dm.ctx, "download:cancelled", map[string]interface{}{
+						"taskId":  taskID,
+						"name":    task.Name,
+						"url":     task.URL,
+						"message": errorMsg,
+					})
+				}
+			}
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package downloader
 
 import (
+	"context"
 	"sort"
 	"sync"
 
@@ -12,6 +13,7 @@ type DownloaderAPI struct {
 	manager       *DownloadManager
 	configManager types.ConfigProvider
 	storageAPI    interface{} // 存储API
+	ctx           context.Context // Wails上下文
 	sync.Mutex
 }
 
@@ -34,6 +36,13 @@ func (api *DownloaderAPI) SetStorageAPI(storageAPI interface{}) {
 
 	// 同时设置到下载管理器
 	api.manager.SetStorageAPI(storageAPI)
+}
+
+// SetContext 设置Wails上下文
+func (api *DownloaderAPI) SetContext(ctx context.Context) {
+	api.ctx = ctx
+	// 将上下文传递给下载管理器
+	api.manager.SetContext(ctx)
 }
 
 // StartDownload 开始下载网页图片

@@ -65,3 +65,7 @@ export function SetOutputDir() {
 export function SetProxy(arg1) {
   return window['go']['viewer']['Viewer']['SetProxy'](arg1);
 }
+
+export function Startup(arg1) {
+  return window['go']['viewer']['Viewer']['Startup'](arg1);
+}

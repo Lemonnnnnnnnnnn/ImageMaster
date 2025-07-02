@@ -34,6 +34,10 @@ export function Lock() {
   return window['go']['downloader']['DownloaderAPI']['Lock']();
 }
 
+export function SetContext(arg1) {
+  return window['go']['downloader']['DownloaderAPI']['SetContext'](arg1);
+}
+
 export function SetStorageAPI(arg1) {
   return window['go']['downloader']['DownloaderAPI']['SetStorageAPI'](arg1);
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"log"
 
@@ -44,7 +45,11 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        v.Startup,
+		OnStartup: func(ctx context.Context) {
+			// 设置context到各个组件
+			v.Startup(ctx)
+			downloaderAPI.SetContext(ctx)
+		},
 		Bind: []interface{}{
 			v,
 			downloaderAPI,
