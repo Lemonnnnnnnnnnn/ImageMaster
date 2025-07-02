@@ -6,8 +6,8 @@ import (
 	"log"
 
 	"ImageMaster/core/download/api"
+	"ImageMaster/core/library"
 	"ImageMaster/core/storage"
-	"ImageMaster/core/viewer"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
@@ -20,6 +20,8 @@ var assets embed.FS
 
 const AppName = "imagemaster"
 
+
+
 func main() {
 	// 创建存储API
 	storageAPI := storage.NewAPI(AppName)
@@ -27,8 +29,8 @@ func main() {
 	// 获取配置管理器
 	configManager := storageAPI.GetStorage().GetConfigManager()
 
-	// 创建新的查看器实例，传入配置管理器
-	v := viewer.NewViewer(configManager)
+	// 创建图书馆API
+	libraryAPI := library.NewAPI(configManager)
 
 	// 创建下载API
 	downloadAPI := api.NewDownloadAPI(configManager)
@@ -47,11 +49,12 @@ func main() {
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup: func(ctx context.Context) {
 			// 设置context到各个组件
-			v.Startup(ctx)
+			libraryAPI.SetContext(ctx)
+			libraryAPI.InitializeLibraryManager()
 			downloadAPI.SetContext(ctx)
 		},
 		Bind: []interface{}{
-			v,
+			libraryAPI,
 			downloadAPI,
 			storageAPI, // 注册存储API，可以从前端直接调用
 		},
@@ -63,7 +66,4 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// 启动查看器
-	// v.Startup(context.Background())
 }

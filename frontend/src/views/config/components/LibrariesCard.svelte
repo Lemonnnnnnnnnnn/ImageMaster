@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { SelectLibrary, GetLibraries } from '../../../../wailsjs/go/viewer/Viewer';
+  import { SelectLibrary } from '../../../../wailsjs/go/library/API';
+import { GetLibraries } from '../../../../wailsjs/go/storage/API';
   import Button from '../../../components/Button.svelte';
   import Card from '../../../components/Card.svelte';
   

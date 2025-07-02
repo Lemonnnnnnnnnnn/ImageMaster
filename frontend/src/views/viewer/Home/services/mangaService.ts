@@ -1,10 +1,10 @@
 import {
   GetAllMangas,
-  GetLibraries,
   DeleteManga,
   GetImageDataUrl,
   LoadAllLibraries,
-} from '../../../../../wailsjs/go/viewer/Viewer';
+} from '../../../../../wailsjs/go/library/API';
+import { GetLibraries } from '../../../../../wailsjs/go/storage/API';
 import { mangas, libraries, loading, mangaImages } from '../stores/homeStore';
 import { get } from 'svelte/store';
 import type { Manga } from '../stores/homeStore';

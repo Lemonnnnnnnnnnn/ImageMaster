@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SetProxy, GetProxy } from '../../../../wailsjs/go/viewer/Viewer';
+  import { SetProxy, GetProxy } from '../../../../wailsjs/go/storage/API';
   import Button from '../../../components/Button.svelte';
   import Card from '../../../components/Card.svelte';
   

@@ -1,4 +1,4 @@
-export namespace getter {
+export namespace library {
 	
 	export class Manga {
 	    name: string;

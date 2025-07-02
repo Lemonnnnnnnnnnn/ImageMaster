@@ -5,7 +5,7 @@ import {
   GetAllMangas,
   DeleteManga,
   GetImageDataUrl
-} from '../../../../../wailsjs/go/viewer/Viewer';
+} from '../../../../../wailsjs/go/library/API';
 import { mangaStore, updateMangaStore, type MangaState } from '../stores/mangaStore';
 import { toast } from 'svelte-sonner';
 

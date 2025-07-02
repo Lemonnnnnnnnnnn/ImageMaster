@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SetOutputDir, GetOutputDir } from '../../../../wailsjs/go/viewer/Viewer';
+  import { SetOutputDir, GetOutputDir } from '../../../../wailsjs/go/storage/API';
   import Button from '../../../components/Button.svelte';
   import Card from '../../../components/Card.svelte';
   

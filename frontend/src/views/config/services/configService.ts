@@ -1,11 +1,14 @@
 import { 
-  SelectLibrary, 
-  GetLibraries, 
-  SetOutputDir,
+  SelectLibrary,
+  SetOutputDir
+} from '../../../../wailsjs/go/library/API';
+
+import {
+  GetLibraries,
   GetOutputDir,
   SetProxy,
   GetProxy
-} from '../../../../wailsjs/go/viewer/Viewer';
+} from '../../../../wailsjs/go/storage/API';
 
 // 漫画库相关服务
 export const libraryService = {
