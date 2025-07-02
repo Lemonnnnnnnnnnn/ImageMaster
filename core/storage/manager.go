@@ -2,8 +2,8 @@ package storage
 
 import (
 	"ImageMaster/core/config"
-	"ImageMaster/core/download/models"
 	"ImageMaster/core/logger"
+	"ImageMaster/core/task"
 	"ImageMaster/core/types"
 )
 
@@ -48,7 +48,7 @@ func (m *Manager) GetDownloadHistory() []interface{} {
 }
 
 // GetDownloadHistoryTyped 获取类型化的下载历史
-func (m *Manager) GetDownloadHistoryTyped() []*models.DownloadTask {
+func (m *Manager) GetDownloadHistoryTyped() []*task.DownloadTask {
 	return m.historyManager.GetHistory()
 }
 

@@ -8,7 +8,6 @@ import (
 
 	"ImageMaster/core/crawler"
 	"ImageMaster/core/download/core"
-	"ImageMaster/core/download/models"
 	"ImageMaster/core/types"
 
 	"github.com/google/uuid"
@@ -17,16 +16,16 @@ import (
 
 // TaskManager 任务管理器
 type TaskManager struct {
-	tasks         map[string]*models.DownloadTask // 所有任务，包括活跃和历史
-	activeTasks   map[string]bool                 // 活跃任务集合
-	taskCancelMap map[string]chan struct{}        // 任务取消通道
-	downloaders   map[string]*core.Downloader     // 每个任务对应的下载器实例
-	defaultConfig core.Config                     // 默认下载器配置
-	mu            sync.RWMutex                    // 并发控制锁
-	history       []*models.DownloadTask          // 历史任务记录
-	storageAPI    interface{}                     // 存储API
-	ctx           context.Context                 // Wails上下文
-	configManager types.ConfigProvider            // 配置管理器
+	tasks         map[string]*DownloadTask    // 所有任务，包括活跃和历史
+	activeTasks   map[string]bool             // 活跃任务集合
+	taskCancelMap map[string]chan struct{}    // 任务取消通道
+	downloaders   map[string]*core.Downloader // 每个任务对应的下载器实例
+	defaultConfig core.Config                 // 默认下载器配置
+	mu            sync.RWMutex                // 并发控制锁
+	history       []*DownloadTask             // 历史任务记录
+	storageAPI    interface{}                 // 存储API
+	ctx           context.Context             // Wails上下文
+	configManager types.ConfigProvider        // 配置管理器
 }
 
 // Config 任务管理器配置
@@ -37,12 +36,12 @@ type Config struct {
 // NewTaskManager 创建任务管理器
 func NewTaskManager(config Config) *TaskManager {
 	return &TaskManager{
-		tasks:         make(map[string]*models.DownloadTask),
+		tasks:         make(map[string]*DownloadTask),
 		activeTasks:   make(map[string]bool),
 		taskCancelMap: make(map[string]chan struct{}),
 		downloaders:   make(map[string]*core.Downloader),
 		defaultConfig: config.DownloaderConfig,
-		history:       make([]*models.DownloadTask, 0),
+		history:       make([]*DownloadTask, 0),
 	}
 }
 
@@ -62,15 +61,15 @@ func (tm *TaskManager) SetContext(ctx context.Context) {
 }
 
 // AddTask 添加下载任务并立即开始下载
-func (tm *TaskManager) AddTask(url string) *models.DownloadTask {
+func (tm *TaskManager) AddTask(url string) *DownloadTask {
 	tm.mu.Lock()
 
 	// 创建新任务
 	now := time.Now()
-	task := &models.DownloadTask{
+	task := &DownloadTask{
 		ID:        uuid.New().String(),
 		URL:       url,
-		Status:    string(models.StatusPending),
+		Status:    string(StatusPending),
 		StartTime: now,
 		UpdatedAt: now,
 	}
@@ -142,8 +141,8 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 	tm.mu.RUnlock()
 
 	// 更新任务状态为下载中
-	tm.UpdateTask(taskID, func(task *models.DownloadTask) {
-		task.Status = string(models.StatusDownloading)
+	tm.UpdateTask(taskID, func(task *DownloadTask) {
+		task.Status = string(StatusDownloading)
 		task.UpdatedAt = time.Now()
 	})
 
@@ -173,16 +172,16 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 	savePath, err := crawlerInstance.Crawl(task.URL, outputDir)
 	if err != nil {
 		// 下载失败
-		tm.UpdateTask(taskID, func(task *models.DownloadTask) {
-			task.Status = string(models.StatusFailed)
+		tm.UpdateTask(taskID, func(task *DownloadTask) {
+			task.Status = string(StatusFailed)
 			task.Error = err.Error()
 			task.CompleteTime = time.Now()
 			task.UpdatedAt = time.Now()
 		})
 	} else {
 		// 下载成功
-		tm.UpdateTask(taskID, func(task *models.DownloadTask) {
-			task.Status = string(models.StatusCompleted)
+		tm.UpdateTask(taskID, func(task *DownloadTask) {
+			task.Status = string(StatusCompleted)
 			task.SavePath = savePath
 			task.CompleteTime = time.Now()
 			task.UpdatedAt = time.Now()
@@ -221,7 +220,7 @@ func (tm *TaskManager) moveTaskToHistory(taskID string) {
 }
 
 // UpdateTask 更新任务
-func (tm *TaskManager) UpdateTask(taskID string, updateFunc func(task *models.DownloadTask)) {
+func (tm *TaskManager) UpdateTask(taskID string, updateFunc func(task *DownloadTask)) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 
@@ -233,7 +232,7 @@ func (tm *TaskManager) UpdateTask(taskID string, updateFunc func(task *models.Do
 
 // UpdateTaskProgress 更新任务进度
 func (tm *TaskManager) UpdateTaskProgress(taskID string, current, total int) {
-	tm.UpdateTask(taskID, func(task *models.DownloadTask) {
+	tm.UpdateTask(taskID, func(task *DownloadTask) {
 		task.Progress.Current = current
 		task.Progress.Total = total
 	})
@@ -248,7 +247,7 @@ func (tm *TaskManager) CancelTask(taskID string) bool {
 		close(cancelChan)
 		// 更新任务状态
 		if task, exists := tm.tasks[taskID]; exists {
-			task.Status = string(models.StatusCancelled)
+			task.Status = string(StatusCancelled)
 			task.UpdatedAt = time.Now()
 		}
 		return true
@@ -257,18 +256,18 @@ func (tm *TaskManager) CancelTask(taskID string) bool {
 }
 
 // GetTaskByID 根据ID获取任务
-func (tm *TaskManager) GetTaskByID(taskID string) *models.DownloadTask {
+func (tm *TaskManager) GetTaskByID(taskID string) *DownloadTask {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 	return tm.tasks[taskID]
 }
 
 // GetAllTasks 获取所有任务
-func (tm *TaskManager) GetAllTasks() []*models.DownloadTask {
+func (tm *TaskManager) GetAllTasks() []*DownloadTask {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 
-	tasks := make([]*models.DownloadTask, 0, len(tm.tasks))
+	tasks := make([]*DownloadTask, 0, len(tm.tasks))
 	for _, task := range tm.tasks {
 		tasks = append(tasks, task)
 	}
@@ -282,11 +281,11 @@ func (tm *TaskManager) GetAllTasks() []*models.DownloadTask {
 }
 
 // GetActiveTasks 获取活跃任务
-func (tm *TaskManager) GetActiveTasks() []*models.DownloadTask {
+func (tm *TaskManager) GetActiveTasks() []*DownloadTask {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 
-	tasks := make([]*models.DownloadTask, 0)
+	tasks := make([]*DownloadTask, 0)
 	for taskID := range tm.activeTasks {
 		if task, exists := tm.tasks[taskID]; exists {
 			tasks = append(tasks, task)
@@ -302,12 +301,12 @@ func (tm *TaskManager) GetActiveTasks() []*models.DownloadTask {
 }
 
 // GetHistoryTasks 获取历史任务
-func (tm *TaskManager) GetHistoryTasks() []*models.DownloadTask {
+func (tm *TaskManager) GetHistoryTasks() []*DownloadTask {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 
 	// 复制历史记录
-	history := make([]*models.DownloadTask, len(tm.history))
+	history := make([]*DownloadTask, len(tm.history))
 	copy(history, tm.history)
 
 	// 按完成时间倒序排序
@@ -336,7 +335,7 @@ func (tm *TaskManager) ClearHistory() {
 	defer tm.mu.Unlock()
 
 	// 清空历史记录
-	tm.history = make([]*models.DownloadTask, 0)
+	tm.history = make([]*DownloadTask, 0)
 
 	// 清除非活跃任务
 	for id := range tm.tasks {

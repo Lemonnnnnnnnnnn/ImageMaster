@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"ImageMaster/core/download/models"
 	"ImageMaster/core/logger"
+	"ImageMaster/core/task"
 )
 
 // API 存储管理API - 对外提供的统一接口
@@ -39,7 +39,7 @@ func (api *API) SetProxy(proxyURL string) bool {
 }
 
 // GetDownloadHistory 获取下载历史
-func (api *API) GetDownloadHistory() []*models.DownloadTask {
+func (api *API) GetDownloadHistory() []*task.DownloadTask {
 	return api.manager.GetDownloadHistoryTyped()
 }
 

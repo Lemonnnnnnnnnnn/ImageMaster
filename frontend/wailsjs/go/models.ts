@@ -23,7 +23,24 @@ export namespace library {
 
 }
 
-export namespace models {
+export namespace storage {
+	
+	export class Manager {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new Manager(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+
+}
+
+export namespace task {
 	
 	export class DownloadTask {
 	    id: string;
@@ -76,23 +93,6 @@ export namespace models {
 		    }
 		    return a;
 		}
-	}
-
-}
-
-export namespace storage {
-	
-	export class Manager {
-	
-	
-	    static createFrom(source: any = {}) {
-	        return new Manager(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	
-	    }
 	}
 
 }

@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"ImageMaster/core/download/core"
-	"ImageMaster/core/download/models"
 	"ImageMaster/core/task"
 	"ImageMaster/core/types"
 )
@@ -75,20 +74,20 @@ func (api *CrawlerAPI) CancelCrawl(taskID string) bool {
 }
 
 // GetAllTasks 获取所有任务
-func (api *CrawlerAPI) GetAllTasks() []*models.DownloadTask {
+func (api *CrawlerAPI) GetAllTasks() []*task.DownloadTask {
 	return api.taskManager.GetAllTasks()
 }
 
 // GetActiveTasks 获取活跃任务
-func (api *CrawlerAPI) GetActiveTasks() []*models.DownloadTask {
+func (api *CrawlerAPI) GetActiveTasks() []*task.DownloadTask {
 	return api.taskManager.GetActiveTasks()
 }
 
 // GetHistoryTasks 获取历史任务
-func (api *CrawlerAPI) GetHistoryTasks() []*models.DownloadTask {
+func (api *CrawlerAPI) GetHistoryTasks() []*task.DownloadTask {
 	// 如果有存储API，优先从存储获取
 	if api.storageAPI != nil {
-		if storage, ok := api.storageAPI.(interface{ GetDownloadHistory() []*models.DownloadTask }); ok {
+		if storage, ok := api.storageAPI.(interface{ GetDownloadHistory() []*task.DownloadTask }); ok {
 			tasks := storage.GetDownloadHistory()
 
 			// 确保从存储获取的任务也按时间倒序排序
@@ -132,7 +131,7 @@ func (api *CrawlerAPI) ClearHistory() {
 }
 
 // GetTaskByID 根据ID获取任务
-func (api *CrawlerAPI) GetTaskByID(taskID string) *models.DownloadTask {
+func (api *CrawlerAPI) GetTaskByID(taskID string) *task.DownloadTask {
 	return api.taskManager.GetTaskByID(taskID)
 }
 

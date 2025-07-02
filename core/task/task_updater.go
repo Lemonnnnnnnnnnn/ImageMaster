@@ -1,7 +1,6 @@
 package task
 
 import (
-	"ImageMaster/core/download/models"
 	"ImageMaster/core/types"
 )
 
@@ -12,7 +11,7 @@ type TaskUpdater struct {
 }
 
 type TaskUpdate interface {
-	UpdateTask(taskID string, updateFunc func(task *models.DownloadTask))
+	UpdateTask(taskID string, updateFunc func(task *DownloadTask))
 	UpdateTaskProgress(taskID string, current, total int)
 }
 
@@ -26,14 +25,14 @@ func NewTaskUpdater(taskID string, manager TaskUpdate) *TaskUpdater {
 
 // UpdateTaskName 更新任务名称
 func (tu *TaskUpdater) UpdateTaskName(name string) {
-	tu.manager.UpdateTask(tu.taskID, func(task *models.DownloadTask) {
+	tu.manager.UpdateTask(tu.taskID, func(task *DownloadTask) {
 		task.Name = name
 	})
 }
 
 // UpdateTaskStatus 更新任务状态
 func (tu *TaskUpdater) UpdateTaskStatus(status string, errorMsg string) {
-	tu.manager.UpdateTask(tu.taskID, func(task *models.DownloadTask) {
+	tu.manager.UpdateTask(tu.taskID, func(task *DownloadTask) {
 		task.Status = status
 		if errorMsg != "" {
 			task.Error = errorMsg
@@ -48,7 +47,7 @@ func (tu *TaskUpdater) UpdateTaskProgress(current, total int) {
 
 // UpdateTaskProgressWithDetails 更新详细进度信息
 func (tu *TaskUpdater) UpdateTaskProgressWithDetails(progress types.ProgressDetails) {
-	tu.manager.UpdateTask(tu.taskID, func(task *models.DownloadTask) {
+	tu.manager.UpdateTask(tu.taskID, func(task *DownloadTask) {
 		task.Progress.Current = progress.Current
 		task.Progress.Total = progress.Total
 		// 可以在这里扩展DownloadTask结构体来存储更多详细信息
@@ -57,7 +56,7 @@ func (tu *TaskUpdater) UpdateTaskProgressWithDetails(progress types.ProgressDeta
 
 // UpdateTaskField 更新任务的特定字段
 func (tu *TaskUpdater) UpdateTaskField(field string, value interface{}) {
-	tu.manager.UpdateTask(tu.taskID, func(task *models.DownloadTask) {
+	tu.manager.UpdateTask(tu.taskID, func(task *DownloadTask) {
 		switch field {
 		case "name":
 			if name, ok := value.(string); ok {
@@ -81,7 +80,7 @@ func (tu *TaskUpdater) UpdateTaskField(field string, value interface{}) {
 
 // UpdateTask 使用函数更新任务
 func (tu *TaskUpdater) UpdateTask(updateFunc func(task interface{})) {
-	tu.manager.UpdateTask(tu.taskID, func(task *models.DownloadTask) {
+	tu.manager.UpdateTask(tu.taskID, func(task *DownloadTask) {
 		updateFunc(task)
 	})
 }

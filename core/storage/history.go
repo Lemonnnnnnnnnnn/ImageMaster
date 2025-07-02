@@ -6,14 +6,14 @@ import (
 	"path/filepath"
 	"sync"
 
-	"ImageMaster/core/download/models"
 	"ImageMaster/core/logger"
+	"ImageMaster/core/task"
 )
 
 type HistoryManager struct {
 	dataDir         string
 	mu              sync.RWMutex
-	downloadHistory []*models.DownloadTask
+	downloadHistory []*task.DownloadTask
 }
 
 // NewHistoryManager 创建历史记录管理器
@@ -35,7 +35,7 @@ func NewHistoryManager(appName string) *HistoryManager {
 	// 创建管理器实例
 	m := &HistoryManager{
 		dataDir:         dataDir,
-		downloadHistory: make([]*models.DownloadTask, 0),
+		downloadHistory: make([]*task.DownloadTask, 0),
 	}
 
 	// 加载历史记录
@@ -45,9 +45,9 @@ func NewHistoryManager(appName string) *HistoryManager {
 }
 
 // AddRecord 添加下载记录
-func (m *HistoryManager) AddRecord(task interface{}) {
+func (m *HistoryManager) AddRecord(t interface{}) {
 	// 类型断言
-	downloadTask, ok := task.(*models.DownloadTask)
+	downloadTask, ok := t.(*task.DownloadTask)
 	if !ok {
 		logger.Warn("Invalid task type for download history")
 		return
@@ -65,12 +65,12 @@ func (m *HistoryManager) AddRecord(task interface{}) {
 }
 
 // GetHistory 获取下载历史
-func (m *HistoryManager) GetHistory() []*models.DownloadTask {
+func (m *HistoryManager) GetHistory() []*task.DownloadTask {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	// 返回历史记录的副本
-	history := make([]*models.DownloadTask, len(m.downloadHistory))
+	history := make([]*task.DownloadTask, len(m.downloadHistory))
 	copy(history, m.downloadHistory)
 
 	return history
@@ -82,7 +82,7 @@ func (m *HistoryManager) ClearHistory() {
 	defer m.mu.Unlock()
 
 	// 清空历史记录
-	m.downloadHistory = make([]*models.DownloadTask, 0)
+	m.downloadHistory = make([]*task.DownloadTask, 0)
 	logger.Info("Cleared download history")
 
 	// 保存历史记录
