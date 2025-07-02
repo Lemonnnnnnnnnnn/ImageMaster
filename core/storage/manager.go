@@ -3,7 +3,6 @@ package storage
 import (
 	"ImageMaster/core/config"
 	"ImageMaster/core/download/models"
-	"ImageMaster/core/history"
 	"ImageMaster/core/logger"
 	"ImageMaster/core/types"
 )
@@ -14,16 +13,16 @@ var _ types.StorageProvider = (*Manager)(nil)
 // Manager 存储管理器 - 统一的存储接口
 type Manager struct {
 	configManager  *config.Manager
-	historyManager *history.Manager
+	historyManager *HistoryManager
 }
 
 // NewManager 创建存储管理器
 func NewManager(appName string) *Manager {
 	logger.Info("Initializing storage manager for app: %s", appName)
-	
+
 	return &Manager{
 		configManager:  config.NewManager(appName),
-		historyManager: history.NewManager(appName),
+		historyManager: NewHistoryManager(appName),
 	}
 }
 

@@ -1,4 +1,4 @@
-package history
+package storage
 
 import (
 	"encoding/json"
@@ -10,15 +10,14 @@ import (
 	"ImageMaster/core/logger"
 )
 
-// Manager 历史记录管理器
-type Manager struct {
+type HistoryManager struct {
 	dataDir         string
 	mu              sync.RWMutex
 	downloadHistory []*models.DownloadTask
 }
 
-// NewManager 创建历史记录管理器
-func NewManager(appName string) *Manager {
+// NewHistoryManager 创建历史记录管理器
+func NewHistoryManager(appName string) *HistoryManager {
 	// 获取数据目录
 	userHome, err := os.UserHomeDir()
 	if err != nil {
@@ -34,7 +33,7 @@ func NewManager(appName string) *Manager {
 	}
 
 	// 创建管理器实例
-	m := &Manager{
+	m := &HistoryManager{
 		dataDir:         dataDir,
 		downloadHistory: make([]*models.DownloadTask, 0),
 	}
@@ -46,7 +45,7 @@ func NewManager(appName string) *Manager {
 }
 
 // AddRecord 添加下载记录
-func (m *Manager) AddRecord(task interface{}) {
+func (m *HistoryManager) AddRecord(task interface{}) {
 	// 类型断言
 	downloadTask, ok := task.(*models.DownloadTask)
 	if !ok {
@@ -66,7 +65,7 @@ func (m *Manager) AddRecord(task interface{}) {
 }
 
 // GetHistory 获取下载历史
-func (m *Manager) GetHistory() []*models.DownloadTask {
+func (m *HistoryManager) GetHistory() []*models.DownloadTask {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -78,7 +77,7 @@ func (m *Manager) GetHistory() []*models.DownloadTask {
 }
 
 // ClearHistory 清除下载历史
-func (m *Manager) ClearHistory() {
+func (m *HistoryManager) ClearHistory() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -91,7 +90,7 @@ func (m *Manager) ClearHistory() {
 }
 
 // saveHistory 保存下载历史到文件
-func (m *Manager) saveHistory() {
+func (m *HistoryManager) saveHistory() {
 	historyPath := filepath.Join(m.dataDir, "download_history.json")
 
 	// 将历史记录序列化为JSON
@@ -111,7 +110,7 @@ func (m *Manager) saveHistory() {
 }
 
 // loadHistory 从文件加载下载历史
-func (m *Manager) loadHistory() {
+func (m *HistoryManager) loadHistory() {
 	historyPath := filepath.Join(m.dataDir, "download_history.json")
 
 	// 检查文件是否存在
