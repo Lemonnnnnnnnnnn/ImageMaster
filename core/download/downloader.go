@@ -1,4 +1,4 @@
-package core
+package download
 
 import (
 	"fmt"
@@ -75,7 +75,7 @@ func (d *Downloader) SetProxy(proxyURL string) error {
 	if d.proxyManager == nil {
 		d.proxyManager = proxy.NewProxyManager(d.configManager)
 	}
-	
+
 	// 设置代理
 	err := d.proxyManager.SetProxy(proxyURL)
 	if err != nil {

@@ -5,7 +5,7 @@ import (
 	"sort"
 	"sync"
 
-	"ImageMaster/core/download/core"
+	"ImageMaster/core/download"
 	"ImageMaster/core/task"
 	"ImageMaster/core/types"
 )
@@ -29,7 +29,7 @@ func NewCrawlerAPI(configManager types.ConfigProvider) *CrawlerAPI {
 	// 默认配置
 	config := Config{
 		TaskManagerConfig: task.Config{
-			DownloaderConfig: core.Config{
+			DownloaderConfig: download.Config{
 				RetryCount:  3,
 				RetryDelay:  2,
 				ShowProcess: true,

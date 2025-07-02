@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"ImageMaster/core/crawler"
-	"ImageMaster/core/download/core"
+	"ImageMaster/core/download"
 	"ImageMaster/core/types"
 
 	"github.com/google/uuid"
@@ -16,21 +16,21 @@ import (
 
 // TaskManager 任务管理器
 type TaskManager struct {
-	tasks         map[string]*DownloadTask    // 所有任务，包括活跃和历史
-	activeTasks   map[string]bool             // 活跃任务集合
-	taskCancelMap map[string]chan struct{}    // 任务取消通道
-	downloaders   map[string]*core.Downloader // 每个任务对应的下载器实例
-	defaultConfig core.Config                 // 默认下载器配置
-	mu            sync.RWMutex                // 并发控制锁
-	history       []*DownloadTask             // 历史任务记录
-	storageAPI    interface{}                 // 存储API
-	ctx           context.Context             // Wails上下文
-	configManager types.ConfigProvider        // 配置管理器
+	tasks         map[string]*DownloadTask        // 所有任务，包括活跃和历史
+	activeTasks   map[string]bool                 // 活跃任务集合
+	taskCancelMap map[string]chan struct{}        // 任务取消通道
+	downloaders   map[string]*download.Downloader // 每个任务对应的下载器实例
+	defaultConfig download.Config                 // 默认下载器配置
+	mu            sync.RWMutex                    // 并发控制锁
+	history       []*DownloadTask                 // 历史任务记录
+	storageAPI    interface{}                     // 存储API
+	ctx           context.Context                 // Wails上下文
+	configManager types.ConfigProvider            // 配置管理器
 }
 
 // Config 任务管理器配置
 type Config struct {
-	DownloaderConfig core.Config
+	DownloaderConfig download.Config
 }
 
 // NewTaskManager 创建任务管理器
@@ -39,7 +39,7 @@ func NewTaskManager(config Config) *TaskManager {
 		tasks:         make(map[string]*DownloadTask),
 		activeTasks:   make(map[string]bool),
 		taskCancelMap: make(map[string]chan struct{}),
-		downloaders:   make(map[string]*core.Downloader),
+		downloaders:   make(map[string]*download.Downloader),
 		defaultConfig: config.DownloaderConfig,
 		history:       make([]*DownloadTask, 0),
 	}
@@ -102,9 +102,9 @@ func (tm *TaskManager) CrawlWebImages(url string) string {
 }
 
 // createDownloaderForTask 为任务创建专用的下载器实例
-func (tm *TaskManager) createDownloaderForTask(taskID string) *core.Downloader {
+func (tm *TaskManager) createDownloaderForTask(taskID string) *download.Downloader {
 	// 创建新的下载器实例
-	newDownloader := core.NewDownloader(tm.defaultConfig)
+	newDownloader := download.NewDownloader(tm.defaultConfig)
 
 	// 复制配置
 	if tm.configManager != nil {
