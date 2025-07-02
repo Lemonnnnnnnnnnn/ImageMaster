@@ -47,6 +47,15 @@ func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, sa
 		return fmt.Errorf("获取专辑失败: %w", err)
 	}
 
+	// 使用TaskUpdater更新任务名称（如果可用）
+	if dl != nil {
+		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
+			taskUpdater.UpdateTaskName(eHentaiAlbum.Name)
+			taskUpdater.UpdateTaskStatus("parsing", "")
+			fmt.Printf("已更新任务名称为: %s\n", eHentaiAlbum.Name)
+		}
+	}
+
 	// 创建信号量来控制并发
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, PARALLEL)
@@ -118,6 +127,14 @@ func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, sa
 	totalImages := len(imgURLs)
 	fmt.Printf("已收集 %d 张图片URL，开始下载...\n", totalImages)
 
+	// 更新任务状态为下载中
+	if dl != nil {
+		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
+			taskUpdater.UpdateTaskStatus("downloading", "")
+			taskUpdater.UpdateTaskProgress(0, totalImages)
+		}
+	}
+
 	// 批量下载所有图片
 	successImages, err = localDownloader.BatchDownload(imgURLs, filePaths, nil)
 	if err != nil {
@@ -126,6 +143,18 @@ func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, sa
 	}
 
 	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", totalImages, successImages)
+
+	// 更新最终状态
+	if dl != nil {
+		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
+			if successImages == totalImages {
+				taskUpdater.UpdateTaskStatus("completed", "")
+			} else {
+				failedCount := totalImages - successImages
+				taskUpdater.UpdateTaskStatus("partial_success", fmt.Sprintf("成功 %d 张，失败 %d 张", successImages, failedCount))
+			}
+		}
+	}
 	
 	// 如果有图片下载失败，返回错误
 	if successImages < totalImages {

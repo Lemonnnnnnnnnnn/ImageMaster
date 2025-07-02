@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -14,17 +13,15 @@ import (
 	"ImageMaster/core/storage"
 )
 
-// 下载进度回调函数类型
-type DownloadProgressCallback func(current int, total int)
+
 
 // Viewer 结构体
 type Viewer struct {
-	ctx                  context.Context
-	configManager        *storage.ConfigManager
-	mangas               []getter.Manga
-	localGetter          *getter.LocalGetter
-	crawlerFactory       *crawler.CrawlerFactory
-	progressCallbackLock sync.Mutex
+	ctx            context.Context
+	configManager  *storage.ConfigManager
+	mangas         []getter.Manga
+	localGetter    *getter.LocalGetter
+	crawlerFactory *crawler.CrawlerFactory
 }
 
 // NewViewer 创建新的 Viewer 实例
@@ -166,13 +163,7 @@ func (v *Viewer) NotifyDownloadProgress(current, total int) {
 	// 关键修改：直接通过事件通知前端，不使用回调机制
 	runtime.EventsEmit(v.ctx, "download:progress", current, total)
 
-	v.progressCallbackLock.Lock()
-	defer v.progressCallbackLock.Unlock()
 
-	// if v.progressCallback != nil {
-	// 	// 仍然执行老的回调，保持兼容性
-	// 	v.progressCallback(current, total)
-	// }
 }
 
 // CrawlFromWeb 从网页爬取图片
@@ -187,17 +178,7 @@ func (v *Viewer) CrawlFromWeb(url string, saveName string) string {
 	// 创建对应爬虫
 	crawler := v.crawlerFactory.CreateCrawler(siteType)
 
-	// 设置进度回调
-	downloader := crawler.GetDownloader()
-	if downloader != nil {
-		fmt.Printf("设置进度回调\n")
 
-		// 直接使用匿名函数包装，确保调用是正确的
-		downloader.SetProgressCallback(func(current, total int) {
-			fmt.Printf("进度回调被触发: %d/%d\n", current, total)
-			v.NotifyDownloadProgress(current, total)
-		})
-	}
 
 	// 获取输出目录
 	outputDir := v.configManager.GetOutputDir()

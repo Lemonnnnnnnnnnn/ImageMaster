@@ -27,9 +27,8 @@
   <Button 
     onclick={() => handleTabSwitch('history')}
     variant={$activeTab === 'history' ? 'filled' : 'ghost'}
-    color="secondary"
+    color="gray"
     size="md"
-    classes="text-gray-600"
   >
     历史记录
   </Button>

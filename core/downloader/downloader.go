@@ -21,24 +21,25 @@ type DownloadTask struct {
 	SavePath     string    `json:"savePath"`     // 保存路径
 	StartTime    time.Time `json:"startTime"`    // 开始时间
 	CompleteTime time.Time `json:"completeTime"` // 完成时间
+	UpdatedAt    time.Time `json:"updatedAt"`    // 更新时间
 	Error        string    `json:"error"`        // 错误信息
+	Name         string    `json:"name"`         // 任务名
 	Progress     struct {
 		Current int `json:"current"` // 当前已下载项目数
 		Total   int `json:"total"`   // 总项目数
 	} `json:"progress"` // 下载进度
 }
 
-// ProgressCallback 定义进度回调函数类型
-type ProgressCallback func(current, total int)
+
 
 // Downloader 下载器
 type Downloader struct {
-	reqClient        *request.Client
-	retryCount       int
-	retryDelay       time.Duration
-	showProcess      bool
-	configManager    types.ConfigProvider
-	progressCallback ProgressCallback // 进度回调函数
+	reqClient     *request.Client
+	retryCount    int
+	retryDelay    time.Duration
+	showProcess   bool
+	configManager types.ConfigProvider
+	taskUpdater   types.TaskUpdater // 任务更新器
 }
 
 // NewDownloader 创建新的下载器
@@ -169,9 +170,18 @@ func (d *Downloader) BatchDownload(urls []string, filepaths []string, headers ma
 		if err := d.DownloadFile(url, filepaths[i], headers); err == nil {
 			successCount++
 
-			// 下载成功后调用进度回调
-			if d.progressCallback != nil {
-				d.progressCallback(successCount, total)
+			// 使用任务更新器更新进度
+			if d.taskUpdater != nil {
+				d.taskUpdater.UpdateTaskProgress(successCount, total)
+				// 可以提供更详细的进度信息
+				progressDetails := types.ProgressDetails{
+					Current:     successCount,
+					Total:       total,
+					CurrentItem: fmt.Sprintf("正在下载: %s", url),
+					Phase:       "downloading",
+					Timestamp:   time.Now(),
+				}
+				d.taskUpdater.UpdateTaskProgressWithDetails(progressDetails)
 			}
 		} else {
 			fmt.Printf("下载失败: %s, 错误: %v\n", url, err)
@@ -181,7 +191,14 @@ func (d *Downloader) BatchDownload(urls []string, filepaths []string, headers ma
 	return successCount, nil
 }
 
-// SetProgressCallback 设置进度回调函数
-func (d *Downloader) SetProgressCallback(callback func(current, total int)) {
-	d.progressCallback = callback
+
+
+// GetTaskUpdater 获取任务更新器
+func (d *Downloader) GetTaskUpdater() types.TaskUpdater {
+	return d.taskUpdater
+}
+
+// SetTaskUpdater 设置任务更新器
+func (d *Downloader) SetTaskUpdater(updater types.TaskUpdater) {
+	d.taskUpdater = updater
 }

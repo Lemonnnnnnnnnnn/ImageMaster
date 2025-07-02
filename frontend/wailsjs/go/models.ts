@@ -9,7 +9,10 @@ export namespace downloader {
 	    startTime: any;
 	    // Go type: time
 	    completeTime: any;
+	    // Go type: time
+	    updatedAt: any;
 	    error: string;
+	    name: string;
 	    // Go type: struct { Current int "json:\"current\""; Total int "json:\"total\"" }
 	    progress: any;
 	
@@ -25,7 +28,9 @@ export namespace downloader {
 	        this.savePath = source["savePath"];
 	        this.startTime = this.convertValues(source["startTime"], null);
 	        this.completeTime = this.convertValues(source["completeTime"], null);
+	        this.updatedAt = this.convertValues(source["updatedAt"], null);
 	        this.error = source["error"];
+	        this.name = source["name"];
 	        this.progress = this.convertValues(source["progress"], Object);
 	    }
 	

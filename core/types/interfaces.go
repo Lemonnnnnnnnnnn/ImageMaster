@@ -1,12 +1,42 @@
 package types
 
+import "time"
+
+// TaskUpdater 任务更新器接口
+type TaskUpdater interface {
+	// UpdateTaskName 更新任务名称
+	UpdateTaskName(name string)
+	// UpdateTaskStatus 更新任务状态
+	UpdateTaskStatus(status string, errorMsg string)
+	// UpdateTaskProgress 更新任务进度
+	UpdateTaskProgress(current, total int)
+	// UpdateTaskProgressWithDetails 更新详细进度信息
+	UpdateTaskProgressWithDetails(progress ProgressDetails)
+	// UpdateTaskField 更新任务的特定字段
+	UpdateTaskField(field string, value interface{})
+	// UpdateTask 使用函数更新任务
+	UpdateTask(updateFunc func(task interface{}))
+}
+
+// ProgressDetails 详细进度信息
+type ProgressDetails struct {
+	Current     int       `json:"current"`     // 当前进度
+	Total       int       `json:"total"`       // 总数
+	Speed       string    `json:"speed"`       // 下载速度
+	ETA         string    `json:"eta"`         // 预计完成时间
+	CurrentItem string    `json:"currentItem"` // 当前处理项目
+	Phase       string    `json:"phase"`       // 当前阶段（解析/下载）
+	Timestamp   time.Time `json:"timestamp"`   // 时间戳
+}
+
 // Downloader 下载器接口
 type Downloader interface {
 	DownloadFile(url string, filepath string, headers map[string]string) error
 	BatchDownload(urls []string, filepaths []string, headers map[string]string) (int, error)
-	SetProgressCallback(callback func(current, total int))
 	GetProxy() string
 	SetProxy(proxyURL string) error
+	// GetTaskUpdater 获取任务更新器
+	GetTaskUpdater() TaskUpdater
 }
 
 // ProgressReporter 进度报告接口

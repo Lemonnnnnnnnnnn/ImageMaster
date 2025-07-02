@@ -21,7 +21,7 @@ const POLL_INTERVAL = 1000;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 // 用于跟踪任务数量变化
-let previousActiveTasksCount = 0;
+// let previousActiveTasksCount = 0;
 
 // 派生状态
 export const activeTasksCount = derived(activeTasks, $activeTasks => $activeTasks.length);
@@ -42,20 +42,20 @@ export async function initializeStore() {
 export async function pollTasks() {
   try {
     const active = await GetActiveTasks();
-    const currentActiveTasksCount = active.length;
+    // const currentActiveTasksCount = active.length;
     
     // 检查任务数量是否减少（任务完成）
-    if (previousActiveTasksCount > 0 && currentActiveTasksCount < previousActiveTasksCount) {
-      const completedTasksCount = previousActiveTasksCount - currentActiveTasksCount;
-      if (completedTasksCount === 1) {
-        toast.success('下载任务已完成');
-      } else {
-        toast.success(`${completedTasksCount} 个下载任务已完成`);
-      }
-    }
+    // if (previousActiveTasksCount > 0 && currentActiveTasksCount < previousActiveTasksCount) {
+    //   const completedTasksCount = previousActiveTasksCount - currentActiveTasksCount;
+    //   if (completedTasksCount === 1) {
+    //     toast.success('下载任务已完成');
+    //   } else {
+    //     toast.success(`${completedTasksCount} 个下载任务已完成`);
+    //   }
+    // }
     
     // 更新任务数量记录
-    previousActiveTasksCount = currentActiveTasksCount;
+    // previousActiveTasksCount = currentActiveTasksCount;
     activeTasks.set(active);
     
     // 如果当前显示历史标签，也获取历史任务

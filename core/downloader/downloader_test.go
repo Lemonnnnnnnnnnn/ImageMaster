@@ -82,11 +82,7 @@ func TestBatchDownloadWithProxy(t *testing.T) {
 	}
 	defer os.RemoveAll(tempDir)
 
-	// 设置进度回调
-	progressCalled := false
-	d.SetProgressCallback(func(current, total int) {
-		progressCalled = true
-	})
+
 
 	// 准备批量下载的URL和路径
 	urls := []string{
@@ -110,10 +106,7 @@ func TestBatchDownloadWithProxy(t *testing.T) {
 		t.Errorf("批量下载不完整, 成功: %d, 总数: %d", successCount, len(urls))
 	}
 
-	// 检查回调是否被调用
-	if !progressCalled {
-		t.Errorf("进度回调未被调用")
-	}
+
 
 	// 检查所有文件是否存在
 	for i, filepath := range filepaths {

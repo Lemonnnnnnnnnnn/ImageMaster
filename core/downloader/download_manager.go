@@ -15,6 +15,83 @@ import (
 	"github.com/google/uuid"
 )
 
+// taskUpdater 实现TaskUpdater接口
+type taskUpdater struct {
+	taskID  string
+	manager *DownloadManager
+}
+
+// UpdateTaskName 更新任务名称
+func (tu *taskUpdater) UpdateTaskName(name string) {
+	tu.manager.updateTask(tu.taskID, func(task *DownloadTask) {
+		task.Name = name
+	})
+}
+
+// UpdateTaskStatus 更新任务状态
+func (tu *taskUpdater) UpdateTaskStatus(status string, errorMsg string) {
+	tu.manager.mu.Lock()
+	defer tu.manager.mu.Unlock()
+
+	if task, exists := tu.manager.tasks[tu.taskID]; exists {
+		task.Status = status
+		if errorMsg != "" {
+			task.Error = errorMsg
+		}
+	}
+}
+
+// UpdateTaskProgress 更新任务进度
+func (tu *taskUpdater) UpdateTaskProgress(current, total int) {
+	tu.manager.updateTaskProgress(tu.taskID, current, total)
+}
+
+// UpdateTaskProgressWithDetails 更新详细进度信息
+func (tu *taskUpdater) UpdateTaskProgressWithDetails(progress types.ProgressDetails) {
+	tu.manager.mu.Lock()
+	defer tu.manager.mu.Unlock()
+
+	if task, exists := tu.manager.tasks[tu.taskID]; exists {
+		task.Progress.Current = progress.Current
+		task.Progress.Total = progress.Total
+		// 可以在这里扩展DownloadTask结构体来存储更多详细信息
+	}
+}
+
+// UpdateTaskField 更新任务的特定字段
+func (tu *taskUpdater) UpdateTaskField(field string, value interface{}) {
+	tu.manager.updateTask(tu.taskID, func(task *DownloadTask) {
+		switch field {
+		case "name":
+			if name, ok := value.(string); ok {
+				task.Name = name
+			}
+		case "savePath":
+			if path, ok := value.(string); ok {
+				task.SavePath = path
+			}
+		case "status":
+			if status, ok := value.(string); ok {
+				task.Status = status
+			}
+		case "error":
+			if errorMsg, ok := value.(string); ok {
+				task.Error = errorMsg
+			}
+		}
+	})
+}
+
+// UpdateTask 使用函数更新任务
+func (tu *taskUpdater) UpdateTask(updateFunc func(task interface{})) {
+	tu.manager.mu.Lock()
+	defer tu.manager.mu.Unlock()
+
+	if task, exists := tu.manager.tasks[tu.taskID]; exists {
+		updateFunc(task)
+	}
+}
+
 // DownloadStatus 表示下载任务状态
 type DownloadStatus string
 
@@ -68,11 +145,13 @@ func (dm *DownloadManager) AddTask(url string) *DownloadTask {
 	dm.mu.Lock()
 
 	// 创建新任务
+	now := time.Now()
 	task := &DownloadTask{
 		ID:        uuid.New().String(),
 		URL:       url,
 		Status:    string(StatusPending),
-		StartTime: time.Now(),
+		StartTime: now,
+		UpdatedAt: now,
 	}
 
 	// 初始化进度
@@ -112,10 +191,12 @@ func (dm *DownloadManager) createDownloaderForTask(taskID string) *Downloader {
 		newDownloader.SetConfigManager(dm.downloader.configManager)
 	}
 
-	// 设置进度回调函数
-	newDownloader.SetProgressCallback(func(current, total int) {
-		dm.updateTaskProgress(taskID, current, total)
-	})
+	// 创建并设置TaskUpdater
+	taskUpdater := &taskUpdater{
+		taskID:  taskID,
+		manager: dm,
+	}
+	newDownloader.SetTaskUpdater(taskUpdater)
 
 	// 保存到下载器映射
 	dm.downloaders[taskID] = newDownloader
@@ -265,8 +346,19 @@ func (dm *DownloadManager) updateTaskProgress(taskID string, current, total int)
 	if task, exists := dm.tasks[taskID]; exists {
 		task.Progress.Current = current
 		task.Progress.Total = total
+		task.UpdatedAt = time.Now()
 	}
+}
 
+// updateTask 通用任务更新方法
+func (dm *DownloadManager) updateTask(taskID string, updateFunc func(*DownloadTask)) {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
+	if task, exists := dm.tasks[taskID]; exists {
+		updateFunc(task)
+		task.UpdatedAt = time.Now()
+	}
 }
 
 // markTaskComplete 标记任务完成，移出活跃任务列表

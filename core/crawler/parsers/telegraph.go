@@ -48,6 +48,12 @@ func ParseTelegraph(client *http.Client, url string, savePath string, dl types.D
 	if dl != nil {
 		localDownloader = dl
 		fmt.Printf("Telegraph解析器使用传入的下载器\n")
+		
+		// 使用TaskUpdater更新任务名称和状态
+		if taskUpdater := localDownloader.GetTaskUpdater(); taskUpdater != nil {
+			taskUpdater.UpdateTaskName(album.Name)
+			taskUpdater.UpdateTaskStatus("parsing", "")
+		}
 	} else {
 		// 未提供下载器，返回错误
 		return fmt.Errorf("未提供下载器")
@@ -66,6 +72,12 @@ func ParseTelegraph(client *http.Client, url string, savePath string, dl types.D
 		filePaths = append(filePaths, fullPath)
 	}
 
+	// 使用TaskUpdater更新下载状态和初始进度
+	if taskUpdater := localDownloader.GetTaskUpdater(); taskUpdater != nil {
+		taskUpdater.UpdateTaskStatus("downloading", "")
+		taskUpdater.UpdateTaskProgress(0, len(imgURLs))
+	}
+
 	// 批量下载所有图片
 	totalImages := len(imgURLs)
 	successCount, err := localDownloader.BatchDownload(imgURLs, filePaths, nil)
@@ -75,6 +87,15 @@ func ParseTelegraph(client *http.Client, url string, savePath string, dl types.D
 	}
 
 	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", totalImages, successCount)
+	
+	// 使用TaskUpdater更新最终状态
+	if taskUpdater := localDownloader.GetTaskUpdater(); taskUpdater != nil {
+		if successCount == totalImages {
+			taskUpdater.UpdateTaskStatus("completed", "")
+		} else {
+			taskUpdater.UpdateTaskStatus("partial_success", fmt.Sprintf("成功下载 %d/%d 张图片", successCount, totalImages))
+		}
+	}
 	
 	// 如果有图片下载失败，返回错误
 	if successCount < totalImages {
