@@ -9,7 +9,6 @@ import (
 	"ImageMaster/core/crawler"
 	"ImageMaster/core/download/core"
 	"ImageMaster/core/download/models"
-	"ImageMaster/core/download/updater"
 	"ImageMaster/core/types"
 
 	"github.com/google/uuid"
@@ -114,7 +113,7 @@ func (tm *TaskManager) createDownloaderForTask(taskID string) *core.Downloader {
 	}
 
 	// 创建并设置TaskUpdater
-	taskUpdater := updater.NewTaskUpdater(taskID, tm)
+	taskUpdater := NewTaskUpdater(taskID, tm)
 	newDownloader.SetTaskUpdater(taskUpdater)
 
 	// 保存到下载器映射

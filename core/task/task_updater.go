@@ -1,4 +1,4 @@
-package updater
+package task
 
 import (
 	"ImageMaster/core/download/models"
@@ -8,17 +8,16 @@ import (
 // TaskUpdater 任务更新器实现
 type TaskUpdater struct {
 	taskID  string
-	manager TaskManager
+	manager TaskUpdate
 }
 
-// TaskManager 任务管理器接口
-type TaskManager interface {
+type TaskUpdate interface {
 	UpdateTask(taskID string, updateFunc func(task *models.DownloadTask))
 	UpdateTaskProgress(taskID string, current, total int)
 }
 
 // NewTaskUpdater 创建任务更新器
-func NewTaskUpdater(taskID string, manager TaskManager) *TaskUpdater {
+func NewTaskUpdater(taskID string, manager TaskUpdate) *TaskUpdater {
 	return &TaskUpdater{
 		taskID:  taskID,
 		manager: manager,
