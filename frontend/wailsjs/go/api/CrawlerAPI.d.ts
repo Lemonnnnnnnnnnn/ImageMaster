@@ -3,7 +3,7 @@
 import {models} from '../models';
 import {context} from '../models';
 
-export function CancelDownload(arg1:string):Promise<boolean>;
+export function CancelCrawl(arg1:string):Promise<boolean>;
 
 export function ClearHistory():Promise<void>;
 
@@ -23,7 +23,7 @@ export function SetContext(arg1:context.Context):Promise<void>;
 
 export function SetStorageAPI(arg1:any):Promise<void>;
 
-export function StartDownload(arg1:string):Promise<string>;
+export function StartCrawl(arg1:string):Promise<string>;
 
 export function TryLock():Promise<boolean>;
 

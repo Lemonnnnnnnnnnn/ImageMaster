@@ -3,9 +3,9 @@ import type { models } from '../../../../wailsjs/go/models';
 import {
   GetActiveTasks,
   GetHistoryTasks,
-  CancelDownload,
+  CancelCrawl,
   ClearHistory
-} from '../../../../wailsjs/go/api/DownloadAPI';
+} from '../../../../wailsjs/go/api/CrawlerAPI';
 import { GetOutputDir } from '../../../../wailsjs/go/storage/API';
 import { toast } from 'svelte-sonner';
 
@@ -76,7 +76,7 @@ export function stopPolling() {
 // 取消下载任务
 export async function cancelTask(taskId: string) {
   try {
-    await CancelDownload(taskId);
+    await CancelCrawl(taskId);
     await pollTasks();
   } catch (err) {
     console.error('取消任务出错:', err);

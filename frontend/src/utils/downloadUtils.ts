@@ -1,4 +1,4 @@
-import { StartDownload } from "../../wailsjs/go/api/DownloadAPI";
+import { StartCrawl } from "../../wailsjs/go/api/CrawlerAPI";
  import { toast  } from 'svelte-sonner'
 
 /**
@@ -57,8 +57,8 @@ export async function executeDownload(options: DownloadOptions): Promise<Downloa
     // 调用下载开始回调
     onStart?.(url.trim());
     
-    // 执行下载
-    const taskId = await StartDownload(url.trim());
+    // 执行爬取
+    const taskId = await StartCrawl(url.trim());
     
     if (taskId) {
       // 下载任务创建成功

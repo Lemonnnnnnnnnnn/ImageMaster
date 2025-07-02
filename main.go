@@ -5,7 +5,7 @@ import (
 	"embed"
 	"log"
 
-	"ImageMaster/core/download/api"
+	"ImageMaster/core/crawler/api"
 	"ImageMaster/core/library"
 	"ImageMaster/core/storage"
 
@@ -20,8 +20,6 @@ var assets embed.FS
 
 const AppName = "imagemaster"
 
-
-
 func main() {
 	// 创建存储API
 	storageAPI := storage.NewAPI(AppName)
@@ -32,11 +30,11 @@ func main() {
 	// 创建图书馆API
 	libraryAPI := library.NewAPI(configManager)
 
-	// 创建下载API
-	downloadAPI := api.NewDownloadAPI(configManager)
+	// 创建爬虫API
+	crawlerAPI := api.NewCrawlerAPI(configManager)
 
-	// 设置存储API到下载器
-	downloadAPI.SetStorageAPI(storageAPI)
+	// 设置存储API到爬虫
+	crawlerAPI.SetStorageAPI(storageAPI)
 
 	// 创建应用
 	err := wails.Run(&options.App{
@@ -51,11 +49,11 @@ func main() {
 			// 设置context到各个组件
 			libraryAPI.SetContext(ctx)
 			libraryAPI.InitializeLibraryManager()
-			downloadAPI.SetContext(ctx)
+			crawlerAPI.SetContext(ctx)
 		},
 		Bind: []interface{}{
 			libraryAPI,
-			downloadAPI,
+			crawlerAPI,
 			storageAPI, // 注册存储API，可以从前端直接调用
 		},
 		LogLevel:                 logger.ERROR,
