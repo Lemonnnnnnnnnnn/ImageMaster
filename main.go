@@ -22,7 +22,7 @@ const AppName = "imagemaster"
 
 func main() {
 	// 创建存储API
-	storageAPI := storage.NewStorageAPI(AppName)
+	storageAPI := storage.NewAPI(AppName)
 
 	// 获取配置管理器
 	configManager := storageAPI.GetStorage().GetConfigManager()

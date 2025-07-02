@@ -2,7 +2,6 @@ package crawler
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -35,7 +34,7 @@ func NewSimpleCrawler() *SimpleCrawler {
 func (sc *SimpleCrawler) SetDownloader(downloader types.Downloader) {
 	// 保存下载器引用
 	sc.downloader = downloader
-	
+
 	// 从下载器获取配置管理器并设置到爬虫工厂
 	if configProvider, ok := downloader.(interface{ GetConfigManager() interface{} }); ok {
 		if configManager, ok := configProvider.GetConfigManager().(types.ConfigProvider); ok {
@@ -49,15 +48,15 @@ func (sc *SimpleCrawler) SetDownloader(downloader types.Downloader) {
 func (sc *SimpleCrawler) CrawlImages(targetURL, outputDir string) (*CrawlResult, error) {
 	// 检测网站类型
 	siteType := sc.detectSiteType(targetURL)
-	
+
 	// 创建对应的爬虫
 	crawlerInstance := sc.factory.CreateCrawler(siteType)
-	
+
 	// 将下载器设置给爬虫实例
 	if sc.downloader != nil {
 		crawlerInstance.SetDownloader(sc.downloader)
 	}
-	
+
 	// 执行爬取
 	savePath, err := crawlerInstance.Crawl(targetURL, outputDir)
 	if err != nil {
@@ -65,12 +64,9 @@ func (sc *SimpleCrawler) CrawlImages(targetURL, outputDir string) (*CrawlResult,
 			Error: err,
 		}, err
 	}
-	
-	// 从路径中提取标题
-	title := extractTitleFromPath(savePath)
-	
+
 	return &CrawlResult{
-		Title:    title,
+		Title:    targetURL,
 		SavePath: savePath,
 	}, nil
 }
@@ -101,15 +97,4 @@ func (sc *SimpleCrawler) detectSiteType(rawURL string) string {
 
 	// 默认使用通用爬虫
 	return crawler.SiteTypeGeneric
-}
-
-// extractTitleFromPath 从路径中提取标题
-func extractTitleFromPath(path string) string {
-	// 简单的标题提取逻辑
-	if path == "" {
-		return "未知标题"
-	}
-	
-	// 可以根据实际需要实现更复杂的标题提取逻辑
-	return fmt.Sprintf("下载任务 - %s", path)
 }

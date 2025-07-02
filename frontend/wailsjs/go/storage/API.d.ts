@@ -17,7 +17,7 @@ export function GetOutputDir():Promise<string>;
 
 export function GetProxy():Promise<string>;
 
-export function GetStorage():Promise<storage.Storage>;
+export function GetStorage():Promise<storage.Manager>;
 
 export function SetOutputDir(arg1:string):Promise<boolean>;
 

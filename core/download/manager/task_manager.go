@@ -178,7 +178,6 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 		tm.UpdateTask(taskID, func(task *models.DownloadTask) {
 			task.Status = string(models.StatusCompleted)
 			task.SavePath = result.SavePath
-			task.Name = result.Title
 			task.CompleteTime = time.Now()
 			task.UpdatedAt = time.Now()
 		})

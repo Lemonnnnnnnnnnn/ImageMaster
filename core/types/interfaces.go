@@ -59,6 +59,8 @@ type ConfigManager interface {
 	SetOutputDir(dir string) bool
 	GetProxy() string
 	SetProxy(proxyURL string) bool
+	GetLibraries() []string
+	AddLibrary(path string) bool
 }
 
 // StorageProvider 存储提供者接口

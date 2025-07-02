@@ -82,11 +82,11 @@ export namespace models {
 
 export namespace storage {
 	
-	export class Storage {
+	export class Manager {
 	
 	
 	    static createFrom(source: any = {}) {
-	        return new Storage(source);
+	        return new Manager(source);
 	    }
 	
 	    constructor(source: any = {}) {

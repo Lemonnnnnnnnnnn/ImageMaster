@@ -10,7 +10,7 @@ import (
 
 	"ImageMaster/core/crawler"
 	"ImageMaster/core/getter"
-	"ImageMaster/core/storage"
+	"ImageMaster/core/types"
 )
 
 
@@ -18,14 +18,14 @@ import (
 // Viewer 结构体
 type Viewer struct {
 	ctx            context.Context
-	configManager  *storage.ConfigManager
+	configManager  types.ConfigManager
 	mangas         []getter.Manga
 	localGetter    *getter.LocalGetter
 	crawlerFactory *crawler.CrawlerFactory
 }
 
 // NewViewer 创建新的 Viewer 实例
-func NewViewer(configManager *storage.ConfigManager) *Viewer {
+func NewViewer(configManager types.ConfigManager) *Viewer {
 	return &Viewer{
 		configManager: configManager,
 	}
@@ -46,8 +46,8 @@ func (v *Viewer) Startup(ctx context.Context) {
 
 	// 如果配置中有指定的输出目录，使用配置中的目录，否则使用默认目录
 	outputDir := defaultOutputDir
-	if cfg := v.configManager.GetConfig(); cfg.OutputDir != "" {
-		outputDir = cfg.OutputDir
+	if configOutputDir := v.configManager.GetOutputDir(); configOutputDir != "" {
+		outputDir = configOutputDir
 	} else {
 		// 如果是第一次使用，将默认目录保存到配置中
 		v.configManager.SetOutputDir(defaultOutputDir)

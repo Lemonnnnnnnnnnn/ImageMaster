@@ -2,68 +2,68 @@ package storage
 
 import (
 	"ImageMaster/core/download/models"
-	"fmt"
+	"ImageMaster/core/logger"
 )
 
-// StorageAPI 存储管理API
-type StorageAPI struct {
-	storage *Storage
+// API 存储管理API - 对外提供的统一接口
+type API struct {
+	manager *Manager
 }
 
-// NewStorageAPI 创建存储API
-func NewStorageAPI(configName string) *StorageAPI {
-	fmt.Println("NewStorageAPI")
-	return &StorageAPI{
-		storage: NewStorage(configName),
+// NewAPI 创建存储API
+func NewAPI(appName string) *API {
+	logger.Info("Creating storage API for app: %s", appName)
+	return &API{
+		manager: NewManager(appName),
 	}
 }
 
 // GetOutputDir 获取输出目录
-func (api *StorageAPI) GetOutputDir() string {
-	return api.storage.GetConfigManager().GetOutputDir()
+func (api *API) GetOutputDir() string {
+	return api.manager.GetOutputDir()
 }
 
 // SetOutputDir 设置输出目录
-func (api *StorageAPI) SetOutputDir(dir string) bool {
-	return api.storage.GetConfigManager().SetOutputDir(dir)
+func (api *API) SetOutputDir(dir string) bool {
+	return api.manager.SetOutputDir(dir)
 }
 
 // GetProxy 获取代理设置
-func (api *StorageAPI) GetProxy() string {
-	return api.storage.GetConfigManager().GetProxy()
+func (api *API) GetProxy() string {
+	return api.manager.GetProxy()
 }
 
 // SetProxy 设置代理
-func (api *StorageAPI) SetProxy(proxyURL string) bool {
-	return api.storage.GetConfigManager().SetProxy(proxyURL)
+func (api *API) SetProxy(proxyURL string) bool {
+	return api.manager.SetProxy(proxyURL)
 }
 
 // GetDownloadHistory 获取下载历史
-func (api *StorageAPI) GetDownloadHistory() []*models.DownloadTask {
-	return api.storage.GetDownloadHistory()
+func (api *API) GetDownloadHistory() []*models.DownloadTask {
+	return api.manager.GetDownloadHistoryTyped()
 }
 
 // AddDownloadRecord 添加下载记录
-func (api *StorageAPI) AddDownloadRecord(task interface{}) {
-	api.storage.AddDownloadRecord(task)
+func (api *API) AddDownloadRecord(task interface{}) {
+	api.manager.AddDownloadRecord(task)
 }
 
 // ClearDownloadHistory 清除下载历史
-func (api *StorageAPI) ClearDownloadHistory() {
-	api.storage.ClearDownloadHistory()
+func (api *API) ClearDownloadHistory() {
+	api.manager.ClearDownloadHistory()
 }
 
-// GetStorage 获取存储管理器
-func (api *StorageAPI) GetStorage() *Storage {
-	return api.storage
+// GetStorage 获取存储管理器（为了兼容性保留）
+func (api *API) GetStorage() *Manager {
+	return api.manager
 }
 
 // GetLibraries 获取图书馆列表
-func (api *StorageAPI) GetLibraries() []string {
-	return api.storage.GetConfigManager().GetLibraries()
+func (api *API) GetLibraries() []string {
+	return api.manager.GetLibraries()
 }
 
 // AddLibrary 添加图书馆
-func (api *StorageAPI) AddLibrary(path string) bool {
-	return api.storage.GetConfigManager().AddLibrary(path)
+func (api *API) AddLibrary(path string) bool {
+	return api.manager.AddLibrary(path)
 }

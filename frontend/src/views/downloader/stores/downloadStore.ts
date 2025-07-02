@@ -6,7 +6,7 @@ import {
   CancelDownload,
   ClearHistory
 } from '../../../../wailsjs/go/api/DownloadAPI';
-import { GetOutputDir } from '../../../../wailsjs/go/storage/StorageAPI';
+import { GetOutputDir } from '../../../../wailsjs/go/storage/API';
 import { toast } from 'svelte-sonner';
 
 // 基础状态
