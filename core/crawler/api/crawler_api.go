@@ -6,30 +6,30 @@ import (
 	"sync"
 
 	"ImageMaster/core/download/core"
-	"ImageMaster/core/download/manager"
 	"ImageMaster/core/download/models"
+	"ImageMaster/core/task"
 	"ImageMaster/core/types"
 )
 
 // CrawlerAPI 爬虫API接口
 type CrawlerAPI struct {
-	taskManager   *manager.TaskManager
+	taskManager   *task.TaskManager
 	configManager types.ConfigProvider
-	storageAPI    interface{} // 存储API
+	storageAPI    interface{}     // 存储API
 	ctx           context.Context // Wails上下文
 	sync.Mutex
 }
 
 // Config API配置
 type Config struct {
-	TaskManagerConfig manager.Config
+	TaskManagerConfig task.Config
 }
 
 // NewCrawlerAPI 创建爬虫API
 func NewCrawlerAPI(configManager types.ConfigProvider) *CrawlerAPI {
 	// 默认配置
 	config := Config{
-		TaskManagerConfig: manager.Config{
+		TaskManagerConfig: task.Config{
 			DownloaderConfig: core.Config{
 				RetryCount:  3,
 				RetryDelay:  2,
@@ -39,7 +39,7 @@ func NewCrawlerAPI(configManager types.ConfigProvider) *CrawlerAPI {
 	}
 
 	api := &CrawlerAPI{
-		taskManager:   manager.NewTaskManager(config.TaskManagerConfig),
+		taskManager:   task.NewTaskManager(config.TaskManagerConfig),
 		configManager: configManager,
 	}
 

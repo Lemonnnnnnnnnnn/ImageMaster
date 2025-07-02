@@ -1,4 +1,4 @@
-package manager
+package task
 
 import (
 	"context"
