@@ -154,5 +154,155 @@ img {
 
 #app {
     height: 100vh;
-    text-align: center;
+    /* text-align: center; */
+}
+
+
+/* Fluent Design 样式 */
+.config-card {
+  @apply bg-white/80 backdrop-blur-md border border-gray-200/60 rounded-2xl shadow-lg shadow-gray-200/40;
+  @apply transition-all duration-300 ease-out;
+  @apply hover:shadow-xl hover:shadow-gray-200/60 hover:border-gray-300/60;
+}
+
+.config-card-header {
+  @apply p-6 pb-4;
+}
+
+.config-card-content {
+  @apply px-6 pb-6;
+}
+
+.config-icon-container {
+  @apply w-10 h-10 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200/60;
+  @apply flex items-center justify-center;
+  @apply transition-transform duration-200 group-hover:scale-105;
+}
+
+.fluent-input-display {
+  @apply w-full p-4 bg-gray-50/80 backdrop-blur-sm border border-gray-200/60 rounded-xl;
+  @apply transition-all duration-200;
+  @apply hover:bg-gray-100/80 hover:border-gray-300/60;
+}
+
+.fluent-input-container {
+  @apply relative;
+}
+
+.fluent-input {
+  @apply w-full p-4 bg-white/60 backdrop-blur-sm border border-gray-200/60 rounded-xl;
+  @apply text-sm text-gray-900 placeholder-gray-500;
+  @apply transition-all duration-200 ease-out;
+  @apply focus:outline-none focus:bg-white/80 focus:border-blue-400/80 focus:ring-4 focus:ring-blue-100/60;
+  @apply disabled:bg-gray-50/60 disabled:text-gray-400 disabled:cursor-not-allowed;
+}
+
+.fluent-input-border {
+  @apply absolute inset-0 rounded-xl border-2 border-transparent;
+  @apply transition-colors duration-200 pointer-events-none;
+}
+
+.fluent-input:focus + .fluent-input-border {
+  @apply border-blue-400/40;
+}
+
+.empty-state {
+  @apply text-center py-12;
+}
+
+.empty-state-icon {
+  @apply flex justify-center mb-4;
+}
+
+.library-list {
+  @apply max-h-40 overflow-y-auto space-y-2 pr-2;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent;
+}
+
+.library-list::-webkit-scrollbar {
+  @apply w-1.5;
+}
+
+.library-list::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.library-list::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+.library-list::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+.library-item {
+  @apply flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50/80 to-indigo-50/80;
+  @apply border border-purple-200/60 rounded-xl;
+  @apply transition-all duration-200 ease-out;
+  @apply hover:from-purple-100/80 hover:to-indigo-100/80 hover:border-purple-300/60 hover:shadow-sm;
+  animation: slideInUp 0.3s ease-out forwards;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.library-item-icon {
+  @apply w-8 h-8 rounded-lg bg-white/80 border border-purple-200/60;
+  @apply flex items-center justify-center flex-shrink-0;
+  @apply transition-transform duration-200;
+}
+
+.library-item:hover .library-item-icon {
+  @apply scale-105;
+}
+
+.library-item-path {
+  @apply text-sm text-gray-700 font-medium truncate min-w-0;
+}
+
+/* 全局按钮样式覆盖 */
+:global(.fluent-button-primary) {
+  @apply bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700;
+  @apply border-0 shadow-lg shadow-blue-200/40 hover:shadow-xl hover:shadow-blue-200/60;
+  @apply transition-all duration-200 ease-out;
+  @apply hover:scale-105 active:scale-95;
+}
+
+:global(.fluent-button-success) {
+  @apply bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700;
+  @apply border-0 shadow-lg shadow-green-200/40 hover:shadow-xl hover:shadow-green-200/60;
+  @apply transition-all duration-200 ease-out;
+  @apply hover:scale-105 active:scale-95;
+}
+
+:global(.fluent-button-outlined) {
+  @apply bg-white/60 backdrop-blur-sm border-2 border-blue-200/60 text-blue-600;
+  @apply hover:bg-blue-50/80 hover:border-blue-300/80 hover:text-blue-700;
+  @apply shadow-sm hover:shadow-md;
+  @apply transition-all duration-200 ease-out;
+  @apply hover:scale-105 active:scale-95;
+}
+
+/* 动画关键帧 */
+@keyframes slideInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .config-card-content {
+    @apply space-y-4;
+  }
+  
+  .config-card-content > div {
+    @apply flex-col items-stretch;
+  }
+  
+  .fluent-input-display,
+  .fluent-input-container {
+    @apply mb-3;
+  }
 }

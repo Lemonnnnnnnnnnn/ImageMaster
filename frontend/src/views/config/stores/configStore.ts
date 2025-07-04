@@ -6,8 +6,6 @@ export interface ConfigState {
   outputDir: string;
   proxyURL: string;
   loading: boolean;
-  error: string;
-  success: string;
 }
 
 // 初始状态
@@ -15,9 +13,7 @@ const initialState: ConfigState = {
   libraries: [],
   outputDir: '',
   proxyURL: '',
-  loading: false,
-  error: '',
-  success: ''
+  loading: false
 };
 
 // 创建可写store
@@ -27,18 +23,6 @@ export const configStore = writable<ConfigState>(initialState);
 export const configActions = {
   setLoading: (loading: boolean) => {
     configStore.update(state => ({ ...state, loading }));
-  },
-  
-  setError: (error: string) => {
-    configStore.update(state => ({ ...state, error, success: '' }));
-  },
-  
-  setSuccess: (success: string) => {
-    configStore.update(state => ({ ...state, success, error: '' }));
-  },
-  
-  clearMessages: () => {
-    configStore.update(state => ({ ...state, error: '', success: '' }));
   },
   
   setLibraries: (libraries: string[]) => {
@@ -52,15 +36,4 @@ export const configActions = {
   setProxyURL: (proxyURL: string) => {
     configStore.update(state => ({ ...state, proxyURL }));
   }
-};
-
-// 成功消息自动清除
-let successTimeout: NodeJS.Timeout;
-
-export const showSuccessMessage = (message: string) => {
-  configActions.setSuccess(message);
-  if (successTimeout) clearTimeout(successTimeout);
-  successTimeout = setTimeout(() => {
-    configActions.setSuccess('');
-  }, 3000);
 };
