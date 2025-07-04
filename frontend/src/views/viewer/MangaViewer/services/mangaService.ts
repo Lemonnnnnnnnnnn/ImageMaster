@@ -8,6 +8,7 @@ import {
 } from '../../../../../wailsjs/go/library/API';
 import { mangaStore, updateMangaStore, type MangaState } from '../stores/mangaStore';
 import { toast } from 'svelte-sonner';
+import { ProgressService } from './progressService';
 
 export class MangaService {
   static async loadManga(path: string) {
@@ -149,6 +150,8 @@ export class MangaService {
         const success = await DeleteManga(state.mangaPath);
         
         if (success) {
+          // 删除成功后，清除该漫画的阅读进度
+          ProgressService.removeProgress(state.mangaPath);
           toast.success('删除成功');
           if (nextMangaPath) {
             // 重要：在导航前设置 loading 为 false，防止新页面保持加载状态
