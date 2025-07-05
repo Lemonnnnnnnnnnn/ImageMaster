@@ -20,26 +20,37 @@
   });
 </script>
 
-<div class="p-5 max-w-[95%] w-full mx-auto font-sans text-gray-800 h-screen flex flex-col gap-5 box-border">
-  <Header title="网页图片下载器" />
+<!-- Fluent Design 黑色主题布局 -->
+<div class="min-h-screen bg-black-secondary">
+  <Header 
+    title="网页图片下载器" 
+    subtitle="从支持的网站下载图片和漫画"
+  />
 
-  <!-- 顶部面板：输出目录 + 下载表单 -->
-  <Card classes="p-5 border border-gray-300 shadow-sm flex-shrink-0">
-    <OutputDirectory />
-    <DownloadForm />
-  </Card>
-  
-  <!-- 任务管理面板 -->
-  <Card classes="border border-gray-300 shadow-sm flex-1 flex flex-col min-h-0">
-    <TaskTabs />
+  <!-- 主要内容区域 -->
+  <div class="container mx-auto max-w-7xl px-6 py-8 space-y-6">
+    <!-- 顶部面板：输出目录 + 下载表单 -->
+    <Card variant="elevated" padding="lg" classes="transition-fluent hover-lift">
+      <OutputDirectory />
+      <div class="mt-6 pt-6 border-t border-white-tertiary/20">
+        <DownloadForm />
+      </div>
+    </Card>
     
-    <!-- Tab内容 -->
-    <div class="flex-1 overflow-auto p-5">
-      {#if $activeTab === 'downloading'}
-        <ActiveTaskList />
-      {:else if $activeTab === 'history'}
-        <HistoryTaskList />
-      {/if}
-    </div>
-  </Card>
+    <!-- 任务管理面板 -->
+    <Card variant="elevated" padding="none" classes="flex flex-col min-h-[500px]">
+      <div class="border-b border-white-tertiary/20">
+        <TaskTabs />
+      </div>
+      
+      <!-- Tab内容 -->
+      <div class="flex-1 overflow-auto p-6">
+        {#if $activeTab === 'downloading'}
+          <ActiveTaskList />
+        {:else if $activeTab === 'history'}
+          <HistoryTaskList />
+        {/if}
+      </div>
+    </Card>
+  </div>
 </div>

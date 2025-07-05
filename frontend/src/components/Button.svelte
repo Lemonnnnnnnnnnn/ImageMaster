@@ -1,8 +1,7 @@
 <script lang="ts">
   import { twMerge } from 'tailwind-merge';
-  import { componentStyles } from '../utils/designTokens';
   
-  // Props
+  // Props - 保持向后兼容
   export let variant: 'filled' | 'outlined' | 'ghost' = 'filled';
   export let color: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'gray' = 'primary';
   export let size: 'sm' | 'md' | 'lg' = 'md';
@@ -17,57 +16,67 @@
   // Additional classes
   export let classes: string = '';
   
-  // 使用设计令牌中的按钮基础样式
-  $: baseClasses = componentStyles.button.base;
+  // Fluent Design 基础样式
+  $: baseClasses = 'fluent-button inline-flex items-center justify-center font-medium transition-fluent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black-secondary active:scale-98';
   
-  // 构建变体和颜色类名
+  // 构建变体和颜色类名 - 基于 Fluent Design
   $: variantClasses = (() => {
     const colorMap = {
       primary: {
-        filled: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-        outlined: 'border border-primary-600 text-primary-600 hover:bg-primary-50 focus:ring-primary-500',
-        ghost: 'text-primary-600 hover:bg-primary-50 focus:ring-primary-500'
+        filled: 'fluent-button-primary focus:ring-fluent-blue/50',
+        outlined: 'fluent-button-secondary border-fluent-blue text-fluent-blue hover:bg-fluent-blue/10 focus:ring-fluent-blue/50',
+        ghost: 'text-fluent-blue hover:bg-fluent-blue/10 focus:ring-fluent-blue/50'
       },
       secondary: {
-        filled: 'bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500',
-        outlined: 'border border-secondary-600 text-secondary-600 hover:bg-secondary-50 focus:ring-secondary-500',
-        ghost: 'text-secondary-600 hover:bg-secondary-50 focus:ring-secondary-500'
+        filled: 'bg-fluent-green text-white hover:bg-fluent-green/90 focus:ring-fluent-green/50',
+        outlined: 'fluent-button-secondary border-fluent-green text-fluent-green hover:bg-fluent-green/10 focus:ring-fluent-green/50',
+        ghost: 'text-fluent-green hover:bg-fluent-green/10 focus:ring-fluent-green/50'
       },
       success: {
-        filled: 'bg-success-600 text-white hover:bg-success-700 focus:ring-success-500',
-        outlined: 'border border-success-600 text-success-600 hover:bg-success-50 focus:ring-success-500',
-        ghost: 'text-success-600 hover:bg-success-50 focus:ring-success-500'
+        filled: 'bg-fluent-green text-white hover:bg-fluent-green/90 focus:ring-fluent-green/50',
+        outlined: 'fluent-button-secondary border-fluent-green text-fluent-green hover:bg-fluent-green/10 focus:ring-fluent-green/50',
+        ghost: 'text-fluent-green hover:bg-fluent-green/10 focus:ring-fluent-green/50'
       },
       warning: {
-        filled: 'bg-warning-600 text-white hover:bg-warning-700 focus:ring-warning-500',
-        outlined: 'border border-warning-600 text-warning-600 hover:bg-warning-50 focus:ring-warning-500',
-        ghost: 'text-warning-600 hover:bg-warning-50 focus:ring-warning-500'
+        filled: 'bg-fluent-orange text-white hover:bg-fluent-orange/90 focus:ring-fluent-orange/50',
+        outlined: 'fluent-button-secondary border-fluent-orange text-fluent-orange hover:bg-fluent-orange/10 focus:ring-fluent-orange/50',
+        ghost: 'text-fluent-orange hover:bg-fluent-orange/10 focus:ring-fluent-orange/50'
       },
       error: {
-        filled: 'bg-error-600 text-white hover:bg-error-700 focus:ring-error-500',
-        outlined: 'border border-error-600 text-error-600 hover:bg-error-50 focus:ring-error-500',
-        ghost: 'text-error-600 hover:bg-error-50 focus:ring-error-500'
+        filled: 'bg-fluent-red text-white hover:bg-fluent-red/90 focus:ring-fluent-red/50',
+        outlined: 'fluent-button-secondary border-fluent-red text-fluent-red hover:bg-fluent-red/10 focus:ring-fluent-red/50',
+        ghost: 'text-fluent-red hover:bg-fluent-red/10 focus:ring-fluent-red/50'
       },
       gray: {
-        filled: 'bg-neutral-500 text-white hover:bg-neutral-600 focus:ring-neutral-400',
-        outlined: 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 focus:ring-neutral-400',
-        ghost: 'text-neutral-700 hover:bg-neutral-50 focus:ring-neutral-400'
+        filled: 'bg-white-tertiary text-white-primary hover:bg-white-tertiary/80 focus:ring-white-tertiary/50',
+        outlined: 'fluent-button-secondary border-white-tertiary text-white-secondary hover:bg-white-tertiary/10 focus:ring-white-tertiary/50',
+        ghost: 'text-white-secondary hover:bg-white-tertiary/10 focus:ring-white-tertiary/50'
       }
     };
     
     return colorMap[color][variant] || colorMap.primary.filled;
   })();
   
-  // 使用设计令牌中的按钮大小样式
-  $: sizeClasses = componentStyles.button.sizes[size] || componentStyles.button.sizes.md;
+  // Fluent Design 尺寸样式
+  $: sizeClasses = (() => {
+    const sizes = {
+      sm: 'px-3 py-1.5 text-sm rounded-fluent-sm min-h-[32px]',
+      md: 'px-4 py-2 text-sm rounded-fluent-md min-h-[40px]',
+      lg: 'px-6 py-3 text-base rounded-fluent-lg min-h-[48px]'
+    };
+    return sizes[size] || sizes.md;
+  })();
   
   // 禁用状态样式
   $: disabledClasses = disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : '';
   
-  // 组合所有类名，使用 twMerge 确保外部传入的 classes 具有更高优先级
-  $: allClasses = twMerge(baseClasses, variantClasses, sizeClasses, disabledClasses, classes);
+  // 加载状态样式
+  $: loadingClasses = loading ? 'cursor-wait' : '';
   
-  // 回调props - 替代createEventDispatcher
+  // 组合所有类名
+  $: allClasses = twMerge(baseClasses, variantClasses, sizeClasses, disabledClasses, loadingClasses, classes);
+  
+  // 回调props
   export let onclick: ((event: MouseEvent) => void) | undefined = undefined;
   export let onkeydown: ((event: KeyboardEvent) => void) | undefined = undefined;
   
@@ -95,7 +104,6 @@
     {rel}
     {download}
     class={allClasses}
-    class:pointer-events-none={loading}
     onclick={handleClick}
     onkeydown={handleKeydown}
     role="button"
@@ -104,10 +112,7 @@
     {...$$restProps}
   >
     {#if loading}
-      <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
+      <div class="animate-spin -ml-1 mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" role="status" aria-label="加载中"></div>
     {/if}
     <slot />
   </a>
@@ -117,17 +122,13 @@
     {type}
     {disabled}
     class={allClasses}
-    class:pointer-events-none={loading}
     onclick={handleClick}
     onkeydown={handleKeydown}
     aria-disabled={disabled}
     {...$$restProps}
   >
     {#if loading}
-      <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
+      <div class="animate-spin -ml-1 mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" role="status" aria-label="加载中"></div>
     {/if}
     <slot />
   </button>

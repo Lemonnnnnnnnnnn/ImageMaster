@@ -1,17 +1,15 @@
 import { wrap } from 'svelte-spa-router/wrap';
 
-// 导入页面组件
-import NotFound from './views/NotFound.svelte';
 
 // 导入漫画查看器组件
-import MangaViewer from './views/viewer/MangaViewer/index.svelte';
-import ViewerContainer from './views/viewer/ViewerContainer.svelte';
+import MangaViewer from './views/MangaViewer/index.svelte';
+import ViewerContainer from './views/ViewerContainer.svelte';
 
 // 导入下载器组件
-import Downloader from './views/downloader/Downloader.svelte';
+import Downloader from './views/Downloader/Downloader.svelte';
 
 // 导入配置组件
-import Config from './views/config/Config.svelte';
+import Config from './views/Config/Config.svelte';
 
 // 定义路由
 const routes = {
@@ -40,9 +38,6 @@ const routes = {
   
   // 配置页面
   '/config': Config,
-  
-  // 通配符路由 - 处理所有未匹配的 URL
-  '*': NotFound,
 };
 
 export default routes;

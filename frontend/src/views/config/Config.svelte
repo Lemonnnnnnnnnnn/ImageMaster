@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
+  import { Folder, Globe, Library, Settings, Plus, Check } from 'lucide-svelte';
   import Header from "../../components/Header.svelte";
   import Button from "../../components/Button.svelte";
+  import Card from "../../components/Card.svelte";
   import { configStore, configActions } from "./stores/configStore";
   import { SelectLibrary, SetOutputDir } from "../../../wailsjs/go/library/API";
   import {
@@ -112,35 +114,35 @@
   }
 </script>
 
-<div class="bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40">
-  <div class="container mx-auto max-w-4xl px-6 py-8">
-    <Header title="应用设置" />
+<!-- Fluent Design 黑色主题布局 -->
+<div class="min-h-screen bg-black-secondary">
+  <Header 
+    title="应用设置" 
+    subtitle="配置应用选项和管理漫画库"
+  />
+  
+  <!-- 主要内容区域 -->
+  <div class="container mx-auto max-w-4xl px-6 py-8 space-y-6">
     
-    <!-- 主要内容区域 -->
-    <div class="mt-8 space-y-8">
-      
-      <!-- 输出目录设置卡片 -->
-      <div class="config-card group">
-        <div class="config-card-header">
-          <div class="flex items-center gap-3">
-            <div class="config-icon-container">
-              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 1v6" />
-              </svg>
-            </div>
-            <div>
-              <h3 class="text-lg font-semibold text-gray-900">输出目录</h3>
-              <p class="text-sm text-gray-600 mt-1">设置下载内容的保存位置</p>
-            </div>
-          </div>
+    <!-- 输出目录设置卡片 -->
+    <Card variant="elevated" padding="lg" classes="transition-fluent hover-lift">
+      <div class="flex items-start gap-4">
+        <!-- 图标 -->
+        <div class="flex-shrink-0 w-12 h-12 bg-fluent-blue/20 rounded-fluent-lg flex items-center justify-center">
+          <Folder size={24} class="text-fluent-blue" />
         </div>
         
-        <div class="config-card-content">
+        <!-- 内容区域 -->
+        <div class="flex-1 min-w-0">
+          <div class="mb-4">
+            <h3 class="text-lg font-semibold text-white-primary mb-1">输出目录</h3>
+            <p class="text-sm text-white-secondary">设置下载内容的保存位置</p>
+          </div>
+          
           <div class="flex items-center gap-4">
             <div class="flex-1">
-              <div class="fluent-input-display">
-                <span class="text-sm text-gray-700 truncate">
+              <div class="fluent-input bg-glass-input/50 px-4 py-3 rounded-fluent-md border border-white-tertiary/20">
+                <span class="text-sm text-white-primary truncate">
                   {outputDir || "未设置输出目录"}
                 </span>
               </div>
@@ -149,120 +151,109 @@
             <Button
               onclick={changeOutputDir}
               disabled={loading}
-              {loading}
+              loading={loading}
               variant="filled"
               color="primary"
-              classes="fluent-button-primary"
             >
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
+              <Plus size={16} class="mr-2" />
               选择目录
             </Button>
           </div>
         </div>
       </div>
+    </Card>
 
-      <!-- 代理设置卡片 -->
-      <div class="config-card group">
-        <div class="config-card-header">
-          <div class="flex items-center gap-3">
-            <div class="config-icon-container">
-              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
-              </svg>
-            </div>
-            <div>
-              <h3 class="text-lg font-semibold text-gray-900">代理设置</h3>
-              <p class="text-sm text-gray-600 mt-1">配置网络代理以改善下载速度</p>
-            </div>
-          </div>
+    <!-- 代理设置卡片 -->
+    <Card variant="elevated" padding="lg" classes="transition-fluent hover-lift">
+      <div class="flex items-start gap-4">
+        <!-- 图标 -->
+        <div class="flex-shrink-0 w-12 h-12 bg-fluent-green/20 rounded-fluent-lg flex items-center justify-center">
+          <Globe size={24} class="text-fluent-green" />
         </div>
         
-        <div class="config-card-content">
+        <!-- 内容区域 -->
+        <div class="flex-1 min-w-0">
+          <div class="mb-4">
+            <h3 class="text-lg font-semibold text-white-primary mb-1">代理设置</h3>
+            <p class="text-sm text-white-secondary">配置网络代理以改善下载速度</p>
+          </div>
+          
           <div class="flex items-center gap-4">
             <div class="flex-1">
-              <div class="fluent-input-container">
-                <input
-                  type="text"
-                  bind:value={proxyURL}
-                  placeholder="例如：http://127.0.0.1:7890"
-                  disabled={loading}
-                  class="fluent-input"
-                />
-                <div class="fluent-input-border"></div>
-              </div>
+              <input
+                type="text"
+                bind:value={proxyURL}
+                placeholder="例如：http://127.0.0.1:7890"
+                disabled={loading}
+                class="fluent-input w-full"
+              />
             </div>
             
             <Button
               onclick={saveProxySettings}
               disabled={loading}
-              {loading}
+              loading={loading}
               variant="filled"
-              color="primary"
-              classes="fluent-button-success"
+              color="success"
             >
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
+              <Check size={16} class="mr-2" />
               保存设置
             </Button>
           </div>
         </div>
       </div>
+    </Card>
 
-      <!-- 漫画库管理卡片 -->
-      <div class="config-card group">
-        <div class="config-card-header">
-          <div class="flex items-center gap-3">
-            <div class="config-icon-container">
-              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
-            <div>
-              <h3 class="text-lg font-semibold text-gray-900">漫画库管理</h3>
-              <p class="text-sm text-gray-600 mt-1">添加和管理漫画存储目录</p>
-            </div>
-          </div>
+    <!-- 漫画库管理卡片 -->
+    <Card variant="elevated" padding="lg" classes="transition-fluent hover-lift">
+      <div class="flex items-start gap-4">
+        <!-- 图标 -->
+        <div class="flex-shrink-0 w-12 h-12 bg-fluent-orange/20 rounded-fluent-lg flex items-center justify-center">
+          <Library size={24} class="text-fluent-orange" />
         </div>
         
-        <div class="config-card-content">
+        <!-- 内容区域 -->
+        <div class="flex-1 min-w-0">
+          <div class="mb-4">
+            <h3 class="text-lg font-semibold text-white-primary mb-1">漫画库管理</h3>
+            <p class="text-sm text-white-secondary">添加和管理漫画存储目录</p>
+          </div>
+          
           {#if libraries.length === 0}
-            <div class="empty-state">
-              <div class="empty-state-icon">
-                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
+            <!-- 空状态 -->
+            <div class="text-center py-8">
+              <div class="w-16 h-16 mx-auto bg-white-tertiary/10 rounded-fluent-xl flex items-center justify-center mb-4">
+                <Library size={32} class="text-white-tertiary" />
               </div>
-              <h4 class="text-lg font-medium text-gray-900 mb-2">尚未添加任何漫画库</h4>
-              <p class="text-gray-600 mb-6">添加第一个漫画库来开始管理您的收藏</p>
+              <h4 class="text-lg font-medium text-white-primary mb-2">尚未添加任何漫画库</h4>
+              <p class="text-white-secondary mb-6">添加第一个漫画库来开始管理您的收藏</p>
               
               <Button
                 onclick={addLibrary}
                 disabled={loading}
-                {loading}
+                loading={loading}
                 variant="filled"
                 color="primary"
-                classes="fluent-button-primary"
               >
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
+                <Plus size={16} class="mr-2" />
                 添加第一个漫画库
               </Button>
             </div>
           {:else}
+            <!-- 漫画库列表 -->
             <div class="space-y-4">
-              <div class="library-list">
+              <div class="space-y-3">
                 {#each libraries as lib, index}
-                  <div class="library-item" style="animation-delay: {index * 50}ms">
-                    <div class="library-item-icon">
-                      <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                      </svg>
+                  <div 
+                    class="flex items-center gap-3 p-3 bg-glass-card/30 rounded-fluent-md border border-white-tertiary/10 transition-fluent hover:bg-glass-card/50"
+                    style="animation-delay: {index * 100}ms"
+                  >
+                    <div class="flex-shrink-0 w-8 h-8 bg-fluent-orange/20 rounded-fluent-md flex items-center justify-center">
+                      <Folder size={16} class="text-fluent-orange" />
                     </div>
-                    <span class="library-item-path">{lib}</span>
+                    <span class="flex-1 text-sm text-white-primary truncate font-mono">
+                      {lib}
+                    </span>
                   </div>
                 {/each}
               </div>
@@ -271,14 +262,11 @@
                 <Button
                   onclick={addLibrary}
                   disabled={loading}
-                  {loading}
+                  loading={loading}
                   variant="outlined"
                   color="primary"
-                  classes="fluent-button-outlined"
                 >
-                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
+                  <Plus size={16} class="mr-2" />
                   添加更多漫画库
                 </Button>
               </div>
@@ -286,6 +274,20 @@
           {/if}
         </div>
       </div>
-    </div>
+    </Card>
+    
+    <!-- 提示信息 -->
+    <Card variant="outlined" padding="md" classes="border border-fluent-blue/30 bg-fluent-blue/5">
+      <div class="flex items-start gap-3">
+        <div class="flex-shrink-0 w-5 h-5 bg-fluent-blue/20 rounded-full flex items-center justify-center mt-0.5">
+          <Settings size={12} class="text-fluent-blue" />
+        </div>
+        <div class="flex-1">
+          <p class="text-sm text-fluent-blue">
+            <strong>提示:</strong> 设置完成后，请重启应用以确保所有配置生效。代理设置将影响图片下载速度，输出目录决定下载内容的保存位置。
+          </p>
+        </div>
+      </div>
+    </Card>
   </div>
 </div>
