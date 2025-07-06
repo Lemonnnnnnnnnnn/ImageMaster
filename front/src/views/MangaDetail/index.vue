@@ -32,9 +32,8 @@ const mangaStore = useMangaStore();
 const { loading, selectedImages } =
     storeToRefs(mangaStore);
 const route = useRoute();
-const mangaService = new MangaService();
-
-const scrollService = new ScrollService(scrollContainer, mangaService, mangaStore);
+const scrollService = new ScrollService(scrollContainer, mangaStore);
+const mangaService = new MangaService(scrollService);
 
 
 onMounted(() => {
@@ -49,9 +48,7 @@ watch(() => route.params.path, (newPath) => {
 });
 
 function init() {
-    mangaService.loadManga(route.params.path as string, () => {
-        scrollService.restoreScrollPosition()
-    });
+    mangaService.loadManga(route.params.path as string);
 }
 
 </script>

@@ -1,19 +1,22 @@
-import {
-  GetMangaImages,
-  GetAllMangas,
-  DeleteManga,
-  GetImageDataUrl
-} from '../../../../wailsjs/go/library/API';
-import { useMangaStore, type MangaState } from '../stores';
-import { ProgressService } from './progressService';
 import { useRouter } from 'vue-router';
 import { toast } from 'vue-sonner';
+import {
+  DeleteManga,
+  GetAllMangas,
+  GetImageDataUrl,
+  GetMangaImages
+} from '../../../../wailsjs/go/library/API';
+import { useMangaStore } from '../stores';
+import { ProgressService } from './progressService';
+import type { ScrollService } from './scrollService';
 
 export class MangaService {
   private router: ReturnType<typeof useRouter>;
   private mangaStore: ReturnType<typeof useMangaStore>;
+  private scrollService: ScrollService;
 
-  constructor() {
+  constructor(scrollService: ScrollService) {
+    this.scrollService = scrollService;
     this.mangaStore = useMangaStore();
     this.router = useRouter();
   }
@@ -52,7 +55,7 @@ export class MangaService {
       console.error('加载漫画失败:', error);
     } finally {
       this.mangaStore.loading = false;
-      callback?.();
+      this.scrollService.restoreScrollPosition();
     }
   }
 

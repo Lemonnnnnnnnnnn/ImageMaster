@@ -5,14 +5,12 @@ import type { MangaService } from "./mangaService";
 
 export class ScrollService {
     private scrollContainer: Ref<HTMLElement | null, HTMLElement | null>
-    private mangaService: MangaService;
     private mangaStore: ReturnType<typeof useMangaStore>;
     private saveTimeout: number | null = null;
     private smoothScroller: SmoothScroller;
 
-    constructor(scrollContainer: Ref<HTMLElement | null, HTMLElement | null>, mangaService: MangaService, mangaStore: ReturnType<typeof useMangaStore>) {
+    constructor(scrollContainer: Ref<HTMLElement | null, HTMLElement | null>, mangaStore: ReturnType<typeof useMangaStore>) {
         this.scrollContainer = scrollContainer;
-        this.mangaService = mangaService;
         this.mangaStore = mangaStore;
         this.smoothScroller = new SmoothScroller(this.scrollContainer);
     }
@@ -27,9 +25,6 @@ export class ScrollService {
     }
 
     handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
-            this.mangaService.backToHome();
-        }
         if (event.key === "j") {
             this.smoothScroller.scrollDown();
         } else if (event.key === "k") {

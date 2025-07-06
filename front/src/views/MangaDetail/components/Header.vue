@@ -39,15 +39,30 @@
         </div>
     </header>
     <QuickDownloadModal v-model="showQuickDownloadModal" />
+    <Transition>
+        <div v-if="showNavigation" class="fixed bottom-8 right-8">
+            <div class="flex flex-col gap-2">
+                <button class="bg-neutral-900/70 p-3 rounded-full cursor-pointer hover:bg-neutral-900/90"
+                    @click="mangaService.navigateToNextManga()">
+                    <ChevronRight :size="20" class="text-white" />
+                </button>
+                <button class="bg-neutral-900/70 p-3 rounded-full cursor-pointer hover:bg-neutral-900/90"
+                    @click="mangaService.navigateToPrevManga()">
+                    <ChevronLeft :size="20" class="text-white" />
+                </button>
+            </div>
+        </div>
+    </Transition>
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, Download, Eye, EyeClosed, Trash } from 'lucide-vue-next';
+import { ArrowLeft, ChevronLeft, ChevronRight, Download, Eye, EyeClosed, Trash } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import { useMangaStore } from '../stores';
 import { storeToRefs } from 'pinia';
 import { Button, QuickDownloadModal } from '../../../components';
-import { ref } from 'vue';
+import { ref, type PropType } from 'vue';
+import { MangaService } from '../services';
 
 const router = useRouter();
 const mangaStore = useMangaStore();
@@ -55,7 +70,7 @@ const { mangaName } = storeToRefs(mangaStore);
 
 defineProps({
     mangaService: {
-        type: Object,
+        type: Object as PropType<MangaService>,
         required: true
     }
 })
@@ -64,4 +79,15 @@ let showNavigation = ref(false);
 let showQuickDownloadModal = ref(false);
 </script>
 
-<style scoped></style>
+<style scoped>
+.v-enter-active,
+.v-leave-active {
+    transition: all 0.5s ease;
+}
+
+.v-enter-from,
+.v-leave-to {
+    opacity: 0;
+    transform: translateY(20px);
+}
+</style>
