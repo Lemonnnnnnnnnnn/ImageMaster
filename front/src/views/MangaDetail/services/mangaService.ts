@@ -1,27 +1,35 @@
-import { push, location } from 'svelte-spa-router';
-import { get } from 'svelte/store';
 import {
   GetMangaImages,
   GetAllMangas,
   DeleteManga,
   GetImageDataUrl
 } from '../../../../wailsjs/go/library/API';
-import { mangaStore, updateMangaStore, type MangaState } from '../stores';
-import { toast } from 'svelte-sonner';
+import { useMangaStore, type MangaState } from '../stores';
 import { ProgressService } from './progressService';
+import { useRouter } from 'vue-router';
+import { toast } from 'vue-sonner';
 
 export class MangaService {
-  static async loadManga(path: string) {
+  private router: ReturnType<typeof useRouter>;
+  private mangaStore: ReturnType<typeof useMangaStore>;
+
+  constructor() {
+    this.mangaStore = useMangaStore();
+    this.router = useRouter();
+  }
+
+  async loadManga(path: string) {
+    console.log('loadManga', path)
     try {
-      updateMangaStore({ loading: true });
-      
+      this.mangaStore.loading = true;
+
       // 解码路径参数
       const mangaPath = decodeURIComponent(path);
-      
+
       // 获取所有漫画以支持导航功能
       const mangas = await GetAllMangas();
       const currentMangaIndex = mangas.findIndex(m => m.path === mangaPath);
-      
+
       let mangaName: string;
       if (currentMangaIndex >= 0) {
         mangaName = mangas[currentMangaIndex].name;
@@ -29,30 +37,29 @@ export class MangaService {
         mangaName = mangaPath.split('/').pop() || '';
       }
 
-      // 更新状态
-      updateMangaStore({
+      this.mangaStore.updateMangaStore({
         mangaPath,
         mangaName,
         mangas,
         currentMangaIndex,
         selectedImages: []
       });
-      
+
       // 获取所有图片
-      await MangaService.loadImages(mangaPath);
-      
+      await this.loadImages(mangaPath);
+
     } catch (error) {
       console.error('加载漫画失败:', error);
     } finally {
-      updateMangaStore({ loading: false });
+      this.mangaStore.loading = false;
     }
   }
 
-  static async loadImages(mangaPath: string) {
+  async loadImages(mangaPath: string) {
     try {
       // 获取所有图片路径
       const imagePaths = await GetMangaImages(mangaPath);
-      
+
       // 并行加载所有图片，保持顺序
       const imagePromises = imagePaths.map(async (imagePath) => {
         try {
@@ -65,122 +72,111 @@ export class MangaService {
 
       // 等待所有图片加载完成
       const loadedImages = await Promise.all(imagePromises);
-      
+
       // 过滤掉加载失败的图片（null值）
       const selectedImages = loadedImages.filter(img => img !== null);
-      updateMangaStore({ selectedImages });
+      this.mangaStore.updateMangaStore({ selectedImages });
     } catch (error) {
       console.error("获取图片路径失败:", error);
     }
   }
 
-  static handleKeyDown(event: KeyboardEvent) {
+  handleKeyDown(event: KeyboardEvent) {
     if (event.key === 'Escape') {
-      MangaService.backToHome();
+      this.backToHome();
     }
   }
 
 
-
-  static backToHome() {
-    push('/');
+  backToHome() {
+    this.router.push('/');
   }
 
-  static toggleNavigation() {
-    const state = get(mangaStore);
-    updateMangaStore({ showNavigation: !state.showNavigation });
-  }
 
-  static navigateToNextManga() {
-    const state = get(mangaStore);
-    
-    if (state.currentMangaIndex < state.mangas.length - 1) {
-      const nextManga = state.mangas[state.currentMangaIndex + 1];
+  navigateToNextManga() {
+    if (this.mangaStore.currentMangaIndex < this.mangaStore.mangas.length - 1) {
+      const nextManga = this.mangaStore.mangas[this.mangaStore.currentMangaIndex + 1];
       const encodedPath = encodeURIComponent(nextManga.path);
-      
+
       // 使用替代路由方案处理相同路径不同参数的导航
-      const currentLocation = get(location);
+      const currentLocation = window.location.href;
       if (currentLocation.includes('/manga/')) {
         // 如果当前已经在漫画页面，采用直接加载新数据的方式
-        MangaService.loadManga(nextManga.path);
-        
+        this.loadManga(nextManga.path);
+
         // 更新 URL 但不触发导航事件
         window.history.pushState(null, '', `/#/manga/${encodedPath}`);
       } else {
         // 否则正常导航
-        push(`/manga/${encodedPath}`);
+        this.router.push(`/manga/${encodedPath}`);
       }
     }
   }
 
-  static navigateToPrevManga() {
-    const state = get(mangaStore);
-    
-    if (state.currentMangaIndex > 0) {
-      const prevManga = state.mangas[state.currentMangaIndex - 1];
+  navigateToPrevManga() {
+    if (this.mangaStore.currentMangaIndex > 0) {
+      const prevManga = this.mangaStore.mangas[this.mangaStore.currentMangaIndex - 1];
       const encodedPath = encodeURIComponent(prevManga.path);
-      
+
       // 使用替代路由方案处理相同路径不同参数的导航
-      const currentLocation = get(location);
+      const currentLocation = window.location.href;
       if (currentLocation.includes('/manga/')) {
         // 如果当前已经在漫画页面，采用直接加载新数据的方式
-        MangaService.loadManga(prevManga.path);
-        
+        this.loadManga(prevManga.path);
+
         // 更新 URL 但不触发导航事件
         window.history.pushState(null, '', `/#/manga/${encodedPath}`);
       } else {
         // 否则正常导航
-        push(`/manga/${encodedPath}`);
+        this.router.push(`/manga/${encodedPath}`);
       }
     }
   }
 
-  static async deleteAndViewNextManga() {
-    const state = get(mangaStore);
-    
-    if (state.currentMangaIndex >= 0 && confirm(`确定要删除 "${state.mangaName}" 并查看下一部漫画吗？`)) {
-      updateMangaStore({ loading: true });
-      
+  async deleteAndViewNextManga() {
+    if (this.mangaStore.currentMangaIndex >= 0 && confirm(`确定要删除 "${this.mangaStore.mangaName}" 并查看下一部漫画吗？`)) {
+      this.mangaStore.loading = true;
+
       try {
         // 记录下一个漫画的位置，因为删除后数组会变化
-        const hasNextManga = state.currentMangaIndex < state.mangas.length - 1;
-        const nextMangaPath = hasNextManga ? state.mangas[state.currentMangaIndex + 1].path : null;
-        
+        const hasNextManga = this.mangaStore.currentMangaIndex < this.mangaStore.mangas.length - 1;
+        const nextMangaPath = hasNextManga ? this.mangaStore.mangas[this.mangaStore.currentMangaIndex + 1].path : null;
+
         // 执行删除操作
-        const success = await DeleteManga(state.mangaPath);
-        
+        const success = await DeleteManga(this.mangaStore.mangaPath);
+
         if (success) {
           // 删除成功后，清除该漫画的阅读进度
-          ProgressService.removeProgress(state.mangaPath);
+          ProgressService.removeProgress(this.mangaStore.mangaPath);
           toast.success('删除成功');
           if (nextMangaPath) {
             // 重要：在导航前设置 loading 为 false，防止新页面保持加载状态
-            updateMangaStore({ loading: false });
-            
+            this.mangaStore.loading = false;
+
             // 使用替代路由方案处理相同路径不同参数的导航
             const encodedPath = encodeURIComponent(nextMangaPath);
-            const currentLocation = get(location);
+            const currentLocation = window.location.href;
             if (currentLocation.includes('/manga/')) {
               // 如果当前已经在漫画页面，采用直接加载新数据的方式
-              MangaService.loadManga(nextMangaPath);
-              
+              this.loadManga(nextMangaPath);
+
               // 更新 URL 但不触发导航事件
               window.history.pushState(null, '', `/#/manga/${encodedPath}`);
             } else {
               // 否则正常导航
-              push(`/manga/${encodedPath}`);
+              this.router.push(`/manga/${encodedPath}`);
             }
           } else {
             // 如果没有下一部漫画，返回首页
-            push('/');
+            this.router.push('/');
           }
         } else {
           alert('删除失败!');
-          updateMangaStore({ loading: false });
+          this.mangaStore.loading = false;
         }
       } catch (error) {
         console.error('删除漫画失败:', error);
-        updateMangaStore({ loading: false });
+        this.mangaStore.loading = false;
       }
     }
   }

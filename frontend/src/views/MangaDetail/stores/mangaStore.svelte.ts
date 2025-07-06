@@ -20,14 +20,16 @@ const initialState: MangaState = {
   showNavigation: false
 };
 
-export const mangaStore = writable<MangaState>(initialState);
+export let mangaStore = $state(initialState);
 
 // 便捷的更新函数
 export const updateMangaStore = (updates: Partial<MangaState>) => {
-  mangaStore.update(state => ({ ...state, ...updates }));
+  // mangaStore.update(state => ({ ...state, ...updates }));
+  mangaStore = { ...mangaStore, ...updates };
 };
 
 // 重置状态
 export const resetMangaStore = () => {
-  mangaStore.set(initialState);
+  // mangaStore.set(initialState);
+  mangaStore = initialState;
 };

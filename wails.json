@@ -2,10 +2,11 @@
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "ImageMaster",
   "outputfilename": "ImageMaster",
-  "frontend:install": "npm install",
-  "frontend:build": "npm run build",
-  "frontend:dev:watcher": "npm run dev",
+  "frontend:install": "pnpm install",
+  "frontend:build": "pnpm run build",
+  "frontend:dev:watcher": "pnpm run dev",
   "frontend:dev:serverUrl": "auto",
+  "frontend:dir": "front",
   "author": {
     "name": "soul",
     "email": "104170577@qq.com"

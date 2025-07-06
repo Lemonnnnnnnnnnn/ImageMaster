@@ -5,13 +5,47 @@
     import { push } from "svelte-spa-router";
     import { onMount } from "svelte";
     import { Loading } from "../../components";
+    import type { derived } from "svelte/store";
 
     let scrollContainer: HTMLElement | null = $state(null);
     let saveTimeout: number;
     let isRestoringProgress = false;
     let lastMangaPath = "";
     let hasRestoredForCurrentManga = false;
-    const { loading, selectedImages, mangaPath, mangaName } = $mangaStore;
+    const { loading, selectedImages, mangaPath, mangaName } =
+        $derived(mangaStore);
+
+    let { params }: { params: { path: string } } = $props();
+
+    $effect(() => {
+        if (params.path) {
+            MangaService.loadManga(params.path);
+        }
+    });
+
+    // 监听漫画路径变化，只在新漫画时恢复位置
+    $effect(() => {
+        if (mangaPath && mangaPath !== lastMangaPath) {
+            lastMangaPath = mangaPath;
+            hasRestoredForCurrentManga = false;
+
+            // 延迟恢复，等待图片加载
+            if (selectedImages.length > 0 && scrollContainer) {
+                setTimeout(restoreScrollPosition, 200);
+            }
+        }
+    });
+
+    $effect(() => {
+        // 监听图片加载完成，如果还没恢复位置则尝试恢复
+        if (
+            selectedImages.length > 0 &&
+            scrollContainer &&
+            !hasRestoredForCurrentManga
+        ) {
+            setTimeout(restoreScrollPosition, 200);
+        }
+    });
 
     onMount(() => {
         // 添加键盘事件监听
@@ -67,38 +101,6 @@
             hasRestoredForCurrentManga = true;
         }
     }
-
-    let { params }: { params: { path: string } } = $props();
-
-    $effect(() => {
-        if (params.path) {
-            MangaService.loadManga(params.path);
-        }
-    });
-
-    // 监听漫画路径变化，只在新漫画时恢复位置
-    $effect(() => {
-        if (mangaPath && mangaPath !== lastMangaPath) {
-            lastMangaPath = mangaPath;
-            hasRestoredForCurrentManga = false;
-
-            // 延迟恢复，等待图片加载
-            if (selectedImages.length > 0 && scrollContainer) {
-                setTimeout(restoreScrollPosition, 200);
-            }
-        }
-    });
-
-    $effect(() => {
-        // 监听图片加载完成，如果还没恢复位置则尝试恢复
-        if (
-            selectedImages.length > 0 &&
-            scrollContainer &&
-            !hasRestoredForCurrentManga
-        ) {
-            setTimeout(restoreScrollPosition, 200);
-        }
-    });
 </script>
 
 <div class="flex flex-col h-full">

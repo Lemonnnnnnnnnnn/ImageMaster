@@ -3,3 +3,5 @@
         class="w-10 h-10 border-4 border-l-blue-500 rounded-full animate-spin"
     ></div>
 </div>
+
+<script lang="ts"></script>

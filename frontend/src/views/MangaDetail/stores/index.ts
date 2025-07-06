@@ -1,1 +1,1 @@
-export * from "./mangaStore";
+export * from "./mangaStore.svelte";
