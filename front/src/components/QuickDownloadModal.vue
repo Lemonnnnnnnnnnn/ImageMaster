@@ -51,27 +51,19 @@ const emits = defineEmits(["update:modelValue"]);
 
 const closeModal = () => {
     url.value = ''; 
-    loading.value = false;
     emits("update:modelValue", false); // 关闭 Modal
 };
 
 let url = ref('');
-let loading = ref(false);
 
 // 创建下载处理器
 const downloadHandler = createDownloadHandler({
-    onStart: () => {
-        loading.value = true;
-    },
     onSuccess: (taskId, downloadUrl) => {
         closeModal();
     },
     onError: (errorMsg) => {
         toast.error(errorMsg);
     },
-    onFinally: () => {
-        loading.value = false;
-    }
 });
 
 // 处理下载
