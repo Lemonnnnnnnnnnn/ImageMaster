@@ -23,14 +23,14 @@
                 </div>
             </Button>
 
-            <Button>
+            <Button @click="showQuickDownloadModal = true">
                 <div class="flex items-center gap-2">
                     <Download :size="16" class="text-white" />
                     <span>快速下载</span>
                 </div>
             </Button>
 
-            <Button @click="mangaService.deleteAndViewNextManga">
+            <Button @click="() => mangaService.deleteAndViewNextManga()">
                 <div class="flex items-center gap-2">
                     <Trash :size="16" class="text-white" />
                     <span>删除并看下一部</span>
@@ -38,25 +38,30 @@
             </Button>
         </div>
     </header>
+    <QuickDownloadModal v-model="showQuickDownloadModal" />
 </template>
 
 <script setup lang="ts">
 import { ArrowLeft, Download, Eye, EyeClosed, Trash } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 import { useMangaStore } from '../stores';
-
 import { storeToRefs } from 'pinia';
-import { Button } from '../../../components';
-import { MangaService } from '../services';
+import { Button, QuickDownloadModal } from '../../../components';
 import { ref } from 'vue';
 
 const router = useRouter();
 const mangaStore = useMangaStore();
-const mangaService = new MangaService();
 const { mangaName } = storeToRefs(mangaStore);
 
-let showNavigation = ref(false);
+defineProps({
+    mangaService: {
+        type: Object,
+        required: true
+    }
+})
 
+let showNavigation = ref(false);
+let showQuickDownloadModal = ref(false);
 </script>
 
 <style scoped></style>

@@ -18,7 +18,7 @@ export class MangaService {
     this.router = useRouter();
   }
 
-  async loadManga(path: string) {
+  async loadManga(path: string, callback?: () => void) {
     console.log('loadManga', path)
     try {
       this.mangaStore.loading = true;
@@ -52,6 +52,7 @@ export class MangaService {
       console.error('加载漫画失败:', error);
     } finally {
       this.mangaStore.loading = false;
+      callback?.();
     }
   }
 
@@ -80,13 +81,6 @@ export class MangaService {
       console.error("获取图片路径失败:", error);
     }
   }
-
-  handleKeyDown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      this.backToHome();
-    }
-  }
-
 
   backToHome() {
     this.router.push('/');

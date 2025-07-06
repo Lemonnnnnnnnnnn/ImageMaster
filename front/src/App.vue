@@ -4,6 +4,7 @@ import { Toaster, toast } from 'vue-sonner';
 import { onMounted } from 'vue';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { SideBar } from './components';
+import 'vue-sonner/style.css'
 
 onMounted(() => {
   // 监听下载完成事件
