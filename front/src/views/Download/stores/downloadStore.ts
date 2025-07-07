@@ -1,12 +1,10 @@
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 import {
   CancelCrawl,
-  ClearHistory,
-  GetActiveTasks,
-  GetHistoryTasks
+  GetActiveTasks
 } from '../../../../wailsjs/go/api/CrawlerAPI';
 import type { task } from '../../../../wailsjs/go/models';
-import { ref } from 'vue';
 
 // 轮询相关
 const POLL_INTERVAL = 1000;
@@ -36,8 +34,6 @@ export const useDownloadStore = defineStore('downloadStore', {
       try {
         const active = await GetActiveTasks();
         this.activeTasks = active;
-        const history = await GetHistoryTasks();
-        this.historyTasks = history;
       } catch (err) {
         console.error('轮询任务状态出错:', err);
       }
@@ -61,17 +57,5 @@ export const useDownloadStore = defineStore('downloadStore', {
         throw err;
       }
     },
-    async clearHistory() {
-      try {
-        if (!confirm(`确定要清空任务吗？`)) {
-          return false;
-        }
-        await ClearHistory();
-        this.historyTasks = [];
-      } catch (err) {
-        console.error('清除历史出错:', err);
-        throw err;
-      }
-    }
   }
 });

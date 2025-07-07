@@ -5,49 +5,46 @@
             <Button @click="handleDownload">
                 <div class="flex items-center gap-2">
                     <Download :size="16" class="text-white" />
-                    <span>Download</span>
+                    <span>下载</span>
                 </div>
             </Button>
         </div>
 
         <div class="h-1 border-b border-neutral-300 w-full my-4"></div>
 
-        <div class="flex items-center justify-between gap-2">
-            <Switch activeLabel="active task" inactiveLabel="history task" v-model="active" />
-            <Button @click="downloadStore.clearHistory">
+        <div class="flex items-center justify-end gap-2">
+            <Button @click="router.push('/history')">
                 <div class="flex items-center gap-2">
-                    <Trash :size="16" class="text-white" />
-                    <span>Clear</span>
+                    <History :size="16" class="text-white" />
+                    <span>历史记录</span>
                 </div>
             </Button>
         </div>
         <div class="flex-1 overflow-auto">
-            <List class="mt-2" :tasks="showTasks" :downloadStore="downloadStore" />
+            <TaskList class="mt-2" :tasks="activeTasks" />
         </div>
     </div>
 
 </template>
 
 <script setup lang="ts">
-import { Button, Input, Switch } from '@/components';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { Button, Input, TaskList } from '@/components';
+import { Download, History } from 'lucide-vue-next';
+import { storeToRefs } from 'pinia';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { createDownloadHandler } from './services';
-import { List } from './components';
 import { useDownloadStore } from './stores';
-import { Download , Trash } from 'lucide-vue-next';
-import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const downloadStore = useDownloadStore();
 
-let active = ref(true);
 let url = ref('');
 
-const { historyTasks, activeTasks } = storeToRefs(downloadStore);
+const { activeTasks } = storeToRefs(downloadStore);
 
-const showTasks = computed(() => {
-    return active.value ? activeTasks.value : historyTasks.value;
-});
 
 onMounted(async () => {
     await downloadStore.initializeStore();
@@ -76,8 +73,6 @@ const downloadHandler = createDownloadHandler({
         toast.error(errorMsg);
     },
 });
-
-
 
 
 </script>

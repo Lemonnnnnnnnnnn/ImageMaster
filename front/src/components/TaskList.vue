@@ -1,4 +1,5 @@
 <template>
+
     <div v-if="tasks.length === 0">
         <div class="text-center h-80 flex items-center justify-center text-neutral-100">
             <p> no task</p>
@@ -14,7 +15,7 @@
                 <!-- <th>startTime</th> -->
                 <th>完成时间</th>
                 <!-- <th>耗时</th> -->
-                <th>操作</th>
+                <!-- <th>操作</th> -->
             </tr>
         </thead>
 
@@ -42,9 +43,9 @@
                 <!-- <td>{{ formatTime(task.startTime) }}</td> -->
                 <td>{{ task.status === 'completed' ? formatTime(task.completeTime) : '-' }}</td>
                 <!-- <td>{{ calculateTimeDifference(task.startTime, task.status === 'completed' ? task.completeTime : Date.now()) }}</td> -->
-                <td><button v-if="task.status === 'pending' || task.status === 'downloading'"
+                <!-- <td><button v-if="task.status === 'pending' || task.status === 'downloading'"
                         class="text-sky-500 cursor-pointer" @click="downloadStore.cancelTask(task.id)">取消</button>
-                </td>
+                </td> -->
             </tr>
         </tbody>
 
@@ -53,15 +54,24 @@
 </template>
 
 <script setup lang="ts">
-import { calculateProgressPercentage, formatTime } from '../services';
-import type { task } from '../../../../wailsjs/go/models';
-import type { DownloadStore } from '../stores';
 import { Loader, ArrowBigDownDash, CircleCheck, CircleX, CircleOff } from 'lucide-vue-next';
+import type { task } from '../../wailsjs/go/models';
 
 defineProps<{
     tasks: task.DownloadTask[]
-    downloadStore: DownloadStore
 }>();
+
+function calculateProgressPercentage(current: number, total: number): number {
+    if (total <= 0) return 0;
+    return Math.round((current / total) * 100);
+}
+
+
+function formatTime(timeStr: string): string {
+    if (!timeStr) return '';
+    const date = new Date(timeStr);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+}
 
 function getStatusIcon(status: string) {
     if (status === "pending") {

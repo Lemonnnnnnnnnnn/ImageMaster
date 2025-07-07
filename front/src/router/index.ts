@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { Home, Download, Setting, MangaDetail } from '../views'
+import { Home, Download, Setting, MangaDetail, History } from '../views'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,6 +24,11 @@ const router = createRouter({
       name: 'manga',
       component: MangaDetail,
     },
+    {
+      path: '/history',
+      name: 'history',
+      component: History,
+    }
   ],
 })
 
