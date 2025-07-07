@@ -8,7 +8,7 @@
                     class="bg-neutral-800 py-8 px-4 rounded-sm w-full max-w-md flex flex-col gap-4">
                     <h2 class="text-lg font-bold text-white">{{ title }}</h2>
 
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 mt-4">
                         <Input v-model="url" class="flex-1" help="please input the target manga url" />
                     </div>
                     <div class="flex justify-end">
@@ -19,7 +19,7 @@
                                     <span>Close</span>
                                 </div>
                             </Button>
-                            <Button @click="handleDownload" type="primary">
+                            <Button @click="handleDownload">
                                 <div class="flex items-center gap-2">
                                     <Download :size="16" class="text-white" />
                                     <span>Download</span>
@@ -44,7 +44,7 @@ import { toast } from "vue-sonner";
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false }, // v-model 控制显示/隐藏
-    title: { type: String, default: 'Quick Download' },
+    title: { type: String, default: '快速下载' },
 });
 
 const emits = defineEmits(["update:modelValue"]);

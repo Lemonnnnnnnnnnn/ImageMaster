@@ -48,7 +48,7 @@ export class ScrollService {
                 if (this.scrollContainer) {
                     this.scrollContainer.value?.scrollBy({
                         top: progress.scrollPosition,
-                        behavior: "smooth"
+                        // behavior: "smooth"
                     })
                     console.log(
                         `已恢复到上次阅读位置：${progress.scrollPosition}px`,

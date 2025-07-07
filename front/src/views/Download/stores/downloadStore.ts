@@ -18,7 +18,6 @@ export const useDownloadStore = defineStore('downloadStore', {
   state: () => ({
     activeTasks: ref<task.DownloadTask[]>([]),
     historyTasks: ref<task.DownloadTask[]>([]),
-    activeTab: 'downloading' as 'downloading' | 'history',
     loading: false as boolean
   }),
   getters: {
@@ -34,7 +33,6 @@ export const useDownloadStore = defineStore('downloadStore', {
       }
     },
     async pollTasks() {
-      console.log("pollTasks")
       try {
         const active = await GetActiveTasks();
         this.activeTasks = active;

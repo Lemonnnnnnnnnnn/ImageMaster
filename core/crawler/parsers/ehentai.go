@@ -51,7 +51,7 @@ func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, sa
 	if dl != nil {
 		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
 			taskUpdater.UpdateTaskName(eHentaiAlbum.Name)
-			taskUpdater.UpdateTaskStatus("parsing", "")
+			taskUpdater.UpdateTaskStatus(string(types.StatusParsing), "")
 			fmt.Printf("已更新任务名称为: %s\n", eHentaiAlbum.Name)
 		}
 	}
@@ -130,7 +130,7 @@ func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, sa
 	// 更新任务状态为下载中
 	if dl != nil {
 		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-			taskUpdater.UpdateTaskStatus("downloading", "")
+			taskUpdater.UpdateTaskStatus(string(types.StatusDownloading), "")
 			taskUpdater.UpdateTaskProgress(0, totalImages)
 		}
 	}
@@ -148,20 +148,20 @@ func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, sa
 	if dl != nil {
 		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
 			if successImages == totalImages {
-				taskUpdater.UpdateTaskStatus("completed", "")
+				taskUpdater.UpdateTaskStatus(string(types.StatusCompleted), "")
 			} else {
 				failedCount := totalImages - successImages
-				taskUpdater.UpdateTaskStatus("partial_success", fmt.Sprintf("成功 %d 张，失败 %d 张", successImages, failedCount))
+				taskUpdater.UpdateTaskStatus(string(types.StatusFailed), fmt.Sprintf("成功 %d 张，失败 %d 张", successImages, failedCount))
 			}
 		}
 	}
-	
+
 	// 如果有图片下载失败，返回错误
 	if successImages < totalImages {
 		failedCount := totalImages - successImages
 		return fmt.Errorf("下载未完全成功，总共 %d 张图片，成功 %d 张，失败 %d 张", totalImages, successImages, failedCount)
 	}
-	
+
 	return nil
 }
 

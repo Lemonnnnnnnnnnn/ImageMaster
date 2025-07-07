@@ -69,7 +69,7 @@ func (tm *TaskManager) AddTask(url string) *DownloadTask {
 	task := &DownloadTask{
 		ID:        uuid.New().String(),
 		URL:       url,
-		Status:    string(StatusPending),
+		Status:    string(types.StatusPending),
 		StartTime: now,
 		UpdatedAt: now,
 	}
@@ -142,7 +142,7 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 
 	// 更新任务状态为下载中
 	tm.UpdateTask(taskID, func(task *DownloadTask) {
-		task.Status = string(StatusDownloading)
+		task.Status = string(types.StatusParsing)
 		task.UpdatedAt = time.Now()
 	})
 
@@ -173,7 +173,7 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 	if err != nil {
 		// 下载失败
 		tm.UpdateTask(taskID, func(task *DownloadTask) {
-			task.Status = string(StatusFailed)
+			task.Status = string(types.StatusFailed)
 			task.Error = err.Error()
 			task.CompleteTime = time.Now()
 			task.UpdatedAt = time.Now()
@@ -181,7 +181,7 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 	} else {
 		// 下载成功
 		tm.UpdateTask(taskID, func(task *DownloadTask) {
-			task.Status = string(StatusCompleted)
+			task.Status = string(types.StatusCompleted)
 			task.SavePath = savePath
 			task.CompleteTime = time.Now()
 			task.UpdatedAt = time.Now()
@@ -247,7 +247,7 @@ func (tm *TaskManager) CancelTask(taskID string) bool {
 		close(cancelChan)
 		// 更新任务状态
 		if task, exists := tm.tasks[taskID]; exists {
-			task.Status = string(StatusCancelled)
+			task.Status = string(types.StatusCancelled)
 			task.UpdatedAt = time.Now()
 		}
 		return true

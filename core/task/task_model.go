@@ -18,14 +18,3 @@ type DownloadTask struct {
 		Total   int `json:"total"`   // 总项目数
 	} `json:"progress"` // 下载进度
 }
-
-// DownloadStatus 表示下载任务状态
-type DownloadStatus string
-
-const (
-	StatusPending     DownloadStatus = "pending"     // 等待下载
-	StatusDownloading DownloadStatus = "downloading" // 下载中
-	StatusCompleted   DownloadStatus = "completed"   // 下载完成
-	StatusFailed      DownloadStatus = "failed"      // 下载失败
-	StatusCancelled   DownloadStatus = "cancelled"   // 已取消
-)
