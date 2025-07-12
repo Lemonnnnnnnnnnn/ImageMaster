@@ -7,3 +7,11 @@ export function debounce(fn: (...args: any[]) => void, delay: number) {
         timer = setTimeout(() => fn(...args), delay);
     };
 }
+
+export function UrlEncode(url: string) {
+    return encodeURIComponent(url);
+}
+
+export function UrlDecode(url: string) {
+    return decodeURIComponent(url);
+}

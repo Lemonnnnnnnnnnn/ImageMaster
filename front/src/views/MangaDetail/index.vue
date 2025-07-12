@@ -25,6 +25,7 @@ import { Loading } from "../../components";
 import { Header } from "./components";
 import { MangaService, ScrollService } from "./services";
 import { useMangaStore } from "./stores";
+import { UrlDecode } from "../../utils";
 
 let scrollContainer = ref<HTMLElement | null>(null);
 
@@ -48,7 +49,7 @@ watch(() => route.params.path, (newPath) => {
 });
 
 function init() {
-    mangaService.loadManga(route.params.path as string);
+    mangaService.loadManga(UrlDecode(route.params.path as string));
 }
 
 </script>

@@ -1,7 +1,7 @@
 <template>
     <button
         class="rounded-lg overflow-hidden xl:w-64 w-32 bg-neutral-400 cursor-pointer text-left hover:translate-y-[-4px] transition-transform duration-300 relative"
-        @click="router.push(`/manga/${manga.path}`)">
+        @click="toMangaDetail">
         <div class="h-48 overflow-hidden">
             <img :src="mangaImageSrc" :alt="manga.name" class="w-full h-full object-cover" />
         </div>
@@ -21,6 +21,7 @@ import { MangaService } from "../services";
 import type { Manga } from "../stores/homeStore";
 // import { push } from "svelte-spa-router";
 import { useRouter } from "vue-router";
+import { UrlEncode } from "../../../utils";
 
 // export let manga: Manga;
 const props = defineProps<{
@@ -30,6 +31,10 @@ const props = defineProps<{
 const mangaService = new MangaService();
 const mangaImageSrc = mangaService.getMangaImage(props.manga.previewImg);
 const router = useRouter();
+
+function toMangaDetail() {
+    router.push(`/manga/${UrlEncode(props.manga.path)}`);
+}
 </script>
 
 <style scoped></style>
