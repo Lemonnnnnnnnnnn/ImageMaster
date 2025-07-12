@@ -54,7 +54,7 @@ const props = defineProps({
 watch(() => props.modelValue, (newVal) => {
     if (newVal) {
         nextTick(() => {
-            inputRef.value?.inputRef?.focus();
+            inputRef.value?.focus();
         })
     }
 })
