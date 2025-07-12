@@ -28,7 +28,3 @@ export const useHomeStore = defineStore('homeStore', {
     }
   }
 });
-
-// 滚动相关状态
-// export const showScrollTop = ref<boolean>(false);
-// export const scrollY = ref<number>(0);

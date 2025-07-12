@@ -93,6 +93,7 @@ func (m *Manager) LoadAllLibraries() {
 
 // LoadLibrary 加载指定图书馆
 func (m *Manager) LoadLibrary(path string) bool {
+	m.mangas = []Manga{}
 	return m.LoadMangaLibrary(path, &m.mangas)
 }
 

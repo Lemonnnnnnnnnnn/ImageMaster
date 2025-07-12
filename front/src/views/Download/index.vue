@@ -1,7 +1,7 @@
 <template>
     <div class="p-8 h-screen flex flex-col">
         <div class="flex gap-4 mt-2">
-            <Input autofocus v-model="url" class="flex-1" help="please input the target manga url" />
+            <Input autofocus v-model="url" class="flex-1" help="please input the target manga url" @keydown="handleKeydown" />
             <Button @click="handleDownload">
                 <div class="flex items-center gap-2">
                     <Download :size="16" class="text-white" />
@@ -45,11 +45,11 @@ let url = ref('');
 
 const { activeTasks } = storeToRefs(downloadStore);
 
-const vFocus = {
-  mounted: (el: HTMLInputElement) => el.focus()
+function handleKeydown(event: any) {
+    if (event.key === 'Enter') {
+        handleDownload();
+    }
 }
-
-
 
 onMounted(async () => {
     await downloadStore.initializeStore();

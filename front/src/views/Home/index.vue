@@ -11,14 +11,16 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { onMounted, ref } from "vue";
+import { GetActiveLibrary } from "../../../wailsjs/go/config/API";
 import { Loading } from "../../components";
 import { EmptyState, MangaGrid } from "./components";
 import { MangaService } from "./services/mangaService";
 import { useHomeStore } from "./stores/homeStore";
-import { GetActiveLibrary } from "../../../wailsjs/go/config/API";
 
 const homeStore = useHomeStore();
-const { loading, mangas } = storeToRefs(homeStore);
+const { mangas } = storeToRefs(homeStore);
+
+let loading = ref(false);
 
 let activeLibrary = ref("");
 
@@ -27,11 +29,14 @@ async function getActiveLibrary() {
     activeLibrary.value = library;
 }
 
+
 onMounted(async () => {
-    // 初始化数据加载
+    loading.value = true;
+    getActiveLibrary();
     const mangaService = new MangaService();
     await mangaService.initialize();
-    getActiveLibrary();
+
+    loading.value = false;
 });
 
 </script>

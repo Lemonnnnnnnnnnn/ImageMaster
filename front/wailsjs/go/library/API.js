@@ -22,6 +22,10 @@ export function InitializeLibraryManager() {
   return window['go']['library']['API']['InitializeLibraryManager']();
 }
 
+export function LoadActiveLibrary() {
+  return window['go']['library']['API']['LoadActiveLibrary']();
+}
+
 export function LoadAllLibraries() {
   return window['go']['library']['API']['LoadAllLibraries']();
 }

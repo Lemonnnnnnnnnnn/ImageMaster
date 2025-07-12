@@ -13,6 +13,8 @@ export function GetMangaImages(arg1:string):Promise<Array<string>>;
 
 export function InitializeLibraryManager():Promise<void>;
 
+export function LoadActiveLibrary():Promise<void>;
+
 export function LoadAllLibraries():Promise<void>;
 
 export function LoadLibrary(arg1:string):Promise<void>;

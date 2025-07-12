@@ -61,7 +61,7 @@ import { useRouter } from 'vue-router';
 import { useMangaStore } from '../stores';
 import { storeToRefs } from 'pinia';
 import { Button, QuickDownloadModal } from '../../../components';
-import { ref, type PropType } from 'vue';
+import { onMounted, onUnmounted, ref, type PropType } from 'vue';
 import { MangaService } from '../services';
 
 const router = useRouter();
@@ -77,6 +77,22 @@ defineProps({
 
 let showNavigation = ref(false);
 let showQuickDownloadModal = ref(false);
+
+// 如果按下 ctrl + k ，则显示 QuickDownloadModal
+function handleKeydown(event: KeyboardEvent) {
+    if (event.ctrlKey && event.key === 'd') {
+        showQuickDownloadModal.value = true;
+    }
+}
+
+onMounted(() => {
+    window.addEventListener('keydown', handleKeydown);
+})
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeydown);
+})
+
 </script>
 
 <style scoped>

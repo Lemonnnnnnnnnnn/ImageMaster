@@ -1,6 +1,12 @@
 <template>
     <div class="p-8">
-        <div class="flex items-center justify-end gap-2">
+        <div class="flex items-center justify-between gap-2">
+            <Button @click="router.back()">
+                <div class="flex items-center text-white gap-2">
+                    <ArrowLeft :size="16" class="text-white" />
+                    <span>返回</span>
+                </div>
+            </Button>
             <Button @click="clearHistory">
                 <div class="flex items-center text-white gap-2">
                     <Trash :size="16" class="text-white" />
@@ -17,6 +23,10 @@ import { onMounted, ref } from 'vue';
 import { ClearHistory, GetHistoryTasks } from '../../../wailsjs/go/api/CrawlerAPI';
 import type { task } from '../../../wailsjs/go/models';
 import { Button, TaskList } from '@/components';
+import { useRouter } from 'vue-router';
+import { ArrowLeft, Trash } from 'lucide-vue-next';
+
+const router = useRouter();
 
 let historyTasks = ref<task.DownloadTask[]>([])
 

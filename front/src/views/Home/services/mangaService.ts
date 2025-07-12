@@ -1,7 +1,8 @@
 import {
   DeleteManga,
   GetAllMangas,
-  GetImageDataUrl
+  GetImageDataUrl,
+  LoadActiveLibrary
 } from '../../../../wailsjs/go/library/API';
 import type { Manga } from '../stores/homeStore';
 import { useHomeStore } from '../stores/homeStore';
@@ -25,6 +26,9 @@ export class MangaService {
    */
   async loadMangas(): Promise<void> {
     this.homeStore.loading = true;
+    // 初始化数据加载
+    await LoadActiveLibrary();
+
     const mangasData = await GetAllMangas();
     this.homeStore.mangas = mangasData;
 

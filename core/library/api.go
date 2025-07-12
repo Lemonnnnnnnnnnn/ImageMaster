@@ -40,15 +40,15 @@ func (a *API) InitializeLibraryManager() {
 	a.libraryManager = NewManager(a.configManager, outputDir)
 	a.libraryManager.SetContext(a.ctx)
 	a.libraryManager.EnsureDir(outputDir)
-
-	if a.configManager.GetActiveLibrary() != "" {
-		a.libraryManager.LoadLibrary(a.configManager.GetActiveLibrary())
-	}
 }
 
 // LoadLibrary 加载指定图书馆
 func (a *API) LoadLibrary(path string) {
 	a.libraryManager.LoadLibrary(path)
+}
+
+func (a *API) LoadActiveLibrary() {
+	a.libraryManager.LoadLibrary(a.configManager.GetActiveLibrary())
 }
 
 // LoadAllLibraries 加载所有图书馆
