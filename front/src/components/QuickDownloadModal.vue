@@ -9,7 +9,7 @@
                     <h2 class="text-lg font-bold text-white">{{ title }}</h2>
 
                     <div class="flex items-center gap-2 mt-4">
-                        <Input v-model="url" class="flex-1" help="please input the target manga url" />
+                        <Input ref="inputRef" v-model="url" class="flex-1" help="please input the target manga url" />
                     </div>
                     <div class="flex justify-end">
                         <div class="flex gap-2">
@@ -37,24 +37,34 @@
 
 <script setup lang="ts">
 import { createDownloadHandler } from "@/views/Download/services";
-import { defineProps, defineEmits, ref } from "vue";
+import { defineProps, defineEmits, ref, onMounted, watch, nextTick } from "vue";
 import { Button, Input } from ".";
 import { Download, X } from "lucide-vue-next";
 import { toast } from "vue-sonner";
+
+
+let url = ref('');
+let inputRef = ref<InstanceType<typeof Input>>();
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false }, // v-model 控制显示/隐藏
     title: { type: String, default: '快速下载' },
 });
 
+watch(() => props.modelValue, (newVal) => {
+    if (newVal) {
+        nextTick(() => {
+            inputRef.value?.inputRef?.focus();
+        })
+    }
+})
+
 const emits = defineEmits(["update:modelValue"]);
 
 const closeModal = () => {
-    url.value = ''; 
+    url.value = '';
     emits("update:modelValue", false); // 关闭 Modal
 };
-
-let url = ref('');
 
 // 创建下载处理器
 const downloadHandler = createDownloadHandler({
@@ -84,6 +94,7 @@ function handleKeydown(event: any) {
         closeModal();
     }
 }
+
 </script>
 
 <style scoped>
