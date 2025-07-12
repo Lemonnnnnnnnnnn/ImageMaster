@@ -56,16 +56,17 @@ type ConfigProvider interface {
 // ConfigManager 配置管理接口
 type ConfigManager interface {
 	GetOutputDir() string
-	SetOutputDir(dir string) bool
+	SetOutputDir() bool
 	GetProxy() string
 	SetProxy(proxyURL string) bool
 	GetLibraries() []string
-	AddLibrary(path string) bool
+	AddLibrary() bool
+	GetActiveLibrary() string
+	SetActiveLibrary(library string) bool
 }
 
 // StorageProvider 存储提供者接口
 type StorageProvider interface {
-	GetConfigManager() ConfigManager
 	AddDownloadRecord(task interface{})
 	GetDownloadHistory() []interface{}
 	ClearDownloadHistory()

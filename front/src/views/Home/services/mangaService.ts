@@ -1,13 +1,10 @@
 import {
-  GetAllMangas,
   DeleteManga,
-  GetImageDataUrl,
-  LoadAllLibraries,
+  GetAllMangas,
+  GetImageDataUrl
 } from '../../../../wailsjs/go/library/API';
-import { GetLibraries } from '../../../../wailsjs/go/storage/API';
-import { useHomeStore } from '../stores/homeStore';
-// import { get } from 'svelte/store';
 import type { Manga } from '../stores/homeStore';
+import { useHomeStore } from '../stores/homeStore';
 
 export class MangaService {
   private homeStore: ReturnType<typeof useHomeStore>;
@@ -19,18 +16,8 @@ export class MangaService {
    */
   async initialize(): Promise<void> {
     this.homeStore.loading = true;
-    await LoadAllLibraries();
-    await this.loadLibraries();
     await this.loadMangas();
     this.homeStore.loading = false;
-  }
-
-  /**
-   * 加载库列表
-   */
-  async loadLibraries(): Promise<void> {
-    const librariesData = await GetLibraries();
-    this.homeStore.libraries = librariesData;
   }
 
   /**

@@ -2,11 +2,8 @@ package library
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 
 	"ImageMaster/core/types"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // API 图书馆API - 提供前端调用的接口
@@ -30,20 +27,13 @@ func (a *API) SetContext(ctx context.Context) {
 
 // InitializeLibraryManager 初始化图书馆管理器
 func (a *API) InitializeLibraryManager() {
-	// 设置默认输出目录
-	userDir, err := os.UserHomeDir()
-	if err != nil {
-		userDir, _ = os.Getwd()
-	}
-	defaultOutputDir := filepath.Join(userDir, "Pictures", "ImageMaster")
-
 	// 如果配置中有指定的输出目录，使用配置中的目录，否则使用默认目录
-	outputDir := defaultOutputDir
+	outputDir := a.configManager.GetOutputDir()
 	if configOutputDir := a.configManager.GetOutputDir(); configOutputDir != "" {
 		outputDir = configOutputDir
 	} else {
 		// 如果是第一次使用，将默认目录保存到配置中
-		a.configManager.SetOutputDir(defaultOutputDir)
+		a.configManager.SetOutputDir()
 	}
 
 	// 初始化图书馆管理器
@@ -51,15 +41,14 @@ func (a *API) InitializeLibraryManager() {
 	a.libraryManager.SetContext(a.ctx)
 	a.libraryManager.EnsureDir(outputDir)
 
-	// 如果配置中有图书馆，自动加载
-	if len(a.configManager.GetLibraries()) > 0 {
-		a.libraryManager.LoadAllLibraries()
+	if a.configManager.GetActiveLibrary() != "" {
+		a.libraryManager.LoadLibrary(a.configManager.GetActiveLibrary())
 	}
 }
 
-// SelectLibrary 选择漫画库文件夹
-func (a *API) SelectLibrary() string {
-	return a.libraryManager.SelectLibrary()
+// LoadLibrary 加载指定图书馆
+func (a *API) LoadLibrary(path string) {
+	a.libraryManager.LoadLibrary(path)
 }
 
 // LoadAllLibraries 加载所有图书馆
@@ -85,22 +74,4 @@ func (a *API) DeleteManga(path string) bool {
 // GetImageDataUrl 获取图片的DataURL
 func (a *API) GetImageDataUrl(path string) string {
 	return a.libraryManager.GetImageDataUrl(path)
-}
-
-// SetOutputDir 设置输出目录
-func (a *API) SetOutputDir() string {
-	dir, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "选择保存目录",
-	})
-
-	if err != nil || dir == "" {
-		return a.configManager.GetOutputDir()
-	}
-
-	a.configManager.SetOutputDir(dir)
-
-	// 更新图书馆管理器的输出目录
-	a.libraryManager.SetOutputDir(dir)
-
-	return dir
 }

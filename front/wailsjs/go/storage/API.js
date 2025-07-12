@@ -6,10 +6,6 @@ export function AddDownloadRecord(arg1) {
   return window['go']['storage']['API']['AddDownloadRecord'](arg1);
 }
 
-export function AddLibrary(arg1) {
-  return window['go']['storage']['API']['AddLibrary'](arg1);
-}
-
 export function ClearDownloadHistory() {
   return window['go']['storage']['API']['ClearDownloadHistory']();
 }
@@ -18,26 +14,6 @@ export function GetDownloadHistory() {
   return window['go']['storage']['API']['GetDownloadHistory']();
 }
 
-export function GetLibraries() {
-  return window['go']['storage']['API']['GetLibraries']();
-}
-
-export function GetOutputDir() {
-  return window['go']['storage']['API']['GetOutputDir']();
-}
-
-export function GetProxy() {
-  return window['go']['storage']['API']['GetProxy']();
-}
-
 export function GetStorage() {
   return window['go']['storage']['API']['GetStorage']();
-}
-
-export function SetOutputDir(arg1) {
-  return window['go']['storage']['API']['SetOutputDir'](arg1);
-}
-
-export function SetProxy(arg1) {
-  return window['go']['storage']['API']['SetProxy'](arg1);
 }

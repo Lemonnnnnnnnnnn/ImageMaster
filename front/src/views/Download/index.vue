@@ -10,7 +10,7 @@
             </Button>
         </div>
 
-        <div class="h-1 border-b border-neutral-300 w-full my-4"></div>
+        <div class="h-1 border-b border-neutral-300/50 w-full my-8"></div>
 
         <div class="flex items-center justify-end gap-2">
             <Button @click="router.push('/history')">
@@ -65,6 +65,7 @@ async function handleDownload() {
     }
 
     await downloadHandler(url.value.trim());
+    url.value = '';
 }
 
 // 创建下载处理器

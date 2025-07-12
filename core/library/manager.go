@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
-
 	"ImageMaster/core/types"
 )
 
@@ -62,23 +60,23 @@ func (m *Manager) SetContext(ctx context.Context) {
 }
 
 // SelectLibrary 选择漫画库文件夹
-func (m *Manager) SelectLibrary() string {
-	dir, err := runtime.OpenDirectoryDialog(m.ctx, runtime.OpenDialogOptions{
-		Title: "选择漫画库文件夹",
-	})
+// func (m *Manager) SelectLibrary() string {
+// 	dir, err := runtime.OpenDirectoryDialog(m.ctx, runtime.OpenDialogOptions{
+// 		Title: "选择漫画库文件夹",
+// 	})
 
-	if err != nil || dir == "" {
-		return ""
-	}
+// 	if err != nil || dir == "" {
+// 		return ""
+// 	}
 
-	// 添加到配置中
-	m.configManager.AddLibrary(dir)
+// 	// 添加到配置中
+// 	m.configManager.AddLibrary(dir)
 
-	// 加载这个新库
-	m.LoadLibrary(dir)
+// 	// 加载这个新库
+// 	m.LoadLibrary(dir)
 
-	return dir
-}
+// 	return dir
+// }
 
 // GetLibraries 获取所有图书馆路径
 func (m *Manager) GetLibraries() []string {

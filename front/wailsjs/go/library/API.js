@@ -26,14 +26,10 @@ export function LoadAllLibraries() {
   return window['go']['library']['API']['LoadAllLibraries']();
 }
 
-export function SelectLibrary() {
-  return window['go']['library']['API']['SelectLibrary']();
+export function LoadLibrary(arg1) {
+  return window['go']['library']['API']['LoadLibrary'](arg1);
 }
 
 export function SetContext(arg1) {
   return window['go']['library']['API']['SetContext'](arg1);
-}
-
-export function SetOutputDir() {
-  return window['go']['library']['API']['SetOutputDir']();
 }

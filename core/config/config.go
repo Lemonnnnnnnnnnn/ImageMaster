@@ -1,23 +1,29 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
 
 	"ImageMaster/core/logger"
 	"ImageMaster/core/types"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // 确保Manager实现ConfigProvider和ConfigManager接口
 var _ types.ConfigProvider = (*Manager)(nil)
 var _ types.ConfigManager = (*Manager)(nil)
 
+var defaultConfig = Config{Libraries: []string{}, OutputDir: "", ProxyURL: "", ActiveLibrary: ""}
+
 // Config 应用配置结构体
 type Config struct {
-	Libraries []string `json:"libraries"`
-	OutputDir string   `json:"output_dir"`
-	ProxyURL  string   `json:"proxy_url"`
+	Libraries     []string `json:"libraries"`
+	OutputDir     string   `json:"output_dir"`
+	ProxyURL      string   `json:"proxy_url"`
+	ActiveLibrary string   `json:"active_library"`
 }
 
 // Manager 配置管理器
@@ -36,7 +42,7 @@ func NewManager(configName string) *Manager {
 	configPath := filepath.Join(configDir, configName)
 
 	m := &Manager{
-		config:     Config{Libraries: []string{}, OutputDir: "", ProxyURL: ""},
+		config:     defaultConfig,
 		configPath: configPath,
 	}
 
@@ -52,14 +58,14 @@ func (m *Manager) LoadConfig() bool {
 	if err != nil {
 		logger.Warn("Failed to load config: %v, using default config", err)
 		// 加载失败，使用默认配置
-		m.config = Config{Libraries: []string{}, OutputDir: "", ProxyURL: ""}
+		m.config = defaultConfig
 		return false
 	}
 
 	err = json.Unmarshal(data, &m.config)
 	if err != nil {
 		logger.Error("Failed to parse config: %v, using default config", err)
-		m.config = Config{Libraries: []string{}, OutputDir: "", ProxyURL: ""}
+		m.config = defaultConfig
 		return false
 	}
 
@@ -100,32 +106,62 @@ func (m *Manager) GetLibraries() []string {
 	return m.config.Libraries
 }
 
+// SetActiveLibrary 设置活动图书馆
+func (m *Manager) SetActiveLibrary(library string) bool {
+	m.config.ActiveLibrary = library
+	logger.Info("Set active library: %s", library)
+	return m.SaveConfig()
+}
+
 // AddLibrary 添加图书馆
-func (m *Manager) AddLibrary(path string) bool {
+func (m *Manager) AddLibrary() bool {
+	dir, err := runtime.OpenDirectoryDialog(context.Background(), runtime.OpenDialogOptions{
+		Title: "选择新增的图书馆",
+	})
+	if err != nil || dir == "" {
+		return false
+	}
+
 	// 检查是否已经添加过该库
 	for _, lib := range m.config.Libraries {
-		if lib == path {
-			logger.Warn("Library already exists: %s", path)
+		if lib == dir {
+			logger.Warn("Library already exists: %s", dir)
 			return false
 		}
 	}
 
 	// 添加到配置中
-	m.config.Libraries = append(m.config.Libraries, path)
-	logger.Info("Added library: %s", path)
-	return m.SaveConfig()
-}
-
-// SetOutputDir 设置输出目录
-func (m *Manager) SetOutputDir(path string) bool {
-	m.config.OutputDir = path
-	logger.Info("Set output directory: %s", path)
+	m.config.Libraries = append(m.config.Libraries, dir)
+	logger.Info("Added library: %s", dir)
 	return m.SaveConfig()
 }
 
 // GetOutputDir 获取输出目录
 func (m *Manager) GetOutputDir() string {
 	return m.config.OutputDir
+}
+
+// SetOutputDir 设置输出目录
+func (m *Manager) SetOutputDir() bool {
+	dir, err := runtime.OpenDirectoryDialog(context.Background(), runtime.OpenDialogOptions{
+		Title: "选择保存目录",
+	})
+
+	if err != nil || dir == "" {
+		return false
+	}
+
+	m.config.OutputDir = dir
+
+	// 更新图书馆管理器的输出目录
+	m.config.OutputDir = dir
+
+	return true
+}
+
+// GetActiveLibrary 获取活动图书馆
+func (m *Manager) GetActiveLibrary() string {
+	return m.config.ActiveLibrary
 }
 
 // SetProxy 设置代理

@@ -5,20 +5,8 @@ import {storage} from '../models';
 
 export function AddDownloadRecord(arg1:any):Promise<void>;
 
-export function AddLibrary(arg1:string):Promise<boolean>;
-
 export function ClearDownloadHistory():Promise<void>;
 
 export function GetDownloadHistory():Promise<Array<task.DownloadTask>>;
 
-export function GetLibraries():Promise<Array<string>>;
-
-export function GetOutputDir():Promise<string>;
-
-export function GetProxy():Promise<string>;
-
 export function GetStorage():Promise<storage.Manager>;
-
-export function SetOutputDir(arg1:string):Promise<boolean>;
-
-export function SetProxy(arg1:string):Promise<boolean>;
