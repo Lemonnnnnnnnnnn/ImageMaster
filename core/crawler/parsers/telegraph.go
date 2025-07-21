@@ -163,3 +163,45 @@ func FormatTelegraphURL(url string) string {
 	}
 	return "https://telegra.ph" + url
 }
+
+// TelegraphCrawler Telegraph爬虫
+type TelegraphCrawler struct {
+	reqClient  *request.Client
+	downloader types.Downloader
+}
+
+// NewTelegraphCrawler 创建新的Telegraph爬虫
+func NewTelegraphCrawler(reqClient *request.Client) types.ImageCrawler {
+	return &TelegraphCrawler{
+		reqClient: reqClient,
+	}
+}
+
+// GetDownloader 获取下载器
+func (c *TelegraphCrawler) GetDownloader() types.Downloader {
+	return c.downloader
+}
+
+// SetDownloader 设置下载器
+func (c *TelegraphCrawler) SetDownloader(dl types.Downloader) {
+	c.downloader = dl
+}
+
+// Crawl 执行爬取
+func (c *TelegraphCrawler) Crawl(url string, savePath string) (string, error) {
+	// 将下载器传递给解析器，解析器会使用downloader获取的代理设置
+	err := ParseTelegraph(nil, url, savePath, c.downloader)
+	if err != nil {
+		return "", err
+	}
+	return savePath, nil
+}
+
+// CrawlAndSave 执行爬取并保存
+func (c *TelegraphCrawler) CrawlAndSave(url string, savePath string) string {
+	result, err := c.Crawl(url, savePath)
+	if err != nil {
+		return ""
+	}
+	return result
+}

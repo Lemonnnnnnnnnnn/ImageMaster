@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -342,4 +343,57 @@ func ParseLinks(body string) []string {
 	})
 
 	return links
+}
+
+// EHentaiCrawler E-Hentai爬虫
+type EHentaiCrawler struct {
+	reqClient  *request.Client
+	ctx        context.Context
+	downloader types.Downloader
+}
+
+// NewEHentaiCrawler 创建新的E-Hentai爬虫
+func NewEHentaiCrawler(reqClient *request.Client, ctx context.Context) types.ImageCrawler {
+	return &EHentaiCrawler{
+		reqClient: reqClient,
+		ctx:       ctx,
+	}
+}
+
+// GetDownloader 获取下载器
+func (c *EHentaiCrawler) GetDownloader() types.Downloader {
+	return c.downloader
+}
+
+// SetDownloader 设置下载器
+func (c *EHentaiCrawler) SetDownloader(dl types.Downloader) {
+	c.downloader = dl
+}
+
+// Crawl 执行爬取
+func (c *EHentaiCrawler) Crawl(url string, savePath string) (string, error) {
+	// 将下载器传递给解析器，解析器会使用downloader获取的代理设置
+	err := ParseEHentai(c.ctx, c.reqClient, url, savePath, c.downloader)
+	if err != nil {
+		return "", err
+	}
+	return savePath, nil
+}
+
+// CrawlAndSave 执行爬取并保存
+func (c *EHentaiCrawler) CrawlAndSave(url string, savePath string) string {
+	// 从URL中提取标题作为文件夹名
+	name := filepath.Base(savePath)
+	if name == "" || name == "." {
+		// 如果无法从路径中提取有效的名称，使用"download"作为默认名称
+		name = "download"
+	}
+
+	result, err := c.Crawl(url, savePath)
+	if err != nil {
+		fmt.Printf("爬取失败: %v\n", err)
+		return ""
+	}
+
+	return result
 }

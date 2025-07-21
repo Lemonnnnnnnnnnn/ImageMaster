@@ -44,6 +44,14 @@ type ProgressReporter interface {
 	ReportProgress(current, total int)
 }
 
+// ImageCrawler 图片爬虫接口
+type ImageCrawler interface {
+	Crawl(url string, saveDir string) (string, error)
+	CrawlAndSave(url string, savePath string) string
+	GetDownloader() Downloader
+	SetDownloader(dl Downloader)
+}
+
 // ConfigProvider 配置提供者接口
 type ConfigProvider interface {
 	// GetOutputDir 获取输出目录

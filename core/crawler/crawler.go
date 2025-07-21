@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"path/filepath"
 	"strings"
 
 	"ImageMaster/core/crawler/parsers"
@@ -18,16 +17,9 @@ const (
 	SiteTypeEHentai   = "ehentai"
 	SiteTypeExHentai  = "exhentai"
 	SiteTypeTelegraph = "telegraph"
+	SiteTypeWnacg     = "wnacg"
 	SiteTypeGeneric   = "generic"
 )
-
-// ImageCrawler 图片爬虫接口
-type ImageCrawler interface {
-	Crawl(url string, saveDir string) (string, error)
-	CrawlAndSave(url string, savePath string) string
-	GetDownloader() types.Downloader
-	SetDownloader(dl types.Downloader)
-}
 
 // CrawlerFactory 爬虫工厂
 type CrawlerFactory struct {
@@ -65,28 +57,19 @@ func (f *CrawlerFactory) SetConfigManager(configManager types.ConfigProvider) {
 }
 
 // CreateCrawler 创建特定网站的爬虫
-func (f *CrawlerFactory) CreateCrawler(siteType string) ImageCrawler {
+func (f *CrawlerFactory) CreateCrawler(siteType string) types.ImageCrawler {
 	fmt.Printf("创建爬虫, 类型: %s\n", siteType)
 
 	// 所有爬虫共用同一个配置好的请求客户端
 	switch siteType {
 	case SiteTypeEHentai:
-		crawler := &EHentaiCrawler{
-			reqClient: f.reqClient,
-			ctx:       f.ctx,
-		}
-		return crawler
+		return parsers.NewEHentaiCrawler(f.reqClient, f.ctx)
 	case SiteTypeExHentai:
-		crawler := &EHentaiCrawler{
-			reqClient: f.reqClient,
-			ctx:       f.ctx,
-		}
-		return crawler
+		return parsers.NewEHentaiCrawler(f.reqClient, f.ctx)
 	case SiteTypeTelegraph:
-		crawler := &TelegraphCrawler{
-			reqClient: f.reqClient,
-		}
-		return crawler
+		return parsers.NewTelegraphCrawler(f.reqClient)
+	case SiteTypeWnacg:
+		return parsers.NewWnacgCrawler(f.reqClient, f.ctx)
 	default:
 		crawler := &GenericCrawler{
 			reqClient: f.reqClient,
@@ -118,6 +101,11 @@ func (f *CrawlerFactory) DetectSiteType(rawURL string) string {
 	// 检测Telegraph
 	if strings.Contains(host, "telegra.ph") || strings.Contains(host, "telegraph.com") {
 		return SiteTypeTelegraph
+	}
+
+	// 检测Wnacg
+	if strings.Contains(host, "wnacg.com") {
+		return SiteTypeWnacg
 	}
 
 	// 默认使用通用爬虫
@@ -154,84 +142,4 @@ func (c *GenericCrawler) CrawlAndSave(url string, savePath string) string {
 		return ""
 	}
 	return savePath
-}
-
-// EHentaiCrawler E-Hentai爬虫
-type EHentaiCrawler struct {
-	reqClient  *request.Client
-	ctx        context.Context
-	downloader types.Downloader
-}
-
-// GetDownloader 获取下载器
-func (c *EHentaiCrawler) GetDownloader() types.Downloader {
-	return c.downloader
-}
-
-// SetDownloader 设置下载器
-func (c *EHentaiCrawler) SetDownloader(dl types.Downloader) {
-	c.downloader = dl
-}
-
-// Crawl 执行爬取
-func (c *EHentaiCrawler) Crawl(url string, savePath string) (string, error) {
-	// 将下载器传递给解析器，解析器会使用downloader获取的代理设置
-	err := parsers.ParseEHentai(c.ctx, c.reqClient, url, savePath, c.downloader)
-	if err != nil {
-		return "", err
-	}
-	return savePath, nil
-}
-
-// CrawlAndSave 执行爬取并保存
-func (c *EHentaiCrawler) CrawlAndSave(url string, savePath string) string {
-	// 从URL中提取标题作为文件夹名
-	name := filepath.Base(savePath)
-	if name == "" || name == "." {
-		// 如果无法从路径中提取有效的名称，使用"download"作为默认名称
-		name = "download"
-	}
-
-	result, err := c.Crawl(url, savePath)
-	if err != nil {
-		fmt.Printf("爬取失败: %v\n", err)
-		return ""
-	}
-
-	return result
-}
-
-// TelegraphCrawler Telegraph爬虫
-type TelegraphCrawler struct {
-	reqClient  *request.Client
-	downloader types.Downloader
-}
-
-// GetDownloader 获取下载器
-func (c *TelegraphCrawler) GetDownloader() types.Downloader {
-	return c.downloader
-}
-
-// SetDownloader 设置下载器
-func (c *TelegraphCrawler) SetDownloader(dl types.Downloader) {
-	c.downloader = dl
-}
-
-// Crawl 执行爬取
-func (c *TelegraphCrawler) Crawl(url string, savePath string) (string, error) {
-	// 将下载器传递给解析器，解析器会使用downloader获取的代理设置
-	err := parsers.ParseTelegraph(nil, url, savePath, c.downloader)
-	if err != nil {
-		return "", err
-	}
-	return savePath, nil
-}
-
-// CrawlAndSave 执行爬取并保存
-func (c *TelegraphCrawler) CrawlAndSave(url string, savePath string) string {
-	result, err := c.Crawl(url, savePath)
-	if err != nil {
-		return ""
-	}
-	return result
 }
