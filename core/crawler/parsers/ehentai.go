@@ -1,11 +1,9 @@
 package parsers
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"net/http"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -25,36 +23,25 @@ type EHentaiAlbum struct {
 	Pages []string
 }
 
-// ParseEHentai 解析EH网站
-func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, savePath string, dl types.Downloader) error {
-	fmt.Printf("下载 eHentai 专辑: %s\n", url)
+// EHentaiParser EHentai解析器实现
+type EHentaiParser struct{}
 
-	// 使用下载器的代理配置
-	if dl != nil && dl.GetProxy() != "" {
-		reqClient.SetProxy(dl.GetProxy())
+// GetName 获取解析器名称
+func (p *EHentaiParser) GetName() string {
+	return "eHentai"
+}
+
+// Parse 解析URL获取图片信息
+func (p *EHentaiParser) Parse(reqClient *request.Client, url string) (*ParseResult, error) {
+	// 设置ehentai特殊配置
+	err := SetupEHentaiClient(reqClient, nil)
+	if err != nil {
+		return nil, fmt.Errorf("设置EHentai客户端失败: %w", err)
 	}
-
-	// 设置ehentai需要的cookie
-	reqClient.AddCookie(&http.Cookie{
-		Name:  "nw",
-		Value: "1",
-	})
-
-	// 设置User-Agent
-	reqClient.SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 
 	eHentaiAlbum, err := GetAlbumWithClient(reqClient, url)
 	if err != nil {
-		return fmt.Errorf("获取专辑失败: %w", err)
-	}
-
-	// 使用TaskUpdater更新任务名称（如果可用）
-	if dl != nil {
-		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-			taskUpdater.UpdateTaskName(eHentaiAlbum.Name)
-			taskUpdater.UpdateTaskStatus(string(types.StatusParsing), "")
-			fmt.Printf("已更新任务名称为: %s\n", eHentaiAlbum.Name)
-		}
+		return nil, fmt.Errorf("获取专辑失败: %w", err)
 	}
 
 	// 创建信号量来控制并发
@@ -63,20 +50,6 @@ func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, sa
 
 	// 统计结果
 	var successMutex sync.Mutex
-	successImages := 0
-
-	// 使用传入的下载器
-	var localDownloader types.Downloader
-	if dl != nil {
-		localDownloader = dl
-		fmt.Printf("EHentai解析器使用传入的下载器\n")
-	} else {
-		// 未提供下载器，返回错误
-		return fmt.Errorf("未提供下载器")
-	}
-
-	// 保存路径
-	albumPath := savePath + "/" + eHentaiAlbum.Name
 
 	// 批量下载URL和路径
 	var imgURLs []string
@@ -107,11 +80,10 @@ func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, sa
 
 				// 构建保存文件名
 				filename := fmt.Sprintf("%d_%d.jpg", pageIndex, linkIndex)
-				fullPath := fmt.Sprintf("%s/%s", albumPath, filename)
 
 				successMutex.Lock()
 				imgURLs = append(imgURLs, imgURL)
-				filePaths = append(filePaths, fullPath)
+				filePaths = append(filePaths, filename)
 				successMutex.Unlock()
 
 				// 随机休眠1到3秒防止被ban
@@ -124,46 +96,11 @@ func ParseEHentai(ctx context.Context, reqClient *request.Client, url string, sa
 	// 等待所有URL收集任务完成
 	wg.Wait()
 
-	// 计算总图片数量
-	totalImages := len(imgURLs)
-	fmt.Printf("已收集 %d 张图片URL，开始下载...\n", totalImages)
-
-	// 更新任务状态为下载中
-	if dl != nil {
-		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-			taskUpdater.UpdateTaskStatus(string(types.StatusDownloading), "")
-			taskUpdater.UpdateTaskProgress(0, totalImages)
-		}
-	}
-
-	// 批量下载所有图片
-	successImages, err = localDownloader.BatchDownload(imgURLs, filePaths, nil)
-	if err != nil {
-		fmt.Printf("批量下载出错: %v\n", err)
-		return fmt.Errorf("批量下载出错: %w", err)
-	}
-
-	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", totalImages, successImages)
-
-	// 更新最终状态
-	if dl != nil {
-		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-			if successImages == totalImages {
-				taskUpdater.UpdateTaskStatus(string(types.StatusCompleted), "")
-			} else {
-				failedCount := totalImages - successImages
-				taskUpdater.UpdateTaskStatus(string(types.StatusFailed), fmt.Sprintf("成功 %d 张，失败 %d 张", successImages, failedCount))
-			}
-		}
-	}
-
-	// 如果有图片下载失败，返回错误
-	if successImages < totalImages {
-		failedCount := totalImages - successImages
-		return fmt.Errorf("下载未完全成功，总共 %d 张图片，成功 %d 张，失败 %d 张", totalImages, successImages, failedCount)
-	}
-
-	return nil
+	return &ParseResult{
+		Name:      eHentaiAlbum.Name,
+		ImageURLs: imgURLs,
+		FilePaths: filePaths,
+	}, nil
 }
 
 // ParsePageWithClient 解析EH页面获取真实图片URL，使用request客户端
@@ -347,53 +284,30 @@ func ParseLinks(body string) []string {
 
 // EHentaiCrawler E-Hentai爬虫
 type EHentaiCrawler struct {
-	reqClient  *request.Client
-	ctx        context.Context
-	downloader types.Downloader
+	*BaseCrawler
 }
 
 // NewEHentaiCrawler 创建新的E-Hentai爬虫
-func NewEHentaiCrawler(reqClient *request.Client, ctx context.Context) types.ImageCrawler {
+func NewEHentaiCrawler(reqClient *request.Client) types.ImageCrawler {
+	parser := &EHentaiParser{}
+	baseCrawler := NewBaseCrawler(reqClient, parser)
 	return &EHentaiCrawler{
-		reqClient: reqClient,
-		ctx:       ctx,
+		BaseCrawler: baseCrawler,
 	}
 }
 
-// GetDownloader 获取下载器
-func (c *EHentaiCrawler) GetDownloader() types.Downloader {
-	return c.downloader
-}
-
-// SetDownloader 设置下载器
-func (c *EHentaiCrawler) SetDownloader(dl types.Downloader) {
-	c.downloader = dl
-}
-
-// Crawl 执行爬取
-func (c *EHentaiCrawler) Crawl(url string, savePath string) (string, error) {
-	// 将下载器传递给解析器，解析器会使用downloader获取的代理设置
-	err := ParseEHentai(c.ctx, c.reqClient, url, savePath, c.downloader)
-	if err != nil {
-		return "", err
-	}
-	return savePath, nil
-}
-
-// CrawlAndSave 执行爬取并保存
-func (c *EHentaiCrawler) CrawlAndSave(url string, savePath string) string {
-	// 从URL中提取标题作为文件夹名
-	name := filepath.Base(savePath)
-	if name == "" || name == "." {
-		// 如果无法从路径中提取有效的名称，使用"download"作为默认名称
-		name = "download"
+// SetupEHentaiClient 设置EHentai特殊的客户端配置
+func SetupEHentaiClient(reqClient *request.Client, downloader types.Downloader) error {
+	// 先执行通用设置
+	if err := SetupRequestClient(reqClient, downloader); err != nil {
+		return err
 	}
 
-	result, err := c.Crawl(url, savePath)
-	if err != nil {
-		fmt.Printf("爬取失败: %v\n", err)
-		return ""
-	}
+	// 设置ehentai需要的cookie
+	reqClient.AddCookie(&http.Cookie{
+		Name:  "nw",
+		Value: "1",
+	})
 
-	return result
+	return nil
 }

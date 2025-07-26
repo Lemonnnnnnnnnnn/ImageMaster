@@ -1,11 +1,9 @@
 package parsers
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,93 +21,33 @@ type NhentaiGallery struct {
 	Images []string // 存储所有图片的URL
 }
 
-// ParseNhentai 解析Nhentai网站
-func ParseNhentai(ctx context.Context, reqClient *request.Client, url string, savePath string, dl types.Downloader) error {
-	fmt.Printf("下载 Nhentai 画廊: %s\n", url)
+// NhentaiParser Nhentai解析器实现
+type NhentaiParser struct{}
 
-	// 使用下载器的代理配置
-	if dl != nil && dl.GetProxy() != "" {
-		reqClient.SetProxy(dl.GetProxy())
-	}
+// GetName 获取解析器名称
+func (p *NhentaiParser) GetName() string {
+	return "Nhentai"
+}
 
-	// 设置User-Agent
-	reqClient.SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-
+// Parse 解析URL获取图片信息
+func (p *NhentaiParser) Parse(reqClient *request.Client, url string) (*ParseResult, error) {
 	nhentaiGallery, err := GetNhentaiGalleryWithClient(reqClient, url)
 	if err != nil {
-		return fmt.Errorf("获取画廊失败: %w", err)
+		return nil, fmt.Errorf("获取画廊失败: %w", err)
 	}
 
-	// 使用TaskUpdater更新任务名称（如果可用）
-	if dl != nil {
-		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-			taskUpdater.UpdateTaskName(nhentaiGallery.Name)
-			taskUpdater.UpdateTaskStatus(string(types.StatusParsing), "")
-			fmt.Printf("已更新任务名称为: %s\n", nhentaiGallery.Name)
-		}
-	}
-
-	// 使用传入的下载器
-	var localDownloader types.Downloader
-	if dl != nil {
-		localDownloader = dl
-		fmt.Printf("Nhentai解析器使用传入的下载器\n")
-	} else {
-		// 未提供下载器，返回错误
-		return fmt.Errorf("未提供下载器")
-	}
-
-	// 保存路径
-	galleryPath := savePath + "/" + nhentaiGallery.Name
-
-	// 计算总图片数量
-	totalImages := len(nhentaiGallery.Images)
-	fmt.Printf("已收集 %d 张图片URL，开始下载...\n", totalImages)
-
-	// 更新任务状态为下载中
-	if dl != nil {
-		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-			taskUpdater.UpdateTaskStatus(string(types.StatusDownloading), "")
-			taskUpdater.UpdateTaskProgress(0, totalImages)
-		}
-	}
-
-	// 准备批量下载的URL和路径
+	// 准备文件路径
 	var filePaths []string
 	for i := range nhentaiGallery.Images {
 		filename := fmt.Sprintf("%03d.webp", i+1)
-		fullPath := fmt.Sprintf("%s/%s", galleryPath, filename)
-		filePaths = append(filePaths, fullPath)
+		filePaths = append(filePaths, filename)
 	}
 
-	// 批量下载所有图片
-	successImages, err := localDownloader.BatchDownload(nhentaiGallery.Images, filePaths, nil)
-	if err != nil {
-		fmt.Printf("批量下载出错: %v\n", err)
-		return fmt.Errorf("批量下载出错: %w", err)
-	}
-
-	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", totalImages, successImages)
-
-	// 更新最终状态
-	if dl != nil {
-		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-			if successImages == totalImages {
-				taskUpdater.UpdateTaskStatus(string(types.StatusCompleted), "")
-			} else {
-				failedCount := totalImages - successImages
-				taskUpdater.UpdateTaskStatus(string(types.StatusFailed), fmt.Sprintf("成功 %d 张，失败 %d 张", successImages, failedCount))
-			}
-		}
-	}
-
-	// 如果有图片下载失败，返回错误
-	if successImages < totalImages {
-		failedCount := totalImages - successImages
-		return fmt.Errorf("下载未完全成功，总共 %d 张图片，成功 %d 张，失败 %d 张", totalImages, successImages, failedCount)
-	}
-
-	return nil
+	return &ParseResult{
+		Name:      nhentaiGallery.Name,
+		ImageURLs: nhentaiGallery.Images,
+		FilePaths: filePaths,
+	}, nil
 }
 
 // GetNhentaiGalleryWithClient 获取整个画廊信息，包括所有图片URL
@@ -272,53 +210,14 @@ func getMoreImagesFromAPI(reqClient *request.Client, doc *goquery.Document, gall
 
 // NhentaiCrawler Nhentai爬虫
 type NhentaiCrawler struct {
-	reqClient  *request.Client
-	ctx        context.Context
-	downloader types.Downloader
+	*BaseCrawler
 }
 
 // NewNhentaiCrawler 创建新的Nhentai爬虫
-func NewNhentaiCrawler(reqClient *request.Client, ctx context.Context) types.ImageCrawler {
+func NewNhentaiCrawler(reqClient *request.Client) types.ImageCrawler {
+	parser := &NhentaiParser{}
+	baseCrawler := NewBaseCrawler(reqClient, parser)
 	return &NhentaiCrawler{
-		reqClient: reqClient,
-		ctx:       ctx,
+		BaseCrawler: baseCrawler,
 	}
-}
-
-// GetDownloader 获取下载器
-func (c *NhentaiCrawler) GetDownloader() types.Downloader {
-	return c.downloader
-}
-
-// SetDownloader 设置下载器
-func (c *NhentaiCrawler) SetDownloader(dl types.Downloader) {
-	c.downloader = dl
-}
-
-// Crawl 执行爬取
-func (c *NhentaiCrawler) Crawl(url string, savePath string) (string, error) {
-	// 将下载器传递给解析器，解析器会使用downloader获取的代理设置
-	err := ParseNhentai(c.ctx, c.reqClient, url, savePath, c.downloader)
-	if err != nil {
-		return "", err
-	}
-	return savePath, nil
-}
-
-// CrawlAndSave 执行爬取并保存
-func (c *NhentaiCrawler) CrawlAndSave(url string, savePath string) string {
-	// 从URL中提取标题作为文件夹名
-	name := filepath.Base(savePath)
-	if name == "" || name == "." {
-		// 如果无法从路径中提取有效的名称，使用"download"作为默认名称
-		name = "download"
-	}
-
-	result, err := c.Crawl(url, savePath)
-	if err != nil {
-		fmt.Printf("爬取失败: %v\n", err)
-		return ""
-	}
-
-	return result
 }

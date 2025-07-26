@@ -1,7 +1,6 @@
 package crawler
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 	"strings"
@@ -25,16 +24,14 @@ const (
 // CrawlerFactory 爬虫工厂
 type CrawlerFactory struct {
 	reqClient     *request.Client
-	ctx           context.Context
 	configManager types.ConfigProvider
 	proxyManager  *proxy.ProxyManager
 }
 
 // NewCrawlerFactory 创建爬虫工厂
-func NewCrawlerFactory(ctx context.Context) *CrawlerFactory {
+func NewCrawlerFactory() *CrawlerFactory {
 	return &CrawlerFactory{
 		reqClient: request.NewClient(),
-		ctx:       ctx,
 	}
 }
 
@@ -64,19 +61,18 @@ func (f *CrawlerFactory) CreateCrawler(siteType string) types.ImageCrawler {
 	// 所有爬虫共用同一个配置好的请求客户端
 	switch siteType {
 	case SiteTypeEHentai:
-		return parsers.NewEHentaiCrawler(f.reqClient, f.ctx)
+		return parsers.NewEHentaiCrawler(f.reqClient)
 	case SiteTypeExHentai:
-		return parsers.NewEHentaiCrawler(f.reqClient, f.ctx)
+		return parsers.NewEHentaiCrawler(f.reqClient)
 	case SiteTypeTelegraph:
 		return parsers.NewTelegraphCrawler(f.reqClient)
 	case SiteTypeWnacg:
-		return parsers.NewWnacgCrawler(f.reqClient, f.ctx)
+		return parsers.NewWnacgCrawler(f.reqClient)
 	case SiteTypeNhentai:
-		return parsers.NewNhentaiCrawler(f.reqClient, f.ctx)
+		return parsers.NewNhentaiCrawler(f.reqClient)
 	default:
 		crawler := &GenericCrawler{
 			reqClient: f.reqClient,
-			ctx:       f.ctx,
 		}
 		return crawler
 	}
@@ -123,7 +119,6 @@ func (f *CrawlerFactory) DetectSiteType(rawURL string) string {
 // GenericCrawler 通用网页爬虫
 type GenericCrawler struct {
 	reqClient  *request.Client
-	ctx        context.Context
 	downloader types.Downloader
 }
 

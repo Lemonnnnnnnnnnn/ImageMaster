@@ -150,7 +150,7 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 	downloader := tm.createDownloaderForTask(taskID)
 
 	// 创建爬虫工厂
-	crawlerFactory := crawler.NewCrawlerFactory(tm.ctx)
+	crawlerFactory := crawler.NewCrawlerFactory()
 	if tm.configManager != nil {
 		crawlerFactory.SetConfigManager(tm.configManager)
 	}

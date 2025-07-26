@@ -1,10 +1,8 @@
 package parsers
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"strings"
 	"sync"
 
@@ -20,44 +18,20 @@ type WnacgAlbum struct {
 	Pages []string // 存储所有分页的URL
 }
 
-// ParseWnacg 解析Wnacg网站
-func ParseWnacg(ctx context.Context, reqClient *request.Client, url string, savePath string, dl types.Downloader) error {
-	fmt.Printf("下载 Wnacg 专辑: %s\n", url)
+// WnacgParser Wnacg解析器实现
+type WnacgParser struct{}
 
-	// 使用下载器的代理配置
-	if dl != nil && dl.GetProxy() != "" {
-		reqClient.SetProxy(dl.GetProxy())
-	}
+// GetName 获取解析器名称
+func (p *WnacgParser) GetName() string {
+	return "Wnacg"
+}
 
-	// 设置User-Agent
-	reqClient.SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-
+// Parse 解析URL获取图片信息
+func (p *WnacgParser) Parse(reqClient *request.Client, url string) (*ParseResult, error) {
 	wnacgAlbum, err := GetWnacgAlbumWithClient(reqClient, url)
 	if err != nil {
-		return fmt.Errorf("获取专辑失败: %w", err)
+		return nil, fmt.Errorf("获取专辑失败: %w", err)
 	}
-
-	// 使用TaskUpdater更新任务名称（如果可用）
-	if dl != nil {
-		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-			taskUpdater.UpdateTaskName(wnacgAlbum.Name)
-			taskUpdater.UpdateTaskStatus(string(types.StatusParsing), "")
-			fmt.Printf("已更新任务名称为: %s\n", wnacgAlbum.Name)
-		}
-	}
-
-	// 使用传入的下载器
-	var localDownloader types.Downloader
-	if dl != nil {
-		localDownloader = dl
-		fmt.Printf("Wnacg解析器使用传入的下载器\n")
-	} else {
-		// 未提供下载器，返回错误
-		return fmt.Errorf("未提供下载器")
-	}
-
-	// 保存路径
-	albumPath := savePath + "/" + wnacgAlbum.Name
 
 	// 批量下载URL和路径
 	var imgURLs []string
@@ -82,17 +56,8 @@ func ParseWnacg(ctx context.Context, reqClient *request.Client, url string, save
 	totalMangaLinks := len(allMangaLinks)
 	fmt.Printf("总共需要处理 %d 个漫画页面\n", totalMangaLinks)
 
-	// 更新解析进度
-	if dl != nil {
-		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-			taskUpdater.UpdateTaskProgress(0, totalMangaLinks)
-		}
-	}
-
 	// 并发处理控制
 	var wg sync.WaitGroup
-	processedCount := 0
-	var progressMutex sync.Mutex
 
 	// 并发处理所有漫画页面链接
 	for _, mangaData := range allMangaLinks {
@@ -118,22 +83,11 @@ func ParseWnacg(ctx context.Context, reqClient *request.Client, url string, save
 
 			// 构建保存文件名
 			filename := fmt.Sprintf("%s.jpg", indexPart)
-			fullPath := fmt.Sprintf("%s/%s", albumPath, filename)
 
 			urlMutex.Lock()
 			imgURLs = append(imgURLs, imgURL)
-			filePaths = append(filePaths, fullPath)
+			filePaths = append(filePaths, filename)
 			urlMutex.Unlock()
-
-			// 更新进度
-			progressMutex.Lock()
-			processedCount++
-			if dl != nil {
-				if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-					taskUpdater.UpdateTaskProgress(processedCount, totalMangaLinks)
-				}
-			}
-			progressMutex.Unlock()
 
 			fmt.Printf("解析完成 %s\n", filename)
 		}(indexPart, mangaURL)
@@ -142,46 +96,11 @@ func ParseWnacg(ctx context.Context, reqClient *request.Client, url string, save
 	// 等待所有URL收集任务完成
 	wg.Wait()
 
-	// 计算总图片数量
-	totalImages := len(imgURLs)
-	fmt.Printf("已收集 %d 张图片URL，开始下载...\n", totalImages)
-
-	// 更新任务状态为下载中
-	if dl != nil {
-		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-			taskUpdater.UpdateTaskStatus(string(types.StatusDownloading), "")
-			taskUpdater.UpdateTaskProgress(0, totalImages)
-		}
-	}
-
-	// 批量下载所有图片
-	successImages, err := localDownloader.BatchDownload(imgURLs, filePaths, nil)
-	if err != nil {
-		fmt.Printf("批量下载出错: %v\n", err)
-		return fmt.Errorf("批量下载出错: %w", err)
-	}
-
-	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", totalImages, successImages)
-
-	// 更新最终状态
-	if dl != nil {
-		if taskUpdater := dl.GetTaskUpdater(); taskUpdater != nil {
-			if successImages == totalImages {
-				taskUpdater.UpdateTaskStatus(string(types.StatusCompleted), "")
-			} else {
-				failedCount := totalImages - successImages
-				taskUpdater.UpdateTaskStatus(string(types.StatusFailed), fmt.Sprintf("成功 %d 张，失败 %d 张", successImages, failedCount))
-			}
-		}
-	}
-
-	// 如果有图片下载失败，返回错误
-	if successImages < totalImages {
-		failedCount := totalImages - successImages
-		return fmt.Errorf("下载未完全成功，总共 %d 张图片，成功 %d 张，失败 %d 张", totalImages, successImages, failedCount)
-	}
-
-	return nil
+	return &ParseResult{
+		Name:      wnacgAlbum.Name,
+		ImageURLs: imgURLs,
+		FilePaths: filePaths,
+	}, nil
 }
 
 // GetWnacgAlbumWithClient 获取整个专辑信息，包括所有分页URL
@@ -332,53 +251,14 @@ func ParseWnacgPageWithClient(reqClient *request.Client, link string) (string, e
 
 // WnacgCrawler Wnacg爬虫
 type WnacgCrawler struct {
-	reqClient  *request.Client
-	ctx        context.Context
-	downloader types.Downloader
+	*BaseCrawler
 }
 
 // NewWnacgCrawler 创建新的Wnacg爬虫
-func NewWnacgCrawler(reqClient *request.Client, ctx context.Context) types.ImageCrawler {
+func NewWnacgCrawler(reqClient *request.Client) types.ImageCrawler {
+	parser := &WnacgParser{}
+	baseCrawler := NewBaseCrawler(reqClient, parser)
 	return &WnacgCrawler{
-		reqClient: reqClient,
-		ctx:       ctx,
+		BaseCrawler: baseCrawler,
 	}
-}
-
-// GetDownloader 获取下载器
-func (c *WnacgCrawler) GetDownloader() types.Downloader {
-	return c.downloader
-}
-
-// SetDownloader 设置下载器
-func (c *WnacgCrawler) SetDownloader(dl types.Downloader) {
-	c.downloader = dl
-}
-
-// Crawl 执行爬取
-func (c *WnacgCrawler) Crawl(url string, savePath string) (string, error) {
-	// 将下载器传递给解析器，解析器会使用downloader获取的代理设置
-	err := ParseWnacg(c.ctx, c.reqClient, url, savePath, c.downloader)
-	if err != nil {
-		return "", err
-	}
-	return savePath, nil
-}
-
-// CrawlAndSave 执行爬取并保存
-func (c *WnacgCrawler) CrawlAndSave(url string, savePath string) string {
-	// 从URL中提取标题作为文件夹名
-	name := filepath.Base(savePath)
-	if name == "" || name == "." {
-		// 如果无法从路径中提取有效的名称，使用"download"作为默认名称
-		name = "download"
-	}
-
-	result, err := c.Crawl(url, savePath)
-	if err != nil {
-		fmt.Printf("爬取失败: %v\n", err)
-		return ""
-	}
-
-	return result
 }
