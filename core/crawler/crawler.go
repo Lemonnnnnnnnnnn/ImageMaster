@@ -18,6 +18,7 @@ const (
 	SiteTypeTelegraph = "telegraph"
 	SiteTypeWnacg     = "wnacg"
 	SiteTypeNhentai   = "nhentai"
+	SiteTypeComic18   = "comic18"
 	SiteTypeGeneric   = "generic"
 )
 
@@ -70,6 +71,8 @@ func (f *CrawlerFactory) CreateCrawler(siteType string) types.ImageCrawler {
 		return parsers.NewWnacgCrawler(f.reqClient)
 	case SiteTypeNhentai:
 		return parsers.NewNhentaiCrawler(f.reqClient)
+	case SiteTypeComic18:
+		return parsers.NewComic18Crawler(f.reqClient)
 	default:
 		crawler := &GenericCrawler{
 			reqClient: f.reqClient,
@@ -110,6 +113,11 @@ func (f *CrawlerFactory) DetectSiteType(rawURL string) string {
 	// 检测Nhentai
 	if strings.Contains(host, "nhentai.xxx") {
 		return SiteTypeNhentai
+	}
+
+	// 检测18comic
+	if strings.Contains(host, "18comic.vip") || strings.Contains(host, "18comic.org") {
+		return SiteTypeComic18
 	}
 
 	// 默认使用通用爬虫
