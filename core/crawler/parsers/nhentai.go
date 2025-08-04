@@ -14,6 +14,16 @@ import (
 	"ImageMaster/core/types"
 )
 
+// ImageConversionStrategy 图片转换策略
+type ImageConversionStrategy int
+
+const (
+	// StrategyWebp 转换为 webp 格式（11t.jpg -> 11.webp）
+	StrategyWebp ImageConversionStrategy = iota
+	// StrategyJpg 保持 jpg 格式（11t.jpg -> 11.jpg）
+	StrategyJpg
+)
+
 // NhentaiGallery Nhentai画廊
 type NhentaiGallery struct {
 	ID     string
@@ -74,36 +84,45 @@ func GetNhentaiGalleryWithClient(reqClient *request.Client, galleryURL string) (
 	if err != nil {
 		return nil, err
 	}
-
 	// 获取画廊标题
 	galleryName := strings.TrimSpace(doc.Find("body > div.main_cnt > div > div.gallery_top > div.info > h1").Text())
 	if galleryName == "" {
 		galleryName = "Unknown Gallery"
 	}
 
-	// 收集前十页的图片URL
-	var imageURLs []string
+	// 收集缩略图URLs，先不转换
+	var thumbnailURLs []string
 	doc.Find("#thumbs_append > div > a > img").Each(func(i int, s *goquery.Selection) {
 		if dataSrc, exists := s.Attr("data-src"); exists && dataSrc != "" {
-			// 转换缩略图URL为完整图片URL
-			fullImageURL := convertThumbnailToFullImage(dataSrc)
-			imageURLs = append(imageURLs, fullImageURL)
+			thumbnailURLs = append(thumbnailURLs, dataSrc)
 		}
 	})
 
-	fmt.Printf("从主页面获取到 %d 张图片URL\n", len(imageURLs))
+	fmt.Printf("从主页面获取到 %d 张缩略图URL\n", len(thumbnailURLs))
+
+	if len(thumbnailURLs) == 0 {
+		return nil, fmt.Errorf("未找到任何图片")
+	}
+
+	// 使用第一张图片确定转换策略
+	strategy := determineConversionStrategy(reqClient, thumbnailURLs[0])
+
+	// 根据确定的策略转换所有缩略图URL
+	var imageURLs []string
+	for _, thumbnailURL := range thumbnailURLs {
+		fullImageURL := convertThumbnailToFullImage(thumbnailURL, strategy)
+		imageURLs = append(imageURLs, fullImageURL)
+	}
+
+	fmt.Printf("使用策略转换后获得 %d 张完整图片URL\n", len(imageURLs))
 
 	// 获取更多图片（通过AJAX接口）
-	moreImages, err := getMoreImagesFromAPI(reqClient, doc, galleryID, len(imageURLs))
+	moreImages, err := getMoreImagesFromAPI(reqClient, doc, galleryID, len(imageURLs), strategy)
 	if err != nil {
 		fmt.Printf("获取更多图片失败: %v\n", err)
 	} else {
 		imageURLs = append(imageURLs, moreImages...)
 		fmt.Printf("通过API获取到额外 %d 张图片URL\n", len(moreImages))
-	}
-
-	if len(imageURLs) == 0 {
-		return nil, fmt.Errorf("未找到任何图片")
 	}
 
 	return &NhentaiGallery{
@@ -125,15 +144,61 @@ func extractGalleryID(galleryURL string) (string, error) {
 }
 
 // convertThumbnailToFullImage 将缩略图URL转换为完整图片URL
-func convertThumbnailToFullImage(thumbnailURL string) string {
-	// 将结尾的【数字t.jpg】替换为【数字.webp】
-	// 例如：http://i4.nhentaimg.com/016/9sazckpugf/11t.jpg -> http://i4.nhentaimg.com/016/9sazckpugf/11.webp
+func convertThumbnailToFullImage(thumbnailURL string, strategy ImageConversionStrategy) string {
 	re := regexp.MustCompile(`(\d+)t\.jpg$`)
-	return re.ReplaceAllString(thumbnailURL, "$1.webp")
+	switch strategy {
+	case StrategyWebp:
+		// 将结尾的【数字t.jpg】替换为【数字.webp】
+		// 例如：http://i4.nhentaimg.com/016/9sazckpugf/11t.jpg -> http://i4.nhentaimg.com/016/9sazckpugf/11.webp
+		return re.ReplaceAllString(thumbnailURL, "$1.webp")
+	case StrategyJpg:
+		// 将结尾的【数字t.jpg】替换为【数字.jpg】
+		// 例如：http://i4.nhentaimg.com/016/9sazckpugf/11t.jpg -> http://i4.nhentaimg.com/016/9sazckpugf/11.jpg
+		return re.ReplaceAllString(thumbnailURL, "$1.jpg")
+	default:
+		// 默认使用 webp 策略
+		return re.ReplaceAllString(thumbnailURL, "$1.webp")
+	}
+}
+
+// testImageAccessibility 测试图片URL的可访问性
+func testImageAccessibility(reqClient *request.Client, imageURL string) bool {
+	// 发送HEAD请求测试图片是否可访问
+	resp, err := reqClient.Head(imageURL)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	// 检查状态码是否为200
+	return resp.StatusCode == http.StatusOK
+}
+
+// determineConversionStrategy 确定图片转换策略
+func determineConversionStrategy(reqClient *request.Client, firstThumbnailURL string) ImageConversionStrategy {
+	// 尝试第一种策略：webp
+	webpURL := convertThumbnailToFullImage(firstThumbnailURL, StrategyWebp)
+	fmt.Printf("测试WebP策略: %s\n", webpURL)
+	if testImageAccessibility(reqClient, webpURL) {
+		fmt.Printf("WebP策略测试成功\n")
+		return StrategyWebp
+	}
+
+	// 尝试第二种策略：jpg
+	jpgURL := convertThumbnailToFullImage(firstThumbnailURL, StrategyJpg)
+	fmt.Printf("测试JPG策略: %s\n", jpgURL)
+	if testImageAccessibility(reqClient, jpgURL) {
+		fmt.Printf("JPG策略测试成功\n")
+		return StrategyJpg
+	}
+
+	// 如果都失败，默认使用webp策略
+	fmt.Printf("所有策略测试失败，使用默认WebP策略\n")
+	return StrategyWebp
 }
 
 // getMoreImagesFromAPI 通过AJAX API获取更多图片
-func getMoreImagesFromAPI(reqClient *request.Client, doc *goquery.Document, galleryID string, visiblePages int) ([]string, error) {
+func getMoreImagesFromAPI(reqClient *request.Client, doc *goquery.Document, galleryID string, visiblePages int, strategy ImageConversionStrategy) ([]string, error) {
 	// 获取CSRF token
 	csrfToken, exists := doc.Find(`meta[name="csrf-token"]`).Attr("content")
 	if !exists {
@@ -200,7 +265,7 @@ func getMoreImagesFromAPI(reqClient *request.Client, doc *goquery.Document, gall
 	apiDoc.Find("img").Each(func(i int, s *goquery.Selection) {
 		if dataSrc, exists := s.Attr("data-src"); exists && dataSrc != "" {
 			// 转换缩略图URL为完整图片URL
-			fullImageURL := convertThumbnailToFullImage(dataSrc)
+			fullImageURL := convertThumbnailToFullImage(dataSrc, strategy)
 			moreImages = append(moreImages, fullImageURL)
 		}
 	})

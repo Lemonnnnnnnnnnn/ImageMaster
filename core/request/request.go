@@ -49,13 +49,13 @@ func (c *Client) SetProxy(proxyURL string) error {
 	if c.proxyManager == nil {
 		c.proxyManager = proxy.NewProxyManager(c.configManager)
 	}
-	
+
 	// 设置代理
 	err := c.proxyManager.SetProxy(proxyURL)
 	if err != nil {
 		return err
 	}
-	
+
 	// 应用到当前客户端
 	return c.proxyManager.ApplyToClient(c.client)
 }
@@ -106,6 +106,11 @@ func (c *Client) Post(url string, body io.Reader, contentType string) (*http.Res
 		"Content-Type": contentType,
 	}
 	return c.DoRequest("POST", url, body, headers)
+}
+
+// Head 发送HEAD请求，测试访问性
+func (c *Client) Head(url string) (*http.Response, error) {
+	return c.DoRequest("HEAD", url, nil, nil)
 }
 
 // PostWithContext 发送带上下文的POST请求
