@@ -301,33 +301,33 @@ func (tm *TaskManager) GetActiveTasks() []*DownloadTask {
 }
 
 // GetHistoryTasks 获取历史任务
-func (tm *TaskManager) GetHistoryTasks() []*DownloadTask {
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
+// func (tm *TaskManager) GetHistoryTasks() []*DownloadTask {
+// 	tm.mu.RLock()
+// 	defer tm.mu.RUnlock()
 
-	// 复制历史记录
-	history := make([]*DownloadTask, len(tm.history))
-	copy(history, tm.history)
+// 	// 复制历史记录
+// 	history := make([]*DownloadTask, len(tm.history))
+// 	copy(history, tm.history)
 
-	// 按完成时间倒序排序
-	sort.Slice(history, func(i, j int) bool {
-		// 如果completeTime为空，使用startTime
-		timeI := history[i].CompleteTime
-		if timeI.IsZero() {
-			timeI = history[i].StartTime
-		}
+// 	// 按完成时间倒序排序
+// 	sort.Slice(history, func(i, j int) bool {
+// 		// 如果completeTime为空，使用startTime
+// 		timeI := history[i].CompleteTime
+// 		if timeI.IsZero() {
+// 			timeI = history[i].StartTime
+// 		}
 
-		timeJ := history[j].CompleteTime
-		if timeJ.IsZero() {
-			timeJ = history[j].StartTime
-		}
+// 		timeJ := history[j].CompleteTime
+// 		if timeJ.IsZero() {
+// 			timeJ = history[j].StartTime
+// 		}
 
-		// 倒序排列
-		return timeI.After(timeJ)
-	})
+// 		// 倒序排列
+// 		return timeI.After(timeJ)
+// 	})
 
-	return history
-}
+// 	return history
+// }
 
 // ClearHistory 清除历史记录
 func (tm *TaskManager) ClearHistory() {

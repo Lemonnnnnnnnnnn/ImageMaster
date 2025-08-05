@@ -34,7 +34,6 @@ type Downloader interface {
 	DownloadFile(url string, filepath string, headers map[string]string) error
 	BatchDownload(urls []string, filepaths []string, headers map[string]string) (int, error)
 	GetProxy() string
-	SetProxy(proxyURL string) error
 	// GetTaskUpdater 获取任务更新器
 	GetTaskUpdater() TaskUpdater
 }

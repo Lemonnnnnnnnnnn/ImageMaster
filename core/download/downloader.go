@@ -49,11 +49,6 @@ func (d *Downloader) SetConfigManager(configManager types.ConfigProvider) {
 	d.configManager = configManager
 	// 将配置管理器传递给请求客户端
 	d.reqClient.SetConfigManager(configManager)
-
-	// 创建代理管理器
-	if configManager != nil {
-		d.proxyManager = proxy.NewProxyManager(configManager)
-	}
 }
 
 // SetTaskUpdater 设置任务更新器
@@ -66,39 +61,9 @@ func (d *Downloader) GetTaskUpdater() types.TaskUpdater {
 	return d.taskUpdater
 }
 
-// SetProxy 设置代理
-func (d *Downloader) SetProxy(proxyURL string) error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	// 如果没有代理管理器，创建一个
-	if d.proxyManager == nil {
-		d.proxyManager = proxy.NewProxyManager(d.configManager)
-	}
-
-	// 设置代理
-	err := d.proxyManager.SetProxy(proxyURL)
-	if err != nil {
-		return fmt.Errorf("设置代理失败: %w", err)
-	}
-
-	// 设置请求客户端的代理
-	if err := d.reqClient.SetProxy(proxyURL); err != nil {
-		return fmt.Errorf("设置请求客户端代理失败: %w", err)
-	}
-
-	fmt.Printf("下载器代理已设置为: %s\n", proxyURL)
-	return nil
-}
-
 // GetProxy 获取当前代理设置
 func (d *Downloader) GetProxy() string {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	if d.proxyManager == nil {
-		return ""
-	}
-	return d.proxyManager.GetProxy()
+	return d.configManager.GetProxy()
 }
 
 // GetConfigManager 获取配置管理器

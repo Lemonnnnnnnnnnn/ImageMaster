@@ -26,7 +26,7 @@ func NormalizePath(path string) string {
 	var remainingPath string
 	var separator string
 	var isAbsolute bool
-	
+
 	// 匹配Windows驱动器模式 (如 "D:", "C:", etc.)
 	driveRegex := regexp.MustCompile(`^[A-Za-z]:[\\/]?`)
 	if match := driveRegex.FindString(path); match != "" {
@@ -58,7 +58,7 @@ func NormalizePath(path string) string {
 
 	// 分割路径为各个部分
 	parts := strings.Split(remainingPath, separator)
-	
+
 	// 规范化每个路径部分，同时过滤空字符串
 	var normalizedParts []string
 	for _, part := range parts {
@@ -69,7 +69,7 @@ func NormalizePath(path string) string {
 
 	// 重新组合路径
 	normalizedPath := strings.Join(normalizedParts, separator)
-	
+
 	// 添加前缀
 	if drivePrefix != "" {
 		return drivePrefix + normalizedPath
@@ -77,7 +77,7 @@ func NormalizePath(path string) string {
 		// Unix风格绝对路径，添加开头的 /
 		return separator + normalizedPath
 	}
-	
+
 	return normalizedPath
 }
 
