@@ -14,6 +14,7 @@
                 <th>进度</th>
                 <!-- <th>startTime</th> -->
                 <th>完成时间</th>
+                <th>失败原因</th>
                 <!-- <th>耗时</th> -->
                 <!-- <th>操作</th> -->
             </tr>
@@ -42,6 +43,14 @@
                 </td>
                 <!-- <td>{{ formatTime(task.startTime) }}</td> -->
                 <td>{{ task.status === 'completed' ? formatTime(task.completeTime) : '-' }}</td>
+                <td class="max-w-64">
+                    <span v-if="task.status === 'failed' && task.error" 
+                          :title="task.error" 
+                          class="text-red-400 text-xs truncate">
+                        {{ task.error }}
+                    </span>
+                    <span v-else class="text-neutral-500">-</span>
+                </td>
                 <!-- <td>{{ calculateTimeDifference(task.startTime, task.status === 'completed' ? task.completeTime : Date.now()) }}</td> -->
                 <!-- <td><button v-if="task.status === 'pending' || task.status === 'downloading'"
                         class="text-sky-500 cursor-pointer" @click="downloadStore.cancelTask(task.id)">取消</button>
