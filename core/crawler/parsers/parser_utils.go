@@ -7,20 +7,12 @@ import (
 	"ImageMaster/core/types"
 )
 
-const (
-	// DefaultUserAgent 默认User-Agent
-	DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-)
-
 // SetupRequestClient 设置请求客户端的通用配置
 func SetupRequestClient(reqClient *request.Client, downloader types.Downloader) error {
 	// 使用下载器的代理配置
 	if downloader != nil && downloader.GetProxy() != "" {
 		reqClient.SetProxy(downloader.GetProxy())
 	}
-
-	// 设置User-Agent
-	reqClient.SetHeader("User-Agent", DefaultUserAgent)
 
 	return nil
 }

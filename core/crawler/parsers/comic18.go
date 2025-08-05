@@ -2,8 +2,11 @@ package parsers
 
 import (
 	"fmt"
+	// "io"
 	"net/http"
+	// "os"
 	"path"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 
@@ -24,19 +27,25 @@ func (p *Comic18Parser) Parse(reqClient *request.Client, url string) (*ParseResu
 	resp, err := reqClient.Get(url)
 	if err != nil {
 		fmt.Println("18comic解析器获取URL失败", err)
-		return nil, err
+		return nil, fmt.Errorf("18comic: 网络请求失败: %v", err)
 	}
 	defer resp.Body.Close()
 
+	// body, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("18comic: 读取响应体失败: %v", err)
+	// }
+	// os.WriteFile("test.html", body, 0644)
+
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP状态码错误: %d", resp.StatusCode)
+		return nil, fmt.Errorf("18comic: HTTP状态码错误: %d，请检查URL是否正确或网站是否可访问", resp.StatusCode)
 	}
 
 	// 解析HTML
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		fmt.Println("18comic解析器解析HTML失败", err)
-		return nil, err
+		return nil, fmt.Errorf("18comic: HTML解析失败: %v，页面可能不是有效的HTML格式", err)
 	}
 
 	// 获取专辑名称
@@ -48,12 +57,14 @@ func (p *Comic18Parser) Parse(reqClient *request.Client, url string) (*ParseResu
 	if albumName == "" {
 		albumName = "18Comic Album" // 默认名称
 	}
+	albumName = strings.ReplaceAll(albumName, "/", "_")
+	albumName = strings.Trim(albumName, " ")
 
 	// 获取所有图片
 	var imgURLs []string
 	var filePaths []string
 	doc.Find(".scramble-page > img").Each(func(i int, s *goquery.Selection) {
-		if src, exists := s.Attr("src"); exists {
+		if src, exists := s.Attr("data-original"); exists {
 			imgURLs = append(imgURLs, src)
 
 			// 从 src 中提取文件扩展名
@@ -64,6 +75,11 @@ func (p *Comic18Parser) Parse(reqClient *request.Client, url string) (*ParseResu
 			filePaths = append(filePaths, fmt.Sprintf("%d%s", i, ext))
 		}
 	})
+
+	// 检查是否找到了图片
+	if len(imgURLs) == 0 {
+		return nil, fmt.Errorf("18comic: 未找到任何图片，可能是：1) URL不正确 2) 页面结构已变化 3) 需要登录才能访问")
+	}
 
 	return &ParseResult{
 		Name:      albumName,

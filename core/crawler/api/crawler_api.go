@@ -114,7 +114,8 @@ func (api *CrawlerAPI) GetHistoryTasks() []*task.DownloadTask {
 	}
 
 	// 否则从任务管理器获取
-	return api.taskManager.GetHistoryTasks()
+	// return api.taskManager.GetHistoryTasks()
+	return nil
 }
 
 // ClearHistory 清除历史记录
