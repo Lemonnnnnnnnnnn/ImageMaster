@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
+
+	"golang.org/x/net/http2"
 
 	"ImageMaster/core/proxy"
 	"ImageMaster/core/types"
@@ -13,34 +16,40 @@ import (
 
 // Client HTTP客户端封装
 type Client struct {
-	client        *http.Client
-	proxyManager  *proxy.ProxyManager
-	configManager types.ConfigProvider
-	headers       map[string]string
-	cookies       []*http.Cookie
+	client         *http.Client
+	proxyManager   *proxy.ProxyManager
+	configManager  types.ConfigProvider
+	headers        map[string]string
+	cookies        []*http.Cookie
+	defaultHeaders map[string]string
 }
 
 // NewClient 创建新的请求客户端
 func NewClient() *Client {
+	transport := &uTransport{
+		tr1: &http.Transport{},
+		tr2: &http2.Transport{},
+	}
+
 	return &Client{
 		client: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout:   30 * time.Second,
+			Transport: transport,
 		},
 		headers: make(map[string]string),
 		cookies: make([]*http.Cookie, 0),
+		defaultHeaders: map[string]string{
+			"accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+			"accept-language": "en,zh-CN;q=0.9,zh;q=0.8",
+			"user-agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
+		},
 	}
 }
 
 // SetConfigManager 设置配置管理器
 func (c *Client) SetConfigManager(configManager types.ConfigProvider) {
 	c.configManager = configManager
-
-	// 创建代理管理器并应用代理设置
-	if configManager != nil {
-		c.proxyManager = proxy.NewProxyManager(configManager)
-		// 应用代理设置到当前客户端
-		c.proxyManager.ApplyToClient(c.client)
-	}
+	c.SetProxy(configManager.GetProxy())
 }
 
 // SetProxy 设置代理
@@ -56,8 +65,20 @@ func (c *Client) SetProxy(proxyURL string) error {
 		return err
 	}
 
-	// 应用到当前客户端
-	return c.proxyManager.ApplyToClient(c.client)
+	// 直接设置uTransport的代理，避免替换整个Transport
+	if uTrans, ok := c.client.Transport.(*uTransport); ok {
+		if proxyURL != "" {
+			proxyURLParsed, parseErr := url.Parse(proxyURL)
+			if parseErr != nil {
+				return fmt.Errorf("解析代理URL失败: %w", parseErr)
+			}
+			uTrans.tr1.Proxy = http.ProxyURL(proxyURLParsed)
+		} else {
+			uTrans.tr1.Proxy = nil
+		}
+	}
+
+	return nil
 }
 
 // GetProxy 获取当前代理设置
@@ -126,7 +147,7 @@ func (c *Client) DoRequest(method, url string, body io.Reader, extraHeaders map[
 	// 尝试从配置中应用代理（如果尚未设置代理且配置管理器存在）
 	if c.proxyManager == nil && c.configManager != nil {
 		c.proxyManager = proxy.NewProxyManager(c.configManager)
-		c.proxyManager.ApplyToClient(c.client)
+		// c.proxyManager.ApplyToClient(c.client)
 	}
 
 	// 创建请求
@@ -135,9 +156,9 @@ func (c *Client) DoRequest(method, url string, body io.Reader, extraHeaders map[
 		return nil, fmt.Errorf("创建请求失败: %w", err)
 	}
 
-	// 设置默认User-Agent
-	if _, ok := c.headers["User-Agent"]; !ok {
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+	// 设置默认头部
+	for key, value := range c.defaultHeaders {
+		req.Header.Set(key, value)
 	}
 
 	// 应用客户端的通用头部
@@ -164,7 +185,7 @@ func (c *Client) DoRequestWithContext(ctx context.Context, method, url string, b
 	// 尝试从配置中应用代理（如果尚未设置代理且配置管理器存在）
 	if c.proxyManager == nil && c.configManager != nil {
 		c.proxyManager = proxy.NewProxyManager(c.configManager)
-		c.proxyManager.ApplyToClient(c.client)
+		// c.proxyManager.ApplyToClient(c.client)
 	}
 
 	// 创建请求
@@ -173,9 +194,9 @@ func (c *Client) DoRequestWithContext(ctx context.Context, method, url string, b
 		return nil, fmt.Errorf("创建请求失败: %w", err)
 	}
 
-	// 设置默认User-Agent
-	if _, ok := c.headers["User-Agent"]; !ok {
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+	// 设置默认头部
+	for key, value := range c.defaultHeaders {
+		req.Header.Set(key, value)
 	}
 
 	// 应用客户端的通用头部
