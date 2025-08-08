@@ -8,6 +8,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.10.3
 	github.com/google/uuid v1.6.0
 	github.com/refraction-networking/utls v1.8.0
+	github.com/robertkrimen/otto v0.5.1
 	github.com/wailsapp/wails/v2 v2.10.1
 	golang.org/x/net v0.42.0
 )
@@ -40,6 +41,7 @@ require (
 	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
+	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )
 
 // replace github.com/wailsapp/wails/v2 v2.10.1 => C:\Users\lemon\go\pkg\mod

@@ -55,7 +55,8 @@ func BatchDownloadWithProgress(downloader types.Downloader, imageURLs, filePaths
 	UpdateTaskProgress(downloader, 0, totalImages)
 
 	// 批量下载所有图片
-	successImages, err := downloader.BatchDownload(imageURLs, filePaths, nil)
+	headers := make(map[string]string)
+	successImages, err := downloader.BatchDownload(imageURLs, filePaths, headers)
 	if err != nil {
 		fmt.Printf("批量下载出错: %v\n", err)
 		return fmt.Errorf("批量下载出错: %w", err)
