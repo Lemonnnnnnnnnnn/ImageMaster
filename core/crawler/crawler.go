@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"ImageMaster/core/crawler/parsers"
-	"ImageMaster/core/proxy"
 	"ImageMaster/core/request"
 	"ImageMaster/core/types"
 )
@@ -27,7 +26,6 @@ const (
 type CrawlerFactory struct {
 	reqClient     *request.Client
 	configManager types.ConfigProvider
-	proxyManager  *proxy.ProxyManager
 }
 
 // NewCrawlerFactory 创建爬虫工厂
@@ -44,9 +42,6 @@ func (f *CrawlerFactory) SetConfigManager(configManager types.ConfigProvider) {
 	// 如果配置管理器不为空，设置到请求客户端
 	if configManager != nil {
 		f.reqClient.SetConfigManager(configManager)
-
-		// 创建代理管理器
-		f.proxyManager = proxy.NewProxyManager(configManager)
 
 		// 从配置中获取代理设置，并直接应用到请求客户端
 		if proxyURL := configManager.GetProxy(); proxyURL != "" {

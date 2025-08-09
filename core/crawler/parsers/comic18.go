@@ -14,6 +14,8 @@ import (
 	"ImageMaster/core/types"
 )
 
+// --------- 废弃，仅作示例 --------------
+
 // Comic18Parser 18comic解析器实现
 type Comic18Parser struct{}
 

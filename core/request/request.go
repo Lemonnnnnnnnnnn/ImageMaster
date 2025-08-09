@@ -10,14 +10,13 @@ import (
 
 	"golang.org/x/net/http2"
 
-	"ImageMaster/core/proxy"
 	"ImageMaster/core/types"
 )
 
 // Client HTTP客户端封装
 type Client struct {
 	client         *http.Client
-	proxyManager   *proxy.ProxyManager
+	proxyManager   *ProxyManager
 	configManager  types.ConfigProvider
 	headers        map[string]string
 	cookies        []*http.Cookie
@@ -56,7 +55,7 @@ func (c *Client) SetConfigManager(configManager types.ConfigProvider) {
 func (c *Client) SetProxy(proxyURL string) error {
 	// 如果没有代理管理器，创建一个
 	if c.proxyManager == nil {
-		c.proxyManager = proxy.NewProxyManager(c.configManager)
+		c.proxyManager = NewProxyManager(c.configManager)
 	}
 
 	// 设置代理
@@ -146,7 +145,7 @@ func (c *Client) PostWithContext(ctx context.Context, url string, body io.Reader
 func (c *Client) DoRequest(method, url string, body io.Reader, extraHeaders map[string]string) (*http.Response, error) {
 	// 尝试从配置中应用代理（如果尚未设置代理且配置管理器存在）
 	if c.proxyManager == nil && c.configManager != nil {
-		c.proxyManager = proxy.NewProxyManager(c.configManager)
+		c.proxyManager = NewProxyManager(c.configManager)
 		// c.proxyManager.ApplyToClient(c.client)
 	}
 
@@ -184,7 +183,7 @@ func (c *Client) DoRequest(method, url string, body io.Reader, extraHeaders map[
 func (c *Client) DoRequestWithContext(ctx context.Context, method, url string, body io.Reader, extraHeaders map[string]string) (*http.Response, error) {
 	// 尝试从配置中应用代理（如果尚未设置代理且配置管理器存在）
 	if c.proxyManager == nil && c.configManager != nil {
-		c.proxyManager = proxy.NewProxyManager(c.configManager)
+		c.proxyManager = NewProxyManager(c.configManager)
 		// c.proxyManager.ApplyToClient(c.client)
 	}
 

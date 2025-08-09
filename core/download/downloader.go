@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"ImageMaster/core/proxy"
 	"ImageMaster/core/request"
 	"ImageMaster/core/types"
 	"ImageMaster/core/utils"
@@ -23,7 +22,6 @@ type Downloader struct {
 	showProcess   bool
 	configManager types.ConfigProvider
 	taskUpdater   types.TaskUpdater // 任务更新器
-	proxyManager  *proxy.ProxyManager
 	mu            sync.RWMutex
 }
 
