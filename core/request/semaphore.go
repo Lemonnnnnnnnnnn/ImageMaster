@@ -1,15 +1,8 @@
 package request
 
-import (
-	"context"
-	"sync"
-	"time"
-)
-
 // Semaphore 信号量，用于控制并发数量
 type Semaphore struct {
 	ch chan struct{}
-	mu sync.RWMutex
 }
 
 // NewSemaphore 创建信号量
@@ -29,36 +22,6 @@ func (s *Semaphore) Release() {
 	<-s.ch
 }
 
-// TryAcquire 尝试获取信号量（非阻塞）
-func (s *Semaphore) TryAcquire() bool {
-	select {
-	case s.ch <- struct{}{}:
-		return true
-	default:
-		return false
-	}
-}
-
-// AcquireWithTimeout 在指定时间内获取信号量
-func (s *Semaphore) AcquireWithTimeout(timeout time.Duration) bool {
-	select {
-	case s.ch <- struct{}{}:
-		return true
-	case <-time.After(timeout):
-		return false
-	}
-}
-
-// AcquireWithContext 使用context获取信号量
-func (s *Semaphore) AcquireWithContext(ctx context.Context) error {
-	select {
-	case s.ch <- struct{}{}:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
-
 // Available 获取当前可用数量
 func (s *Semaphore) Available() int {
 	return cap(s.ch) - len(s.ch)
@@ -76,7 +39,7 @@ func (s *Semaphore) Used() int {
 
 // 默认信号量配置
 const (
-	DefaultRateLimit = 5 // 默认速率限制并发数（替代原有的token_bucket功能）
+	DefaultRateLimit = 5 // 默认速率限制并发数
 )
 
 // 全局默认信号量实例

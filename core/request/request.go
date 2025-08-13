@@ -228,10 +228,3 @@ func (c *Client) RateLimitedGet(url string) (*http.Response, error) {
 	defer DefaultRateSemaphore.Release()
 	return c.Get(url)
 }
-
-// RateLimitedGetWithSemaphore 使用指定信号量的GET请求
-func (c *Client) RateLimitedGetWithSemaphore(url string, sem *Semaphore) (*http.Response, error) {
-	sem.Acquire()
-	defer sem.Release()
-	return c.Get(url)
-}
