@@ -221,3 +221,17 @@ func (c *Client) DoRequestWithContext(ctx context.Context, method, url string, b
 func (c *Client) GetHTTPClient() *http.Client {
 	return c.client
 }
+
+// RateLimitedGet 使用默认速率信号量的GET请求（替代原token_bucket功能）
+func (c *Client) RateLimitedGet(url string) (*http.Response, error) {
+	DefaultRateSemaphore.Acquire()
+	defer DefaultRateSemaphore.Release()
+	return c.Get(url)
+}
+
+// RateLimitedGetWithSemaphore 使用指定信号量的GET请求
+func (c *Client) RateLimitedGetWithSemaphore(url string, sem *Semaphore) (*http.Response, error) {
+	sem.Acquire()
+	defer sem.Release()
+	return c.Get(url)
+}

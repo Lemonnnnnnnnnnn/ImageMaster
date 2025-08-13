@@ -14,6 +14,11 @@ import (
 	"ImageMaster/core/utils"
 )
 
+// 下载器并发控制常数
+const (
+	DefaultDownloadConcurrency = 10 // 默认并发下载数量
+)
+
 // Downloader 核心下载器
 type Downloader struct {
 	reqClient     *request.Client
@@ -21,7 +26,8 @@ type Downloader struct {
 	retryDelay    time.Duration
 	showProcess   bool
 	configManager types.ConfigProvider
-	taskUpdater   types.TaskUpdater // 任务更新器
+	taskUpdater   types.TaskUpdater  // 任务更新器
+	semaphore     *request.Semaphore // 用于控制并发数量的信号量
 	mu            sync.RWMutex
 }
 
@@ -34,11 +40,15 @@ type Config struct {
 
 // NewDownloader 创建新的下载器
 func NewDownloader(config Config) *Downloader {
+	// 创建用于控制并发数量的信号量
+	semaphore := request.NewSemaphore(DefaultDownloadConcurrency)
+
 	return &Downloader{
 		reqClient:   request.NewClient(),
 		retryCount:  config.RetryCount,
 		retryDelay:  time.Duration(config.RetryDelay) * time.Second,
 		showProcess: config.ShowProcess,
+		semaphore:   semaphore,
 	}
 }
 
@@ -146,7 +156,15 @@ func (d *Downloader) DownloadFile(url string, filePath string, headers map[strin
 	return nil
 }
 
-// BatchDownload 批量下载文件
+// DownloadResult 下载结果
+type DownloadResult struct {
+	Index   int
+	URL     string
+	Success bool
+	Error   error
+}
+
+// BatchDownload 批量下载文件（支持并行下载）
 func (d *Downloader) BatchDownload(urls []string, filepaths []string, headers map[string]string) (int, error) {
 	total := len(urls)
 	if total == 0 {
@@ -157,27 +175,67 @@ func (d *Downloader) BatchDownload(urls []string, filepaths []string, headers ma
 		return 0, fmt.Errorf("URL和文件路径数量不匹配")
 	}
 
-	successCount := 0
+	// 创建结果通道
+	resultCh := make(chan DownloadResult, total)
+	var wg sync.WaitGroup
 
+	// 启动并行下载任务
 	for i, url := range urls {
-		if err := d.DownloadFile(url, filepaths[i], headers); err == nil {
-			successCount++
+		wg.Add(1)
+		go func(index int, downloadURL, filePath string) {
+			defer wg.Done()
 
-			// 使用任务更新器更新进度
-			if d.taskUpdater != nil {
-				d.taskUpdater.UpdateTaskProgress(successCount, total)
-				// 可以提供更详细的进度信息
-				progressDetails := types.ProgressDetails{
-					Current:     successCount,
-					Total:       total,
-					CurrentItem: fmt.Sprintf("正在下载: %s", url),
-					Phase:       "downloading",
-					Timestamp:   time.Now(),
-				}
-				d.taskUpdater.UpdateTaskProgressWithDetails(progressDetails)
+			// 获取信号量（阻塞直到有空位）
+			d.semaphore.Acquire()
+			defer d.semaphore.Release() // 完成后释放信号量
+
+			// 添加日志验证并发控制
+			fmt.Printf("开始下载 [%d/%d]: %s (当前并发: %d/%d)\n",
+				index+1, len(urls), downloadURL,
+				d.semaphore.Used(), d.semaphore.Capacity())
+
+			// 执行下载
+			err := d.DownloadFile(downloadURL, filePath, headers)
+
+			// 发送结果
+			resultCh <- DownloadResult{
+				Index:   index,
+				URL:     downloadURL,
+				Success: err == nil,
+				Error:   err,
 			}
+		}(i, url, filepaths[i])
+	}
+
+	// 等待所有任务完成
+	go func() {
+		wg.Wait()
+		close(resultCh)
+	}()
+
+	// 收集结果并更新进度
+	successCount := 0
+	completedCount := 0
+	for result := range resultCh {
+		completedCount++
+		if result.Success {
+			successCount++
 		} else {
-			fmt.Printf("下载失败: %s, 错误: %v\n", url, err)
+			fmt.Printf("下载失败: %s, 错误: %v\n", result.URL, result.Error)
+		}
+
+		// 使用任务更新器更新进度
+		if d.taskUpdater != nil {
+			d.taskUpdater.UpdateTaskProgress(completedCount, total)
+			// 提供更详细的进度信息
+			progressDetails := types.ProgressDetails{
+				Current:     completedCount,
+				Total:       total,
+				CurrentItem: fmt.Sprintf("并行下载完成: %s (成功: %d/%d)", result.URL, successCount, completedCount),
+				Phase:       "downloading",
+				Timestamp:   time.Now(),
+			}
+			d.taskUpdater.UpdateTaskProgressWithDetails(progressDetails)
 		}
 	}
 
