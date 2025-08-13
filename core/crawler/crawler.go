@@ -72,10 +72,8 @@ func (f *CrawlerFactory) CreateCrawler(siteType string) types.ImageCrawler {
 	case SiteTypeHitomi:
 		return parsers.NewHitomiCrawler(f.reqClient)
 	default:
-		crawler := &GenericCrawler{
-			reqClient: f.reqClient,
-		}
-		return crawler
+		fmt.Printf("创建爬虫失败, 类型: %s\n", siteType)
+		return nil
 	}
 }
 
@@ -125,35 +123,4 @@ func (f *CrawlerFactory) DetectSiteType(rawURL string) string {
 
 	// 默认使用通用爬虫
 	return SiteTypeGeneric
-}
-
-// GenericCrawler 通用网页爬虫
-type GenericCrawler struct {
-	reqClient  *request.Client
-	downloader types.Downloader
-}
-
-// GetDownloader 获取下载器
-func (c *GenericCrawler) GetDownloader() types.Downloader {
-	return c.downloader
-}
-
-// SetDownloader 设置下载器
-func (c *GenericCrawler) SetDownloader(dl types.Downloader) {
-	c.downloader = dl
-}
-
-// Crawl 执行爬取
-func (c *GenericCrawler) Crawl(url string, savePath string) (string, error) {
-	// 通用爬虫暂未实现
-	return "", fmt.Errorf("通用爬虫尚未实现")
-}
-
-// CrawlAndSave 执行爬取并保存
-func (c *GenericCrawler) CrawlAndSave(url string, savePath string) string {
-	_, err := c.Crawl(url, savePath)
-	if err != nil {
-		return ""
-	}
-	return savePath
 }
