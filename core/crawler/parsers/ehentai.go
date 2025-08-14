@@ -20,7 +20,18 @@ type EHentaiAlbum struct {
 }
 
 // EHentaiParser EHentai解析器实现
-type EHentaiParser struct{}
+type EHentaiParser struct {
+	downloader types.Downloader
+	reqClient  *request.Client
+
+	// 进度跟踪相关属性
+	totalImages        int
+	completedRealURLs  int
+	completedFinalURLs int
+	completedLinks     int
+	mu                 sync.Mutex
+	taskUpdater        types.TaskUpdater
+}
 
 // GetName 获取解析器名称
 func (p *EHentaiParser) GetName() string {
@@ -29,13 +40,25 @@ func (p *EHentaiParser) GetName() string {
 
 // Parse 解析URL获取图片信息
 func (p *EHentaiParser) Parse(reqClient *request.Client, url string) (*ParseResult, error) {
+	// 设置请求客户端和初始化状态
+	p.reqClient = reqClient
+	p.taskUpdater = p.downloader.GetTaskUpdater()
+	p.taskUpdater.UpdateTaskName(p.GetName())
+
+	// 重置进度计数器
+	p.completedRealURLs = 0
+	p.completedFinalURLs = 0
+	p.completedLinks = 0
+
 	// 设置ehentai特殊配置
-	err := SetupEHentaiClient(reqClient, nil)
+	err := SetupEHentaiClient(p.reqClient, nil)
 	if err != nil {
 		return nil, fmt.Errorf("设置EHentai客户端失败: %w", err)
 	}
 
-	eHentaiAlbum, err := GetAlbumWithClient(reqClient, url)
+	// 获取专辑信息（耗时操作）
+	p.taskUpdater.UpdateTaskName("EHentai - 正在获取专辑信息")
+	eHentaiAlbum, err := p.getAlbum(url)
 	if err != nil {
 		return nil, fmt.Errorf("获取专辑失败: %w", err)
 	}
@@ -43,8 +66,17 @@ func (p *EHentaiParser) Parse(reqClient *request.Client, url string) (*ParseResu
 	// 批量下载URL和路径
 	var imgURLs []string
 	var filePaths []string
-	var mu sync.Mutex
 	var wg sync.WaitGroup
+
+	// 计算总链接数并设置到结构体属性
+	p.totalImages = 0
+	for _, page := range eHentaiAlbum.Pages {
+		links := ParseLinks(page)
+		p.totalImages += len(links)
+	}
+
+	// 更新任务名称显示总数
+	p.taskUpdater.UpdateTaskName(fmt.Sprintf("EHentai - 正在解析图片链接 (0/%d张)", p.totalImages))
 
 	// 遍历每一页
 	for pageIndex, page := range eHentaiAlbum.Pages {
@@ -57,27 +89,36 @@ func (p *EHentaiParser) Parse(reqClient *request.Client, url string) (*ParseResu
 				defer wg.Done()
 
 				// 解析页面获取真实图片URL
-				imgURL, err := ParsePageWithClient(reqClient, linkURL)
+				imgURL, err := p.parsePageForImage(linkURL)
 				if err != nil {
 					fmt.Printf("解析页面失败 %s: %v\n", linkURL, err)
-					return
+				} else {
+					fmt.Printf("解析到图片：%s\n", imgURL)
+
+					// 构建保存文件名
+					filename := fmt.Sprintf("%d_%d.jpg", pageIdx, linkIdx)
+
+					// 线程安全地添加到结果中
+					p.mu.Lock()
+					imgURLs = append(imgURLs, imgURL)
+					filePaths = append(filePaths, filename)
+					p.mu.Unlock()
 				}
-				fmt.Printf("解析到图片：%s\n", imgURL)
 
-				// 构建保存文件名
-				filename := fmt.Sprintf("%d_%d.jpg", pageIdx, linkIdx)
-
-				// 线程安全地添加到结果中
-				mu.Lock()
-				imgURLs = append(imgURLs, imgURL)
-				filePaths = append(filePaths, filename)
-				mu.Unlock()
+				// 更新进度计数器和任务名称
+				p.mu.Lock()
+				p.completedLinks++
+				p.taskUpdater.UpdateTaskName(fmt.Sprintf("EHentai - 解析图片链接进度 (%d/%d张)", p.completedLinks, p.totalImages))
+				p.mu.Unlock()
 			}(pageIndex, linkIndex, link)
 		}
 	}
 
 	// 等待所有并发任务完成
 	wg.Wait()
+
+	// 解析完成，更新任务名称
+	p.taskUpdater.UpdateTaskName(fmt.Sprintf("EHentai - 解析完成 (成功%d张，共%d张)", len(imgURLs), p.totalImages))
 
 	return &ParseResult{
 		Name:      eHentaiAlbum.Name,
@@ -86,102 +127,11 @@ func (p *EHentaiParser) Parse(reqClient *request.Client, url string) (*ParseResu
 	}, nil
 }
 
-// ParsePageWithClient 解析EH页面获取真实图片URL，使用request客户端
-func ParsePageWithClient(reqClient *request.Client, link string) (string, error) {
-	realURL, err := GetRealURLWithClient(reqClient, link)
-	if err != nil {
-		return "", fmt.Errorf("获取真实URL失败: %w", err)
-	}
+// getAlbum 获取整个专辑信息
+func (p *EHentaiParser) getAlbum(url string) (*EHentaiAlbum, error) {
 
-	realPage, err := ParseRealPageWithClient(reqClient, realURL)
-	if err != nil {
-		return "", fmt.Errorf("解析真实页面失败: %w", err)
-	}
-
-	return realPage, nil
-}
-
-// GetRealURLWithClient 获取真实图片URL，使用request客户端
-func GetRealURLWithClient(reqClient *request.Client, link string) (string, error) {
-	resp, err := reqClient.RateLimitedGet(link)
-	fmt.Printf("获取真实URL成功...: %s\n", link)
-
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("HTTP状态码错误: %d", resp.StatusCode)
-	}
-
-	// 解析HTML
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	// 获取img标签的onerror属性
-	imgOnError := ""
-	doc.Find("#img").Each(func(i int, s *goquery.Selection) {
-		if onError, exists := s.Attr("onerror"); exists {
-			imgOnError = onError
-		}
-	})
-
-	if imgOnError == "" {
-		return "", fmt.Errorf("找不到图片onerror属性")
-	}
-
-	// 提取nl参数
-	re := regexp.MustCompile(`nl\('(.+)'\)`)
-	matches := re.FindStringSubmatch(imgOnError)
-	if len(matches) < 2 {
-		return "", fmt.Errorf("无法解析nl参数")
-	}
-
-	nl := matches[1]
-	realURL := fmt.Sprintf("%s?nl=%s", link, nl)
-	return realURL, nil
-}
-
-// ParseRealPageWithClient 解析真实页面获取图片URL，使用request客户端
-func ParseRealPageWithClient(reqClient *request.Client, realURL string) (string, error) {
-	resp, err := reqClient.RateLimitedGet(realURL)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("HTTP状态码错误: %d", resp.StatusCode)
-	}
-
-	// 解析HTML
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	// 获取真实图片URL
-	imgURL := ""
-	doc.Find("#img").Each(func(i int, s *goquery.Selection) {
-		if src, exists := s.Attr("src"); exists {
-			imgURL = src
-		}
-	})
-
-	if imgURL == "" {
-		return "", fmt.Errorf("找不到图片URL")
-	}
-
-	return imgURL, nil
-}
-
-// GetAlbumWithClient 获取整个专辑信息，使用request客户端
-func GetAlbumWithClient(reqClient *request.Client, url string) (*EHentaiAlbum, error) {
 	// 首先访问第一页获取专辑名称和分页信息
-	resp, err := reqClient.RateLimitedGet(url)
+	resp, err := p.reqClient.RateLimitedGet(url)
 	if err != nil {
 		return nil, err
 	}
@@ -252,38 +202,48 @@ func GetAlbumWithClient(reqClient *request.Client, url string) (*EHentaiAlbum, e
 	// 预分配pages切片
 	pages = make([]string, len(pageURLs))
 
+	// 进度计数器
+	var completedPages int
+	totalPages := len(pageURLs)
+
+	// 更新任务名称显示总页数
+	p.taskUpdater.UpdateTaskName(fmt.Sprintf("EHentai - 正在获取专辑页面 (0/%d页)", totalPages))
+
 	for index, pageURL := range pageURLs {
 		fmt.Printf("访问第%d页, %s\n", index+1, pageURL)
 		wg.Add(1)
 		go func(idx int, pURL string) {
 			defer wg.Done()
 
-			pageResp, err := reqClient.RateLimitedGet(pURL)
+			pageResp, err := p.reqClient.RateLimitedGet(pURL)
 			if err != nil {
 				fmt.Printf("访问页面失败 %s: %v\n", pURL, err)
-				return
-			}
-			defer pageResp.Body.Close()
+			} else {
+				defer pageResp.Body.Close()
 
-			if pageResp.StatusCode != http.StatusOK {
-				fmt.Printf("页面HTTP状态码错误 %s: %d\n", pURL, pageResp.StatusCode)
-				return
+				if pageResp.StatusCode != http.StatusOK {
+					fmt.Printf("页面HTTP状态码错误 %s: %d\n", pURL, pageResp.StatusCode)
+				} else {
+					pageDoc, err := goquery.NewDocumentFromReader(pageResp.Body)
+					if err != nil {
+						fmt.Printf("解析页面失败 %s: %v\n", pURL, err)
+					} else {
+						html, err := pageDoc.Html()
+						if err != nil {
+							fmt.Printf("获取页面HTML失败 %s: %v\n", pURL, err)
+						} else {
+							mu.Lock()
+							pages[idx] = html
+							mu.Unlock()
+						}
+					}
+				}
 			}
 
-			pageDoc, err := goquery.NewDocumentFromReader(pageResp.Body)
-			if err != nil {
-				fmt.Printf("解析页面失败 %s: %v\n", pURL, err)
-				return
-			}
-
-			html, err := pageDoc.Html()
-			if err != nil {
-				fmt.Printf("获取页面HTML失败 %s: %v\n", pURL, err)
-				return
-			}
-
+			// 更新进度计数器和任务名称
 			mu.Lock()
-			pages[idx] = html
+			completedPages++
+			p.taskUpdater.UpdateTaskName(fmt.Sprintf("EHentai - 正在获取专辑页面 (%d/%d页)", completedPages, totalPages))
 			mu.Unlock()
 		}(index, pageURL)
 	}
@@ -303,6 +263,111 @@ func GetAlbumWithClient(reqClient *request.Client, url string) (*EHentaiAlbum, e
 		Name:  albumName,
 		Pages: validPages,
 	}, nil
+}
+
+// parsePageForImage 解析EH页面获取真实图片URL
+func (p *EHentaiParser) parsePageForImage(link string) (string, error) {
+	realURL, err := p.getRealURL(link)
+	if err != nil {
+		return "", fmt.Errorf("获取真实URL失败: %w", err)
+	}
+
+	realPage, err := p.parseRealPage(realURL)
+	if err != nil {
+		return "", fmt.Errorf("解析真实页面失败: %w", err)
+	}
+
+	return realPage, nil
+}
+
+// getRealURL 获取真实图片URL
+func (p *EHentaiParser) getRealURL(link string) (string, error) {
+	resp, err := p.reqClient.RateLimitedGet(link)
+	fmt.Printf("获取真实URL成功...: %s\n", link)
+
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("HTTP状态码错误: %d", resp.StatusCode)
+	}
+
+	// 解析HTML
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	// 获取img标签的onerror属性
+	imgOnError := ""
+	doc.Find("#img").Each(func(i int, s *goquery.Selection) {
+		if onError, exists := s.Attr("onerror"); exists {
+			imgOnError = onError
+		}
+	})
+
+	if imgOnError == "" {
+		return "", fmt.Errorf("找不到图片onerror属性")
+	}
+
+	// 提取nl参数
+	re := regexp.MustCompile(`nl\('(.+)'\)`)
+	matches := re.FindStringSubmatch(imgOnError)
+	if len(matches) < 2 {
+		return "", fmt.Errorf("无法解析nl参数")
+	}
+
+	nl := matches[1]
+	realURL := fmt.Sprintf("%s?nl=%s", link, nl)
+
+	// 更新获取真实URL的进度
+	p.mu.Lock()
+	p.completedRealURLs++
+	p.taskUpdater.UpdateTaskName(fmt.Sprintf("EHentai - 已获取%d张图片真实地址 (%d/%d)", p.completedRealURLs, p.completedRealURLs, p.totalImages))
+	p.mu.Unlock()
+
+	return realURL, nil
+}
+
+// parseRealPage 解析真实页面获取图片URL
+func (p *EHentaiParser) parseRealPage(realURL string) (string, error) {
+	resp, err := p.reqClient.RateLimitedGet(realURL)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("HTTP状态码错误: %d", resp.StatusCode)
+	}
+
+	// 解析HTML
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	// 获取真实图片URL
+	imgURL := ""
+	doc.Find("#img").Each(func(i int, s *goquery.Selection) {
+		if src, exists := s.Attr("src"); exists {
+			imgURL = src
+		}
+	})
+
+	if imgURL == "" {
+		return "", fmt.Errorf("找不到图片URL")
+	}
+
+	// 解析完成后更新进度
+	p.mu.Lock()
+	p.completedFinalURLs++
+	p.taskUpdater.UpdateTaskName(fmt.Sprintf("EHentai - 已经解析完成%d张图片最终地址 (%d/%d)", p.completedFinalURLs, p.completedFinalURLs, p.totalImages))
+	p.mu.Unlock()
+
+	return imgURL, nil
 }
 
 // ParseLinks 解析页面中的图片链接
@@ -329,8 +394,10 @@ type EHentaiCrawler struct {
 }
 
 // NewEHentaiCrawler 创建新的E-Hentai爬虫
-func NewEHentaiCrawler(reqClient *request.Client) types.ImageCrawler {
-	parser := &EHentaiParser{}
+func NewEHentaiCrawler(reqClient *request.Client, downloader types.Downloader) types.ImageCrawler {
+	parser := &EHentaiParser{
+		downloader: downloader,
+	}
 	baseCrawler := NewBaseCrawler(reqClient, parser)
 	return &EHentaiCrawler{
 		BaseCrawler: baseCrawler,

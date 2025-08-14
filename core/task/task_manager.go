@@ -156,9 +156,7 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 	}
 
 	// 检测网站类型并创建对应的爬虫
-	siteType := crawlerFactory.DetectSiteType(task.URL)
-	crawlerInstance := crawlerFactory.CreateCrawler(siteType)
-	crawlerInstance.SetDownloader(downloader)
+	crawlerInstance := crawlerFactory.Create(task.URL, downloader)
 
 	// 设置输出目录
 	var outputDir string

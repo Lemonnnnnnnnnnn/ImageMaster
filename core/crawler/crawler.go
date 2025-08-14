@@ -52,15 +52,15 @@ func (f *CrawlerFactory) SetConfigManager(configManager types.ConfigProvider) {
 }
 
 // CreateCrawler 创建特定网站的爬虫
-func (f *CrawlerFactory) CreateCrawler(siteType string) types.ImageCrawler {
+func (f *CrawlerFactory) createCrawler(siteType string, downloader types.Downloader) types.ImageCrawler {
 	fmt.Printf("创建爬虫, 类型: %s\n", siteType)
 
 	// 所有爬虫共用同一个配置好的请求客户端
 	switch siteType {
 	case SiteTypeEHentai:
-		return parsers.NewEHentaiCrawler(f.reqClient)
+		return parsers.NewEHentaiCrawler(f.reqClient, downloader)
 	case SiteTypeExHentai:
-		return parsers.NewEHentaiCrawler(f.reqClient)
+		return parsers.NewEHentaiCrawler(f.reqClient, downloader)
 	case SiteTypeTelegraph:
 		return parsers.NewTelegraphCrawler(f.reqClient)
 	case SiteTypeWnacg:
@@ -78,7 +78,7 @@ func (f *CrawlerFactory) CreateCrawler(siteType string) types.ImageCrawler {
 }
 
 // DetectSiteType 检测网站类型
-func (f *CrawlerFactory) DetectSiteType(rawURL string) string {
+func (f *CrawlerFactory) detectSiteType(rawURL string) string {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return SiteTypeGeneric
@@ -123,4 +123,11 @@ func (f *CrawlerFactory) DetectSiteType(rawURL string) string {
 
 	// 默认使用通用爬虫
 	return SiteTypeGeneric
+}
+
+func (f *CrawlerFactory) Create(rawURL string, downloader types.Downloader) types.ImageCrawler {
+	siteType := f.detectSiteType(rawURL)
+	crawler := f.createCrawler(siteType, downloader)
+	crawler.SetDownloader(downloader)
+	return crawler
 }
