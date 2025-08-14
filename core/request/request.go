@@ -21,6 +21,7 @@ type Client struct {
 	headers        map[string]string
 	cookies        []*http.Cookie
 	defaultHeaders map[string]string
+	semaphore      *Semaphore
 }
 
 // NewClient 创建新的请求客户端
@@ -42,7 +43,12 @@ func NewClient() *Client {
 			"accept-language": "en,zh-CN;q=0.9,zh;q=0.8",
 			"user-agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
 		},
+		semaphore: NewSemaphore(10),
 	}
+}
+
+func (c *Client) SetSemaphore(semaphore *Semaphore) {
+	c.semaphore = semaphore
 }
 
 // SetConfigManager 设置配置管理器
@@ -224,7 +230,7 @@ func (c *Client) GetHTTPClient() *http.Client {
 
 // RateLimitedGet 使用默认速率信号量的GET请求（替代原token_bucket功能）
 func (c *Client) RateLimitedGet(url string) (*http.Response, error) {
-	DefaultRateSemaphore.Acquire()
-	defer DefaultRateSemaphore.Release()
+	c.semaphore.Acquire()
+	defer c.semaphore.Release()
 	return c.Get(url)
 }

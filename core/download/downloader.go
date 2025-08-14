@@ -52,14 +52,6 @@ func NewDownloader(config Config) *Downloader {
 	}
 }
 
-func (d *Downloader) SetConcurrency(concurrency int) {
-	d.semaphore = request.NewSemaphore(concurrency)
-}
-
-func (d *Downloader) SetSemaphore(semaphore *request.Semaphore) {
-	d.semaphore = semaphore
-}
-
 // SetConfigManager 设置配置管理器
 func (d *Downloader) SetConfigManager(configManager types.ConfigProvider) {
 	d.configManager = configManager

@@ -411,6 +411,8 @@ func SetupEHentaiClient(reqClient *request.Client, downloader types.Downloader) 
 		return err
 	}
 
+	reqClient.SetSemaphore(request.NewSemaphore(5))
+
 	// 设置ehentai需要的cookie
 	reqClient.AddCookie(&http.Cookie{
 		Name:  "nw",
