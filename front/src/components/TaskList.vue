@@ -23,7 +23,7 @@
             <tr v-for="task in tasks" :key="task.id" class="border-b border-neutral-500/50">
                 <td :title="task.name" class="max-w-48">{{ task.name }}</td>
                 <td v-if="mode === 'active'" :title="task.url" class="max-w-64">{{ task.url }}</td>
-                <td class="flex justify-center">
+                <td >
                     <div class="flex items-center justify-center gap-2">
                         <component :is="getStatusIcon(task.status)?.icon" :size="16"
                             :class="getStatusIcon(task.status)?.class" />

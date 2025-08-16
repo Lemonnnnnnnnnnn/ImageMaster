@@ -285,7 +285,7 @@ func (tm *TaskManager) CancelTask(taskID string) bool {
 			}
 			// 向前端发事件
 			if tm.ctx != nil {
-				runtime.EventsEmit(tm.ctx, "download:completed", map[string]interface{}{
+				runtime.EventsEmit(tm.ctx, "download:cancelled", map[string]interface{}{
 					"taskId": taskID,
 					"name":   task.Name,
 					"status": task.Status,
