@@ -22,6 +22,7 @@ type Client struct {
 	cookies        []*http.Cookie
 	defaultHeaders map[string]string
 	semaphore      *Semaphore
+	ctx            context.Context
 }
 
 // NewClient 创建新的请求客户端
@@ -55,6 +56,11 @@ func (c *Client) SetSemaphore(semaphore *Semaphore) {
 func (c *Client) SetConfigManager(configManager types.ConfigProvider) {
 	c.configManager = configManager
 	c.SetProxy(configManager.GetProxy())
+}
+
+// SetContext 设置默认请求上下文，用于统一取消/超时控制
+func (c *Client) SetContext(ctx context.Context) {
+	c.ctx = ctx
 }
 
 // SetProxy 设置代理
@@ -156,7 +162,13 @@ func (c *Client) DoRequest(method, url string, body io.Reader, extraHeaders map[
 	}
 
 	// 创建请求
-	req, err := http.NewRequest(method, url, body)
+	var req *http.Request
+	var err error
+	if c.ctx != nil {
+		req, err = http.NewRequestWithContext(c.ctx, method, url, body)
+	} else {
+		req, err = http.NewRequest(method, url, body)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("创建请求失败: %w", err)
 	}

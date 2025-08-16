@@ -1,6 +1,7 @@
 package parsers
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
@@ -29,6 +30,7 @@ type BaseCrawler struct {
 	reqClient  *request.Client
 	downloader types.Downloader
 	parser     Parser
+	ctx        context.Context
 }
 
 // NewBaseCrawler 创建基础爬虫
@@ -50,6 +52,21 @@ func (c *BaseCrawler) SetDownloader(dl types.Downloader) {
 	// 如果解析器支持注入下载器，则同步设置
 	if da, ok := c.parser.(interface{ SetDownloader(types.Downloader) }); ok {
 		da.SetDownloader(dl)
+	}
+}
+
+// SetContext 设置上下文并传递给请求客户端与下载器
+func (c *BaseCrawler) SetContext(ctx context.Context) {
+	c.ctx = ctx
+	if c.reqClient != nil {
+		c.reqClient.SetContext(ctx)
+	}
+	if c.downloader != nil {
+		c.downloader.SetContext(ctx)
+	}
+	// 解析器若支持上下文，也一并传入
+	if withCtx, ok := c.parser.(interface{ SetContext(context.Context) }); ok {
+		withCtx.SetContext(ctx)
 	}
 }
 
@@ -88,10 +105,24 @@ func (c *BaseCrawler) CrawlWithParser(url string, savePath string) error {
 		return fmt.Errorf("设置请求客户端失败: %w", err)
 	}
 
+	// 解析前取消检查
+	if c.ctx != nil {
+		if err := c.ctx.Err(); err != nil {
+			return err
+		}
+	}
+
 	// 解析内容
 	result, err := c.parser.Parse(c.reqClient, url)
 	if err != nil {
 		return fmt.Errorf("解析内容失败: %w", err)
+	}
+
+	// 解析后快速取消检查
+	if c.ctx != nil {
+		if err := c.ctx.Err(); err != nil {
+			return err
+		}
 	}
 
 	// 更新任务名称和状态

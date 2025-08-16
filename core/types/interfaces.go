@@ -2,6 +2,7 @@ package types
 
 import (
 	"ImageMaster/core/types/dto"
+	"context"
 	"time"
 )
 
@@ -39,6 +40,8 @@ type Downloader interface {
 	GetProxy() string
 	// GetTaskUpdater 获取任务更新器
 	GetTaskUpdater() TaskUpdater
+	// SetContext 传入上下文以支持取消
+	SetContext(ctx context.Context)
 }
 
 // ProgressReporter 进度报告接口

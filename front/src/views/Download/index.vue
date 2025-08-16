@@ -21,7 +21,7 @@
             </Button>
         </div>
         <div class="flex-1 overflow-auto">
-            <TaskList class="mt-2" :tasks="activeTasks" />
+            <TaskList class="mt-2" :tasks="activeTasks" mode="active" @cancel="onCancelTask" />
         </div>
     </div>
 
@@ -79,6 +79,10 @@ const downloadHandler = createDownloadHandler({
         toast.error(errorMsg);
     },
 });
+
+async function onCancelTask(taskId: string) {
+    await downloadStore.cancelTask(taskId);
+}
 
 
 </script>

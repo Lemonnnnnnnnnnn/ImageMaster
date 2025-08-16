@@ -14,7 +14,7 @@
                 </div>
             </Button>
         </div>
-        <TaskList :tasks="historyTasks" />
+        <TaskList :tasks="historyTasks" mode="history" />
     </div>
 </template>
 

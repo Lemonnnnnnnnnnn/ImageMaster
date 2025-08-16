@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
@@ -16,6 +17,7 @@ import (
 type CrawlerFactory struct {
 	reqClient     *request.Client
 	configManager types.ConfigProvider
+	ctx           context.Context
 }
 
 // NewCrawlerFactory 创建爬虫工厂
@@ -38,6 +40,14 @@ func (f *CrawlerFactory) SetConfigManager(configManager types.ConfigProvider) {
 			logger.Info("设置代理: %s", proxyURL)
 			f.reqClient.SetProxy(proxyURL)
 		}
+	}
+}
+
+// SetContext 设置默认请求上下文
+func (f *CrawlerFactory) SetContext(ctx context.Context) {
+	f.ctx = ctx
+	if f.reqClient != nil {
+		f.reqClient.SetContext(ctx)
 	}
 }
 

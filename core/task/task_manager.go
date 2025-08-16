@@ -123,6 +123,17 @@ func (tm *TaskManager) createDownloaderForTask(taskID string) *download.Download
 
 // executeTask 执行下载任务
 func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
+	// 为该任务创建可取消的上下文
+	parent := tm.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithCancel(parent)
+	// 监听取消通道以触发上下文取消
+	go func() {
+		<-cancelChan
+		cancel()
+	}()
 	defer func() {
 		tm.mu.Lock()
 		delete(tm.activeTasks, taskID)
@@ -148,12 +159,16 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 
 	// 创建下载器
 	downloader := tm.createDownloaderForTask(taskID)
+	// 传递上下文到下载器
+	downloader.SetContext(ctx)
 
 	// 创建爬虫工厂
 	crawlerFactory := crawler.NewCrawlerFactory()
 	if tm.configManager != nil {
 		crawlerFactory.SetConfigManager(tm.configManager)
 	}
+	// 传递上下文到爬虫工厂
+	crawlerFactory.SetContext(ctx)
 
 	// 检测网站类型并创建对应的爬虫
 	crawlerInstance, err := crawlerFactory.Create(task.URL)
@@ -170,6 +185,10 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 		return
 	}
 	crawlerInstance.SetDownloader(downloader)
+	// 将上下文传给具体爬虫（若实现）
+	if withCtx, ok := crawlerInstance.(interface{ SetContext(context.Context) }); ok {
+		withCtx.SetContext(ctx)
+	}
 
 	// 设置输出目录
 	var outputDir string
@@ -182,10 +201,14 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 	// 执行爬取
 	savePath, err := crawlerInstance.Crawl(task.URL, outputDir)
 	if err != nil {
-		// 下载失败
+		// 如果是取消，标记为已取消，否则标记失败
 		tm.UpdateTask(taskID, func(task *DownloadTask) {
-			task.Status = string(types.StatusFailed)
-			task.Error = err.Error()
+			if ctx.Err() == context.Canceled {
+				task.Status = string(types.StatusCancelled)
+			} else {
+				task.Status = string(types.StatusFailed)
+				task.Error = err.Error()
+			}
 			task.CompleteTime = time.Now()
 			task.UpdatedAt = time.Now()
 		})
@@ -253,7 +276,21 @@ func (tm *TaskManager) CancelTask(taskID string) bool {
 		// 更新任务状态
 		if task, exists := tm.tasks[taskID]; exists {
 			task.Status = string(types.StatusCancelled)
+			task.CompleteTime = time.Now()
 			task.UpdatedAt = time.Now()
+			// 立即持久化到历史
+			if tm.historyStore != nil {
+				dtoTask := ToDownloadTaskDTO(task)
+				tm.historyStore.AddDownloadRecord(dtoTask)
+			}
+			// 向前端发事件
+			if tm.ctx != nil {
+				runtime.EventsEmit(tm.ctx, "download:completed", map[string]interface{}{
+					"taskId": taskID,
+					"name":   task.Name,
+					"status": task.Status,
+				})
+			}
 		}
 		return true
 	}

@@ -1,6 +1,7 @@
 package download
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,6 +30,7 @@ type Downloader struct {
 	taskUpdater   types.TaskUpdater  // 任务更新器
 	semaphore     *request.Semaphore // 用于控制并发数量的信号量
 	mu            sync.RWMutex
+	ctx           context.Context
 }
 
 // Config 下载器配置
@@ -79,8 +81,23 @@ func (d *Downloader) GetConfigManager() interface{} {
 	return d.configManager
 }
 
+// SetContext 设置上下文并同步到请求客户端
+func (d *Downloader) SetContext(ctx context.Context) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.ctx = ctx
+	if d.reqClient != nil {
+		d.reqClient.SetContext(ctx)
+	}
+}
+
 // DownloadFile 下载文件到指定路径
 func (d *Downloader) DownloadFile(url string, filePath string, headers map[string]string) error {
+	if d.ctx != nil {
+		if err := d.ctx.Err(); err != nil {
+			return err
+		}
+	}
 	filePath = utils.NormalizePath(filePath)
 	// 确保目录存在
 	dir := filepath.Dir(filePath)
@@ -99,6 +116,12 @@ func (d *Downloader) DownloadFile(url string, filePath string, headers map[strin
 	success := false
 	var lastErr error
 	for attempt := 0; attempt <= d.retryCount; attempt++ {
+		if d.ctx != nil {
+			if err := d.ctx.Err(); err != nil {
+				lastErr = err
+				break
+			}
+		}
 		if attempt > 0 {
 			fmt.Printf("重试下载 %s (第 %d 次)\n", url, attempt)
 			time.Sleep(d.retryDelay)
@@ -188,6 +211,14 @@ func (d *Downloader) BatchDownload(urls []string, filepaths []string, headers ma
 			// 获取信号量（阻塞直到有空位）
 			d.semaphore.Acquire()
 			defer d.semaphore.Release() // 完成后释放信号量
+
+			// 取消检查（获得并发名额后再次检查）
+			if d.ctx != nil {
+				if err := d.ctx.Err(); err != nil {
+					resultCh <- DownloadResult{Index: index, URL: downloadURL, Success: false, Error: err}
+					return
+				}
+			}
 
 			// 添加日志验证并发控制
 			fmt.Printf("开始下载 [%d/%d]: %s (当前并发: %d/%d)\n",
