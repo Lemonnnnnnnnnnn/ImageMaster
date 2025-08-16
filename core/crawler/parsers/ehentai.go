@@ -431,6 +431,19 @@ func NewEHentaiCrawler(reqClient *request.Client) types.ImageCrawler {
 	}
 }
 
+// 插件注册
+func init() {
+	Register(SiteTypeEHentai, func(reqClient *request.Client, cfg types.ConfigProvider) types.ImageCrawler {
+		return NewEHentaiCrawler(reqClient)
+	})
+	Register(SiteTypeExHentai, func(reqClient *request.Client, cfg types.ConfigProvider) types.ImageCrawler {
+		return NewEHentaiCrawler(reqClient)
+	})
+	// host 规则
+	RegisterHostContains(SiteTypeEHentai, "e-hentai.org")
+	RegisterHostContains(SiteTypeExHentai, "exhentai.org")
+}
+
 // SetupEHentaiClient 设置EHentai特殊的客户端配置
 func SetupEHentaiClient(reqClient *request.Client, downloader types.Downloader) error {
 	// 先执行通用设置

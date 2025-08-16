@@ -262,3 +262,11 @@ func NewWnacgCrawler(reqClient *request.Client) types.ImageCrawler {
 		BaseCrawler: baseCrawler,
 	}
 }
+
+// 插件注册
+func init() {
+	Register(SiteTypeWnacg, func(reqClient *request.Client, cfg types.ConfigProvider) types.ImageCrawler {
+		return NewWnacgCrawler(reqClient)
+	})
+	RegisterHostContains(SiteTypeWnacg, "wnacg.com")
+}

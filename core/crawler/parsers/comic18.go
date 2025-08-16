@@ -103,3 +103,11 @@ func NewComic18Crawler(reqClient *request.Client) types.ImageCrawler {
 		BaseCrawler: baseCrawler,
 	}
 }
+
+// 插件注册
+func init() {
+	Register(SiteTypeComic18, func(reqClient *request.Client, cfg types.ConfigProvider) types.ImageCrawler {
+		return NewComic18Crawler(reqClient)
+	})
+	RegisterHostContains(SiteTypeComic18, "18comic.vip", "18comic.org")
+}

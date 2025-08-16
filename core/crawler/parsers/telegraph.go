@@ -125,3 +125,11 @@ func NewTelegraphCrawler(reqClient *request.Client) types.ImageCrawler {
 		BaseCrawler: baseCrawler,
 	}
 }
+
+// 插件注册
+func init() {
+	Register(SiteTypeTelegraph, func(reqClient *request.Client, cfg types.ConfigProvider) types.ImageCrawler {
+		return NewTelegraphCrawler(reqClient)
+	})
+	RegisterHostContains(SiteTypeTelegraph, "telegra.ph", "telegraph.com")
+}

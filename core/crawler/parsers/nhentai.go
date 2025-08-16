@@ -286,3 +286,11 @@ func NewNhentaiCrawler(reqClient *request.Client) types.ImageCrawler {
 		BaseCrawler: baseCrawler,
 	}
 }
+
+// 插件注册
+func init() {
+	Register(SiteTypeNhentai, func(reqClient *request.Client, cfg types.ConfigProvider) types.ImageCrawler {
+		return NewNhentaiCrawler(reqClient)
+	})
+	RegisterHostContains(SiteTypeNhentai, "nhentai.xxx")
+}

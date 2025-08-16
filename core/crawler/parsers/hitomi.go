@@ -44,6 +44,14 @@ func NewHitomiCrawler(reqClient *request.Client) *HitomiCrawler {
 	return crawler
 }
 
+// 插件注册
+func init() {
+	Register(SiteTypeHitomi, func(reqClient *request.Client, cfg types.ConfigProvider) types.ImageCrawler {
+		return NewHitomiCrawler(reqClient)
+	})
+	RegisterHostContains(SiteTypeHitomi, "hitomi.la")
+}
+
 // SetDownloader 设置下载器，自动包装为HitomiDownloader
 func (c *HitomiCrawler) SetDownloader(dl types.Downloader) {
 	// 包装下载器以添加Referer头
