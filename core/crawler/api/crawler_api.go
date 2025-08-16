@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"sort"
 	"sync"
 
 	"ImageMaster/core/download"
@@ -83,39 +82,9 @@ func (api *CrawlerAPI) GetActiveTasks() []*task.DownloadTask {
 	return api.taskManager.GetActiveTasks()
 }
 
-// GetHistoryTasks 获取历史任务
+// GetHistoryTasks 获取历史任务（不再依赖 storage 的实现类型）
 func (api *CrawlerAPI) GetHistoryTasks() []*task.DownloadTask {
-	// 如果有存储API，优先从存储获取
-	if api.storageAPI != nil {
-		if storage, ok := api.storageAPI.(interface{ GetDownloadHistory() []*task.DownloadTask }); ok {
-			tasks := storage.GetDownloadHistory()
-
-			// 确保从存储获取的任务也按时间倒序排序
-			if len(tasks) > 0 {
-				sort.Slice(tasks, func(i, j int) bool {
-					// 如果completeTime为空，使用startTime
-					timeI := tasks[i].CompleteTime
-					if timeI.IsZero() {
-						timeI = tasks[i].StartTime
-					}
-
-					timeJ := tasks[j].CompleteTime
-					if timeJ.IsZero() {
-						timeJ = tasks[j].StartTime
-					}
-
-					// 倒序排列
-					return timeI.After(timeJ)
-				})
-			}
-
-			return tasks
-		}
-	}
-
-	// 否则从任务管理器获取
-	// return api.taskManager.GetHistoryTasks()
-	return nil
+	return api.taskManager.GetHistoryTasks()
 }
 
 // ClearHistory 清除历史记录

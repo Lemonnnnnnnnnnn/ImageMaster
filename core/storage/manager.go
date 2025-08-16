@@ -2,8 +2,8 @@ package storage
 
 import (
 	"ImageMaster/core/logger"
-	"ImageMaster/core/task"
 	"ImageMaster/core/types"
+	"ImageMaster/core/types/dto"
 )
 
 // 确保Manager实现StorageProvider接口
@@ -40,7 +40,7 @@ func (m *Manager) GetDownloadHistory() []interface{} {
 }
 
 // GetDownloadHistoryTyped 获取类型化的下载历史
-func (m *Manager) GetDownloadHistoryTyped() []*task.DownloadTask {
+func (m *Manager) GetDownloadHistoryTyped() []*dto.DownloadTaskDTO {
 	return m.historyManager.GetHistory()
 }
 

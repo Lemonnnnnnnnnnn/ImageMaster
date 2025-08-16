@@ -7,13 +7,13 @@ import (
 	"sync"
 
 	"ImageMaster/core/logger"
-	"ImageMaster/core/task"
+	"ImageMaster/core/types/dto"
 )
 
 type HistoryManager struct {
 	dataDir         string
 	mu              sync.RWMutex
-	downloadHistory []*task.DownloadTask
+	downloadHistory []*dto.DownloadTaskDTO
 }
 
 // NewHistoryManager 创建历史记录管理器
@@ -35,7 +35,7 @@ func NewHistoryManager(appName string) *HistoryManager {
 	// 创建管理器实例
 	m := &HistoryManager{
 		dataDir:         dataDir,
-		downloadHistory: make([]*task.DownloadTask, 0),
+		downloadHistory: make([]*dto.DownloadTaskDTO, 0),
 	}
 
 	// 加载历史记录
@@ -47,9 +47,9 @@ func NewHistoryManager(appName string) *HistoryManager {
 // AddRecord 添加下载记录
 func (m *HistoryManager) AddRecord(t interface{}) {
 	// 类型断言
-	downloadTask, ok := t.(*task.DownloadTask)
+	d, ok := t.(*dto.DownloadTaskDTO)
 	if !ok {
-		logger.Warn("Invalid task type for download history")
+		logger.Warn("Invalid task type for download history (expect DTO)")
 		return
 	}
 
@@ -57,20 +57,20 @@ func (m *HistoryManager) AddRecord(t interface{}) {
 	defer m.mu.Unlock()
 
 	// 添加到历史记录
-	m.downloadHistory = append(m.downloadHistory, downloadTask)
-	logger.Debug("Added download record: %s", downloadTask.Name)
+	m.downloadHistory = append(m.downloadHistory, d)
+	logger.Debug("Added download record: %s", d.Name)
 
 	// 保存历史记录
 	m.saveHistory()
 }
 
 // GetHistory 获取下载历史
-func (m *HistoryManager) GetHistory() []*task.DownloadTask {
+func (m *HistoryManager) GetHistory() []*dto.DownloadTaskDTO {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	// 返回历史记录的副本
-	history := make([]*task.DownloadTask, len(m.downloadHistory))
+	history := make([]*dto.DownloadTaskDTO, len(m.downloadHistory))
 	copy(history, m.downloadHistory)
 
 	return history
@@ -82,7 +82,7 @@ func (m *HistoryManager) ClearHistory() {
 	defer m.mu.Unlock()
 
 	// 清空历史记录
-	m.downloadHistory = make([]*task.DownloadTask, 0)
+	m.downloadHistory = make([]*dto.DownloadTaskDTO, 0)
 	logger.Info("Cleared download history")
 
 	// 保存历史记录

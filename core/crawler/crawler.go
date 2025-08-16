@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"ImageMaster/core/crawler/parsers"
+	"ImageMaster/core/logger"
 	"ImageMaster/core/request"
 	"ImageMaster/core/types"
 )
@@ -45,22 +46,22 @@ func (f *CrawlerFactory) SetConfigManager(configManager types.ConfigProvider) {
 
 		// 从配置中获取代理设置，并直接应用到请求客户端
 		if proxyURL := configManager.GetProxy(); proxyURL != "" {
-			fmt.Printf("设置代理: %s\n", proxyURL)
+			logger.Info("设置代理: %s", proxyURL)
 			f.reqClient.SetProxy(proxyURL)
 		}
 	}
 }
 
 // CreateCrawler 创建特定网站的爬虫
-func (f *CrawlerFactory) createCrawler(siteType string, downloader types.Downloader) types.ImageCrawler {
-	fmt.Printf("创建爬虫, 类型: %s\n", siteType)
+func (f *CrawlerFactory) createCrawler(siteType string) types.ImageCrawler {
+	logger.Info("创建爬虫, 类型: %s", siteType)
 
 	// 所有爬虫共用同一个配置好的请求客户端
 	switch siteType {
 	case SiteTypeEHentai:
-		return parsers.NewEHentaiCrawler(f.reqClient, downloader)
+		return parsers.NewEHentaiCrawler(f.reqClient)
 	case SiteTypeExHentai:
-		return parsers.NewEHentaiCrawler(f.reqClient, downloader)
+		return parsers.NewEHentaiCrawler(f.reqClient)
 	case SiteTypeTelegraph:
 		return parsers.NewTelegraphCrawler(f.reqClient)
 	case SiteTypeWnacg:
@@ -72,7 +73,7 @@ func (f *CrawlerFactory) createCrawler(siteType string, downloader types.Downloa
 	case SiteTypeHitomi:
 		return parsers.NewHitomiCrawler(f.reqClient)
 	default:
-		fmt.Printf("创建爬虫失败, 类型: %s\n", siteType)
+		logger.Warn("创建爬虫失败, 类型: %s", siteType)
 		return nil
 	}
 }
@@ -125,9 +126,11 @@ func (f *CrawlerFactory) detectSiteType(rawURL string) string {
 	return SiteTypeGeneric
 }
 
-func (f *CrawlerFactory) Create(rawURL string, downloader types.Downloader) types.ImageCrawler {
+func (f *CrawlerFactory) Create(rawURL string) (types.ImageCrawler, error) {
 	siteType := f.detectSiteType(rawURL)
-	crawler := f.createCrawler(siteType, downloader)
-	crawler.SetDownloader(downloader)
-	return crawler
+	crawler := f.createCrawler(siteType)
+	if crawler == nil {
+		return nil, fmt.Errorf("unsupported site type: %s", siteType)
+	}
+	return crawler, nil
 }

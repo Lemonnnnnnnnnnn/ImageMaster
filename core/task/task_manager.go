@@ -156,7 +156,20 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 	}
 
 	// 检测网站类型并创建对应的爬虫
-	crawlerInstance := crawlerFactory.Create(task.URL, downloader)
+	crawlerInstance, err := crawlerFactory.Create(task.URL)
+	if err != nil {
+		// 下载失败
+		tm.UpdateTask(taskID, func(task *DownloadTask) {
+			task.Status = string(types.StatusFailed)
+			task.Error = err.Error()
+			task.CompleteTime = time.Now()
+			task.UpdatedAt = time.Now()
+		})
+		// 将任务移动到历史记录
+		tm.moveTaskToHistory(taskID)
+		return
+	}
+	crawlerInstance.SetDownloader(downloader)
 
 	// 设置输出目录
 	var outputDir string
@@ -208,10 +221,10 @@ func (tm *TaskManager) moveTaskToHistory(taskID string) {
 		// 添加到历史记录
 		tm.history = append(tm.history, task)
 
-		// 如果有存储API，保存到存储
+		// 如果有存储API，保存到存储（使用 DTO）
 		if tm.storageAPI != nil {
 			if storage, ok := tm.storageAPI.(interface{ AddDownloadRecord(task interface{}) }); ok {
-				storage.AddDownloadRecord(task)
+				storage.AddDownloadRecord(ToDownloadTaskDTO(task))
 			}
 		}
 	}
@@ -299,33 +312,33 @@ func (tm *TaskManager) GetActiveTasks() []*DownloadTask {
 }
 
 // GetHistoryTasks 获取历史任务
-// func (tm *TaskManager) GetHistoryTasks() []*DownloadTask {
-// 	tm.mu.RLock()
-// 	defer tm.mu.RUnlock()
+func (tm *TaskManager) GetHistoryTasks() []*DownloadTask {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
 
-// 	// 复制历史记录
-// 	history := make([]*DownloadTask, len(tm.history))
-// 	copy(history, tm.history)
+	// 复制历史记录
+	history := make([]*DownloadTask, len(tm.history))
+	copy(history, tm.history)
 
-// 	// 按完成时间倒序排序
-// 	sort.Slice(history, func(i, j int) bool {
-// 		// 如果completeTime为空，使用startTime
-// 		timeI := history[i].CompleteTime
-// 		if timeI.IsZero() {
-// 			timeI = history[i].StartTime
-// 		}
+	// 按完成时间倒序排序
+	sort.Slice(history, func(i, j int) bool {
+		// 如果completeTime为空，使用startTime
+		timeI := history[i].CompleteTime
+		if timeI.IsZero() {
+			timeI = history[i].StartTime
+		}
 
-// 		timeJ := history[j].CompleteTime
-// 		if timeJ.IsZero() {
-// 			timeJ = history[j].StartTime
-// 		}
+		timeJ := history[j].CompleteTime
+		if timeJ.IsZero() {
+			timeJ = history[j].StartTime
+		}
 
-// 		// 倒序排列
-// 		return timeI.After(timeJ)
-// 	})
+		// 倒序排列
+		return timeI.After(timeJ)
+	})
 
-// 	return history
-// }
+	return history
+}
 
 // ClearHistory 清除历史记录
 func (tm *TaskManager) ClearHistory() {

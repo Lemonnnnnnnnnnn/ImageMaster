@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"ImageMaster/core/logger"
 	"ImageMaster/core/request"
 	"ImageMaster/core/types"
 )
@@ -46,6 +47,10 @@ func (c *BaseCrawler) GetDownloader() types.Downloader {
 // SetDownloader 设置下载器
 func (c *BaseCrawler) SetDownloader(dl types.Downloader) {
 	c.downloader = dl
+	// 如果解析器支持注入下载器，则同步设置
+	if da, ok := c.parser.(interface{ SetDownloader(types.Downloader) }); ok {
+		da.SetDownloader(dl)
+	}
 }
 
 // Crawl 执行爬取
@@ -66,7 +71,7 @@ func (c *BaseCrawler) CrawlAndSave(url string, savePath string) string {
 
 	result, err := c.Crawl(url, savePath)
 	if err != nil {
-		fmt.Printf("爬取失败: %v\n", err)
+		logger.Error("爬取失败: %v", err)
 		return ""
 	}
 
@@ -75,7 +80,7 @@ func (c *BaseCrawler) CrawlAndSave(url string, savePath string) string {
 
 // CrawlWithParser 使用解析器执行爬取
 func (c *BaseCrawler) CrawlWithParser(url string, savePath string) error {
-	fmt.Printf("下载 %s 内容: %s\n", c.parser.GetName(), url)
+	logger.Info("下载 %s 内容: %s", c.parser.GetName(), url)
 
 	// 设置请求客户端
 	err := SetupRequestClient(c.reqClient, c.downloader)
@@ -97,8 +102,7 @@ func (c *BaseCrawler) CrawlWithParser(url string, savePath string) error {
 	if c.downloader == nil {
 		return fmt.Errorf("未提供下载器")
 	}
-
-	fmt.Printf("%s解析器使用传入的下载器\n", c.parser.GetName())
+	logger.Debug("%s解析器使用传入的下载器", c.parser.GetName())
 
 	// 准备下载路径
 	contentPath := savePath + "/" + result.Name

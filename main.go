@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"ImageMaster/core/config"
-	"ImageMaster/core/crawler/api"
+	crawlerapi "ImageMaster/core/crawler/api"
 	"ImageMaster/core/library"
 	"ImageMaster/core/storage"
 
@@ -32,7 +32,7 @@ func main() {
 	libraryAPI := library.NewAPI(configAPI)
 
 	// 创建爬虫API
-	crawlerAPI := api.NewCrawlerAPI(configAPI)
+	crawlerAPI := crawlerapi.NewCrawlerAPI(configAPI)
 
 	// 设置存储API到爬虫
 	crawlerAPI.SetStorageAPI(storageAPI)
@@ -47,9 +47,6 @@ func main() {
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup: func(ctx context.Context) {
-			// 设置context到各个组件
-			// libraryAPI.SetContext(ctx)
-			// configAPI.SetContext(ctx)
 			libraryAPI.InitializeLibraryManager()
 			crawlerAPI.SetContext(ctx)
 		},

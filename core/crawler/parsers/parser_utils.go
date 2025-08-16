@@ -3,6 +3,7 @@ package parsers
 import (
 	"fmt"
 
+	"ImageMaster/core/logger"
 	"ImageMaster/core/request"
 	"ImageMaster/core/types"
 )
@@ -22,7 +23,7 @@ func UpdateTaskName(downloader types.Downloader, name string) {
 	if downloader != nil {
 		if taskUpdater := downloader.GetTaskUpdater(); taskUpdater != nil {
 			taskUpdater.UpdateTaskName(name)
-			fmt.Printf("已更新任务名称为: %s\n", name)
+			logger.Debug("已更新任务名称为: %s", name)
 		}
 	}
 }
@@ -48,7 +49,7 @@ func UpdateTaskProgress(downloader types.Downloader, current, total int) {
 // BatchDownloadWithProgress 带进度的批量下载
 func BatchDownloadWithProgress(downloader types.Downloader, imageURLs, filePaths []string) error {
 	totalImages := len(imageURLs)
-	fmt.Printf("已收集 %d 张图片URL，开始下载...\n", totalImages)
+	logger.Info("已收集 %d 张图片URL，开始下载...", totalImages)
 
 	// 更新任务状态为下载中
 	UpdateTaskStatus(downloader, types.StatusDownloading, "")
@@ -58,11 +59,11 @@ func BatchDownloadWithProgress(downloader types.Downloader, imageURLs, filePaths
 	headers := make(map[string]string)
 	successImages, err := downloader.BatchDownload(imageURLs, filePaths, headers)
 	if err != nil {
-		fmt.Printf("批量下载出错: %v\n", err)
+		logger.Error("批量下载出错: %v", err)
 		return fmt.Errorf("批量下载出错: %w", err)
 	}
 
-	fmt.Printf("下载完成，总共 %d 张图片，成功 %d 张\n", totalImages, successImages)
+	logger.Info("下载完成，总共 %d 张图片，成功 %d 张", totalImages, successImages)
 
 	// 更新最终状态
 	if successImages == totalImages {
@@ -86,6 +87,6 @@ func ValidateDownloader(downloader types.Downloader, parserName string) error {
 	if downloader == nil {
 		return fmt.Errorf("未提供下载器")
 	}
-	fmt.Printf("%s解析器使用传入的下载器\n", parserName)
+	logger.Debug("%s解析器使用传入的下载器", parserName)
 	return nil
 }

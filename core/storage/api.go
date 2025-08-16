@@ -2,7 +2,7 @@ package storage
 
 import (
 	"ImageMaster/core/logger"
-	"ImageMaster/core/task"
+	"ImageMaster/core/types/dto"
 )
 
 // API 存储管理API - 对外提供的统一接口
@@ -19,7 +19,7 @@ func NewAPI(appName string) *API {
 }
 
 // GetDownloadHistory 获取下载历史
-func (api *API) GetDownloadHistory() []*task.DownloadTask {
+func (api *API) GetDownloadHistory() []*dto.DownloadTaskDTO {
 	return api.manager.GetDownloadHistoryTyped()
 }
 
