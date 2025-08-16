@@ -1,6 +1,7 @@
 package parsers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -24,6 +25,7 @@ type EHentaiAlbum struct {
 type EHentaiParser struct {
 	downloader types.Downloader
 	reqClient  *request.Client
+	ctx        context.Context
 
 	// 进度跟踪相关属性
 	totalImages        int
@@ -32,6 +34,11 @@ type EHentaiParser struct {
 	completedLinks     int
 	mu                 sync.Mutex
 	taskUpdater        types.TaskUpdater
+}
+
+// SetContext 注入上下文以支持取消
+func (p *EHentaiParser) SetContext(ctx context.Context) {
+	p.ctx = ctx
 }
 
 // SetDownloader 注入下载器
@@ -49,6 +56,12 @@ func (p *EHentaiParser) GetName() string {
 
 // Parse 解析URL获取图片信息
 func (p *EHentaiParser) Parse(reqClient *request.Client, url string) (*ParseResult, error) {
+	// 解析前取消检查
+	if p.ctx != nil {
+		if err := p.ctx.Err(); err != nil {
+			return nil, err
+		}
+	}
 	// 设置请求客户端和初始化状态
 	p.reqClient = reqClient
 	if p.downloader != nil {
@@ -97,13 +110,31 @@ func (p *EHentaiParser) Parse(reqClient *request.Client, url string) (*ParseResu
 
 	// 遍历每一页
 	for pageIndex, page := range eHentaiAlbum.Pages {
+		// 循环取消检查
+		if p.ctx != nil {
+			if err := p.ctx.Err(); err != nil {
+				break
+			}
+		}
 		links := ParseLinks(page)
 
 		// 并发处理每个链接
 		for linkIndex, link := range links {
+			// 启动前取消检查
+			if p.ctx != nil {
+				if err := p.ctx.Err(); err != nil {
+					break
+				}
+			}
 			wg.Add(1)
 			go func(pageIdx, linkIdx int, linkURL string) {
 				defer wg.Done()
+				// goroutine 内取消检查
+				if p.ctx != nil {
+					if err := p.ctx.Err(); err != nil {
+						return
+					}
+				}
 
 				// 解析页面获取真实图片URL
 				imgURL, err := p.parsePageForImage(linkURL)
@@ -234,9 +265,21 @@ func (p *EHentaiParser) getAlbum(url string) (*EHentaiAlbum, error) {
 
 	for index, pageURL := range pageURLs {
 		logger.Debug("访问第%d页, %s", index+1, pageURL)
+		// 启动前取消检查
+		if p.ctx != nil {
+			if err := p.ctx.Err(); err != nil {
+				break
+			}
+		}
 		wg.Add(1)
 		go func(idx int, pURL string) {
 			defer wg.Done()
+			// goroutine 内取消检查
+			if p.ctx != nil {
+				if err := p.ctx.Err(); err != nil {
+					return
+				}
+			}
 
 			pageResp, err := p.reqClient.RateLimitedGet(pURL)
 			if err != nil {

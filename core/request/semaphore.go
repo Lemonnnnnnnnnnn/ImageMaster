@@ -1,5 +1,7 @@
 package request
 
+import "context"
+
 // Semaphore 信号量，用于控制并发数量
 type Semaphore struct {
 	ch chan struct{}
@@ -15,6 +17,16 @@ func NewSemaphore(capacity int) *Semaphore {
 // Acquire 获取信号量（阻塞直到获取成功）
 func (s *Semaphore) Acquire() {
 	s.ch <- struct{}{}
+}
+
+// AcquireWithContext 带上下文的获取，支持取消
+func (s *Semaphore) AcquireWithContext(ctx context.Context) error {
+	select {
+	case s.ch <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // Release 释放信号量

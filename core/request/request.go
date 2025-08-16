@@ -242,7 +242,13 @@ func (c *Client) GetHTTPClient() *http.Client {
 
 // RateLimitedGet 使用默认速率信号量的GET请求（替代原token_bucket功能）
 func (c *Client) RateLimitedGet(url string) (*http.Response, error) {
-	c.semaphore.Acquire()
+	if c.ctx != nil {
+		if err := c.semaphore.AcquireWithContext(c.ctx); err != nil {
+			return nil, err
+		}
+	} else {
+		c.semaphore.Acquire()
+	}
 	defer c.semaphore.Release()
 	return c.Get(url)
 }

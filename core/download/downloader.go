@@ -208,8 +208,15 @@ func (d *Downloader) BatchDownload(urls []string, filepaths []string, headers ma
 		go func(index int, downloadURL, filePath string) {
 			defer wg.Done()
 
-			// 获取信号量（阻塞直到有空位）
-			d.semaphore.Acquire()
+			// 获取信号量（支持取消）
+			if d.ctx != nil {
+				if err := d.semaphore.AcquireWithContext(d.ctx); err != nil {
+					resultCh <- DownloadResult{Index: index, URL: downloadURL, Success: false, Error: err}
+					return
+				}
+			} else {
+				d.semaphore.Acquire()
+			}
 			defer d.semaphore.Release() // 完成后释放信号量
 
 			// 取消检查（获得并发名额后再次检查）
