@@ -55,6 +55,23 @@ export namespace dto {
 
 }
 
+export namespace history {
+	
+	export class Manager {
+	
+	
+	    static createFrom(source: any = {}) {
+	        return new Manager(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	
+	    }
+	}
+
+}
+
 export namespace library {
 	
 	export class Manga {
@@ -75,23 +92,6 @@ export namespace library {
 	        this.previewImg = source["previewImg"];
 	        this.imagesCount = source["imagesCount"];
 	        this.images = source["images"];
-	    }
-	}
-
-}
-
-export namespace storage {
-	
-	export class Manager {
-	
-	
-	    static createFrom(source: any = {}) {
-	        return new Manager(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	
 	    }
 	}
 

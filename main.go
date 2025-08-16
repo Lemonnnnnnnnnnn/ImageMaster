@@ -7,8 +7,8 @@ import (
 
 	"ImageMaster/core/config"
 	crawlerapi "ImageMaster/core/crawler/api"
+	"ImageMaster/core/history"
 	"ImageMaster/core/library"
-	"ImageMaster/core/storage"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
@@ -22,8 +22,8 @@ var assets embed.FS
 const AppName = "imagemaster"
 
 func main() {
-	// 创建存储API
-	storageAPI := storage.NewAPI(AppName)
+	// 创建历史记录API
+	historyAPI := history.NewAPI(AppName)
 
 	// 获取配置管理器
 	configAPI := config.NewAPI(AppName)
@@ -31,11 +31,8 @@ func main() {
 	// 创建图书馆API
 	libraryAPI := library.NewAPI(configAPI)
 
-	// 创建爬虫API
-	crawlerAPI := crawlerapi.NewCrawlerAPI(configAPI)
-
-	// 设置存储API到爬虫
-	crawlerAPI.SetStorageAPI(storageAPI)
+	// 创建爬虫API（构造注入历史存储）
+	crawlerAPI := crawlerapi.NewCrawlerAPI(configAPI, historyAPI.GetStore())
 
 	// 创建应用
 	err := wails.Run(&options.App{
@@ -53,7 +50,7 @@ func main() {
 		Bind: []interface{}{
 			libraryAPI,
 			crawlerAPI,
-			storageAPI,
+			historyAPI,
 			configAPI,
 		},
 		LogLevel:                 logger.ERROR,

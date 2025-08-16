@@ -21,14 +21,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { ClearHistory, GetHistoryTasks } from '../../../wailsjs/go/api/CrawlerAPI';
-import type { task } from '../../../wailsjs/go/models';
+import type { dto } from '../../../wailsjs/go/models';
 import { Button, TaskList } from '@/components';
 import { useRouter } from 'vue-router';
 import { ArrowLeft, Trash } from 'lucide-vue-next';
 
 const router = useRouter();
 
-let historyTasks = ref<task.DownloadTask[]>([])
+let historyTasks = ref<dto.DownloadTaskDTO[]>([])
 
 async function clearHistory() {
     try {

@@ -64,10 +64,10 @@
 
 <script setup lang="ts">
 import { Loader, ArrowBigDownDash, CircleCheck, CircleX, CircleOff } from 'lucide-vue-next';
-import type { task } from '../../wailsjs/go/models';
+import type { dto } from '../../wailsjs/go/models';
 
 defineProps<{
-    tasks: task.DownloadTask[]
+    tasks: dto.DownloadTaskDTO[]
 }>();
 
 function calculateProgressPercentage(current: number, total: number): number {

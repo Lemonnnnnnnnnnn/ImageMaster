@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"ImageMaster/core/types/dto"
+	"time"
+)
 
 // TaskUpdater 任务更新器接口
 type TaskUpdater interface {
@@ -72,10 +75,12 @@ type ConfigManager interface {
 	SetActiveLibrary(library string) bool
 }
 
-// StorageProvider 存储提供者接口
-type StorageProvider interface {
-	AddDownloadRecord(task interface{})
-	GetDownloadHistory() []interface{}
+// HistoryStore 历史记录存储接口（强类型，面向下载任务历史）
+// 统一由 history 子系统实现，屏蔽底层持久化细节
+// 仅暴露给 task/crawler 等需要读写历史的模块
+type HistoryStore interface {
+	AddDownloadRecord(task *dto.DownloadTaskDTO)
+	GetDownloadHistory() []*dto.DownloadTaskDTO
 	ClearDownloadHistory()
 }
 

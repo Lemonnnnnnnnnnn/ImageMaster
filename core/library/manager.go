@@ -59,25 +59,6 @@ func (m *Manager) SetContext(ctx context.Context) {
 	m.ctx = ctx
 }
 
-// SelectLibrary 选择漫画库文件夹
-// func (m *Manager) SelectLibrary() string {
-// 	dir, err := runtime.OpenDirectoryDialog(m.ctx, runtime.OpenDialogOptions{
-// 		Title: "选择漫画库文件夹",
-// 	})
-
-// 	if err != nil || dir == "" {
-// 		return ""
-// 	}
-
-// 	// 添加到配置中
-// 	m.configManager.AddLibrary(dir)
-
-// 	// 加载这个新库
-// 	m.LoadLibrary(dir)
-
-// 	return dir
-// }
-
 // GetLibraries 获取所有图书馆路径
 func (m *Manager) GetLibraries() []string {
 	return m.configManager.GetLibraries()

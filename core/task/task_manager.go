@@ -9,6 +9,7 @@ import (
 	"ImageMaster/core/crawler"
 	"ImageMaster/core/download"
 	"ImageMaster/core/types"
+	"ImageMaster/core/types/dto"
 
 	"github.com/google/uuid"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -22,8 +23,7 @@ type TaskManager struct {
 	downloaders   map[string]*download.Downloader // 每个任务对应的下载器实例
 	defaultConfig download.Config                 // 默认下载器配置
 	mu            sync.RWMutex                    // 并发控制锁
-	history       []*DownloadTask                 // 历史任务记录
-	storageAPI    interface{}                     // 存储API
+	historyStore  types.HistoryStore              // 历史记录存储
 	ctx           context.Context                 // Wails上下文
 	configManager types.ConfigProvider            // 配置管理器
 }
@@ -33,15 +33,15 @@ type Config struct {
 	DownloaderConfig download.Config
 }
 
-// NewTaskManager 创建任务管理器
-func NewTaskManager(config Config) *TaskManager {
+// NewTaskManager 创建任务管理器（构造注入 HistoryStore）
+func NewTaskManager(config Config, store types.HistoryStore) *TaskManager {
 	return &TaskManager{
 		tasks:         make(map[string]*DownloadTask),
 		activeTasks:   make(map[string]bool),
 		taskCancelMap: make(map[string]chan struct{}),
 		downloaders:   make(map[string]*download.Downloader),
 		defaultConfig: config.DownloaderConfig,
-		history:       make([]*DownloadTask, 0),
+		historyStore:  store,
 	}
 }
 
@@ -50,9 +50,9 @@ func (tm *TaskManager) SetConfigManager(configManager types.ConfigProvider) {
 	tm.configManager = configManager
 }
 
-// SetStorageAPI 设置存储API
-func (tm *TaskManager) SetStorageAPI(storageAPI interface{}) {
-	tm.storageAPI = storageAPI
+// SetHistoryStore 设置历史记录存储
+func (tm *TaskManager) SetHistoryStore(store types.HistoryStore) {
+	tm.historyStore = store
 }
 
 // SetContext 设置Wails上下文
@@ -165,8 +165,8 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 			task.CompleteTime = time.Now()
 			task.UpdatedAt = time.Now()
 		})
-		// 将任务移动到历史记录
-		tm.moveTaskToHistory(taskID)
+		// 持久化到历史记录
+		tm.persistTaskToHistory(taskID)
 		return
 	}
 	crawlerInstance.SetDownloader(downloader)
@@ -199,8 +199,8 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 		})
 	}
 
-	// 将任务移动到历史记录
-	tm.moveTaskToHistory(taskID)
+	// 持久化到历史记录
+	tm.persistTaskToHistory(taskID)
 
 	// 发送完成事件到前端
 	if tm.ctx != nil {
@@ -212,22 +212,16 @@ func (tm *TaskManager) executeTask(taskID string, cancelChan chan struct{}) {
 	}
 }
 
-// moveTaskToHistory 将任务移动到历史记录
-func (tm *TaskManager) moveTaskToHistory(taskID string) {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-
-	if task, exists := tm.tasks[taskID]; exists {
-		// 添加到历史记录
-		tm.history = append(tm.history, task)
-
-		// 如果有存储API，保存到存储（使用 DTO）
-		if tm.storageAPI != nil {
-			if storage, ok := tm.storageAPI.(interface{ AddDownloadRecord(task interface{}) }); ok {
-				storage.AddDownloadRecord(ToDownloadTaskDTO(task))
-			}
-		}
+// persistTaskToHistory 将任务持久化到历史记录
+func (tm *TaskManager) persistTaskToHistory(taskID string) {
+	tm.mu.RLock()
+	task, exists := tm.tasks[taskID]
+	tm.mu.RUnlock()
+	if !exists || tm.historyStore == nil {
+		return
 	}
+	var dtoTask *dto.DownloadTaskDTO = ToDownloadTaskDTO(task)
+	tm.historyStore.AddDownloadRecord(dtoTask)
 }
 
 // UpdateTask 更新任务
@@ -311,47 +305,38 @@ func (tm *TaskManager) GetActiveTasks() []*DownloadTask {
 	return tasks
 }
 
-// GetHistoryTasks 获取历史任务
-func (tm *TaskManager) GetHistoryTasks() []*DownloadTask {
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-
-	// 复制历史记录
-	history := make([]*DownloadTask, len(tm.history))
-	copy(history, tm.history)
-
-	// 按完成时间倒序排序
+// GetHistoryTasks 获取历史任务（从磁盘，倒序）
+func (tm *TaskManager) GetHistoryTasks() []*dto.DownloadTaskDTO {
+	if tm.historyStore == nil {
+		return nil
+	}
+	history := tm.historyStore.GetDownloadHistory()
+	// 倒序：优先 completeTime，为零则用 startTime
 	sort.Slice(history, func(i, j int) bool {
-		// 如果completeTime为空，使用startTime
-		timeI := history[i].CompleteTime
-		if timeI.IsZero() {
-			timeI = history[i].StartTime
+		ti := history[i].CompleteTime
+		if ti.IsZero() {
+			ti = history[i].StartTime
 		}
-
-		timeJ := history[j].CompleteTime
-		if timeJ.IsZero() {
-			timeJ = history[j].StartTime
+		tj := history[j].CompleteTime
+		if tj.IsZero() {
+			tj = history[j].StartTime
 		}
-
-		// 倒序排列
-		return timeI.After(timeJ)
+		return ti.After(tj)
 	})
-
 	return history
 }
 
-// ClearHistory 清除历史记录
+// ClearHistory 清除历史记录（磁盘）
 func (tm *TaskManager) ClearHistory() {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-
-	// 清空历史记录
-	tm.history = make([]*DownloadTask, 0)
-
+	if tm.historyStore != nil {
+		tm.historyStore.ClearDownloadHistory()
+	}
 	// 清除非活跃任务
+	tm.mu.Lock()
 	for id := range tm.tasks {
 		if _, active := tm.activeTasks[id]; !active {
 			delete(tm.tasks, id)
 		}
 	}
+	tm.mu.Unlock()
 }

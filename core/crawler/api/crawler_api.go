@@ -7,14 +7,15 @@ import (
 	"ImageMaster/core/download"
 	"ImageMaster/core/task"
 	"ImageMaster/core/types"
+	"ImageMaster/core/types/dto"
 )
 
 // CrawlerAPI 爬虫API接口
 type CrawlerAPI struct {
 	taskManager   *task.TaskManager
 	configManager types.ConfigProvider
-	storageAPI    interface{}     // 存储API
-	ctx           context.Context // Wails上下文
+	historyStore  types.HistoryStore // 历史存储
+	ctx           context.Context    // Wails上下文
 	sync.Mutex
 }
 
@@ -23,8 +24,8 @@ type Config struct {
 	TaskManagerConfig task.Config
 }
 
-// NewCrawlerAPI 创建爬虫API
-func NewCrawlerAPI(configManager types.ConfigProvider) *CrawlerAPI {
+// NewCrawlerAPI 创建爬虫API（构造注入 HistoryStore）
+func NewCrawlerAPI(configManager types.ConfigProvider, store types.HistoryStore) *CrawlerAPI {
 	// 默认配置
 	config := Config{
 		TaskManagerConfig: task.Config{
@@ -37,21 +38,15 @@ func NewCrawlerAPI(configManager types.ConfigProvider) *CrawlerAPI {
 	}
 
 	api := &CrawlerAPI{
-		taskManager:   task.NewTaskManager(config.TaskManagerConfig),
+		taskManager:   task.NewTaskManager(config.TaskManagerConfig, store),
 		configManager: configManager,
+		historyStore:  store,
 	}
 
 	// 设置配置管理器
 	api.taskManager.SetConfigManager(configManager)
 
 	return api
-}
-
-// SetStorageAPI 设置存储API
-func (api *CrawlerAPI) SetStorageAPI(storageAPI interface{}) {
-	api.storageAPI = storageAPI
-	// 同时设置到任务管理器
-	api.taskManager.SetStorageAPI(storageAPI)
 }
 
 // SetContext 设置Wails上下文
@@ -82,22 +77,16 @@ func (api *CrawlerAPI) GetActiveTasks() []*task.DownloadTask {
 	return api.taskManager.GetActiveTasks()
 }
 
-// GetHistoryTasks 获取历史任务（不再依赖 storage 的实现类型）
-func (api *CrawlerAPI) GetHistoryTasks() []*task.DownloadTask {
+// GetHistoryTasks 获取历史任务（按 TaskManager 的排序）
+func (api *CrawlerAPI) GetHistoryTasks() []*dto.DownloadTaskDTO {
 	return api.taskManager.GetHistoryTasks()
 }
 
 // ClearHistory 清除历史记录
 func (api *CrawlerAPI) ClearHistory() {
-	// 如果有存储API，同时清除存储中的历史
-	if api.storageAPI != nil {
-		if storage, ok := api.storageAPI.(interface{ ClearDownloadHistory() }); ok {
-			storage.ClearDownloadHistory()
-		}
+	if api.historyStore != nil {
+		api.historyStore.ClearDownloadHistory()
 	}
-
-	// 清除任务管理器中的历史
-	api.taskManager.ClearHistory()
 }
 
 // GetTaskByID 根据ID获取任务

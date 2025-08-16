@@ -38,10 +38,6 @@ export function SetContext(arg1) {
   return window['go']['api']['CrawlerAPI']['SetContext'](arg1);
 }
 
-export function SetStorageAPI(arg1) {
-  return window['go']['api']['CrawlerAPI']['SetStorageAPI'](arg1);
-}
-
 export function StartCrawl(arg1) {
   return window['go']['api']['CrawlerAPI']['StartCrawl'](arg1);
 }

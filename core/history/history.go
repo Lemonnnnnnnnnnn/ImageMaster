@@ -1,4 +1,4 @@
-package storage
+package history
 
 import (
 	"encoding/json"
@@ -45,11 +45,9 @@ func NewHistoryManager(appName string) *HistoryManager {
 }
 
 // AddRecord 添加下载记录
-func (m *HistoryManager) AddRecord(t interface{}) {
-	// 类型断言
-	d, ok := t.(*dto.DownloadTaskDTO)
-	if !ok {
-		logger.Warn("Invalid task type for download history (expect DTO)")
+func (m *HistoryManager) AddRecord(d *dto.DownloadTaskDTO) {
+	if d == nil {
+		logger.Warn("Invalid task for download history: nil")
 		return
 	}
 
