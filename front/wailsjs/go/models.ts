@@ -97,6 +97,39 @@ export namespace library {
 
 }
 
+export namespace logger {
+	
+	export class LogInfo {
+	    dir: string;
+	    currentFile: string;
+	    sizeBytes: number;
+	    backups: string[];
+	    maxSizeMB: number;
+	    maxBackups: number;
+	    maxAgeDays: number;
+	    compress: boolean;
+	    updatedAt: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LogInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.dir = source["dir"];
+	        this.currentFile = source["currentFile"];
+	        this.sizeBytes = source["sizeBytes"];
+	        this.backups = source["backups"];
+	        this.maxSizeMB = source["maxSizeMB"];
+	        this.maxBackups = source["maxBackups"];
+	        this.maxAgeDays = source["maxAgeDays"];
+	        this.compress = source["compress"];
+	        this.updatedAt = source["updatedAt"];
+	    }
+	}
+
+}
+
 export namespace task {
 	
 	export class DownloadTask {

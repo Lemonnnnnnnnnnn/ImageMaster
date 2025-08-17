@@ -28,6 +28,19 @@
                 <Input @blur="saveProxy" class="flex-1" v-model="proxyUrl" placeholder="请输入代理地址" />
             </div>
         </div>
+
+        <div class="flex flex-col gap-4">
+            <div class="text-xl">日志</div>
+            <div class="flex flex-col gap-2 text-neutral-300/90">
+                <div>目录：<span class="select-all">{{ logInfo?.dir || '-' }}</span></div>
+                <div>当前文件：<span class="select-all">{{ logInfo?.currentFile || '-' }}</span></div>
+                <div>大小：{{ formatSize(logInfo?.sizeBytes) }}</div>
+            </div>
+            <div class="flex gap-2">
+                <button class="rounded-2xl border-1 border-neutral-300/50 py-2 px-4" @click="copyPath(logInfo?.currentFile)">复制日志文件路径</button>
+                <button class="rounded-2xl border-1 border-neutral-300/50 py-2 px-4" @click="copyPath(logInfo?.dir)">复制日志目录</button>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -38,11 +51,13 @@ import { GetLibraries, GetOutputDir, GetProxy, SetProxy, GetActiveLibrary, SetOu
 import { toast } from 'vue-sonner';
 import { debounce } from '@/utils';
 import { LoadLibrary } from '../../../wailsjs/go/library/API';
+import { GetLogInfo } from '../../../wailsjs/go/logger/API';
 
 let proxyUrl = ref("")
 let downloadDir = ref("")
 let libraries = ref<string[]>([])
 let activeLibrary = ref("")
+let logInfo = ref<any>(null)
 
 const saveProxy = debounce((e: Event) => {
     SetProxy((e.target as HTMLInputElement).value).then(() => {
@@ -55,6 +70,11 @@ async function refreshConfig() {
     downloadDir.value = await GetOutputDir();
     libraries.value = await GetLibraries();
     activeLibrary.value = await GetActiveLibrary();
+    try {
+        logInfo.value = await GetLogInfo();
+    } catch (e) {
+        logInfo.value = null
+    }
 }
 
 async function changeOutputDir() {
@@ -85,6 +105,20 @@ async function addLibrary() {
 onMounted(async () => {
     refreshConfig()
 })
+
+function copyPath(text?: string) {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => toast.success('已复制到剪贴板'))
+}
+
+function formatSize(size?: number) {
+    if (!size && size !== 0) return '-'
+    const units = ['B','KB','MB','GB']
+    let i = 0
+    let s = size
+    while (s >= 1024 && i < units.length - 1) { s /= 1024; i++ }
+    return `${s.toFixed(2)} ${units[i]}`
+}
 </script>
 
 <style scoped></style>

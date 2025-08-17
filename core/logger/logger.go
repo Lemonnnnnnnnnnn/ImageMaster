@@ -1,140 +1,130 @@
 package logger
 
 import (
+	"context"
 	"fmt"
-	"log"
+	"io"
+	"log/slog"
 	"os"
+	"path/filepath"
+	"runtime/debug"
 	"sync"
-	"time"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-// 日志级别
-type LogLevel int
+// 使用 slog 作为底层实现，保留现有全局函数签名
+type LogLevel = slog.Level
 
 const (
-	DebugLevel LogLevel = iota
-	InfoLevel
-	WarnLevel
-	ErrorLevel
-	FatalLevel
+	DebugLevel LogLevel = slog.LevelDebug
+	InfoLevel  LogLevel = slog.LevelInfo
+	WarnLevel  LogLevel = slog.LevelWarn
+	ErrorLevel LogLevel = slog.LevelError
 )
 
-// 日志记录器
-type Logger struct {
-	mu     sync.Mutex
-	level  LogLevel
-	prefix string
-	logger *log.Logger
-}
-
-// 单例日志实例
 var (
-	defaultLogger *Logger
-	once          sync.Once
+	once     sync.Once
+	std      *slog.Logger
+	levelVar = new(slog.LevelVar)
+	writer   io.Writer
+	logFile  string
 )
 
-// 获取默认日志记录器
-func GetLogger() *Logger {
-	once.Do(func() {
-		defaultLogger = &Logger{
-			level:  InfoLevel,
-			prefix: "[ImageMaster] ",
-			logger: log.New(os.Stderr, "", log.LstdFlags),
-		}
-	})
-	return defaultLogger
+type FileConfig struct {
+	Filename    string
+	MaxSizeMB   int
+	MaxBackups  int
+	MaxAgeDays  int
+	Compress    bool
+	WriteStdout bool
 }
 
-// 设置日志级别
-func (l *Logger) SetLevel(level LogLevel) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.level = level
+func defaultLogDir() string {
+	if dir, err := os.UserCacheDir(); err == nil && dir != "" {
+		return filepath.Join(dir, "ImageMaster", "logs")
+	}
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".imagemaster", "logs")
 }
 
-// 设置日志前缀
-func (l *Logger) SetPrefix(prefix string) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.prefix = prefix
-}
-
-// 格式化并输出日志
-func (l *Logger) log(level LogLevel, format string, args ...interface{}) {
-	if level < l.level {
+// 确保 std 存在（即使未显式 Init）
+func ensure() {
+	if std != nil {
 		return
 	}
+	once.Do(func() {
+		levelVar.Set(slog.LevelInfo)
+		h := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: levelVar})
+		std = slog.New(h).With("app", "ImageMaster")
+	})
+}
 
-	l.mu.Lock()
-	defer l.mu.Unlock()
+// Init 配置文件输出与滚动
+func Init(cfg FileConfig) error {
+	// 构造 writer
+	if cfg.Filename == "" {
+		_ = os.MkdirAll(defaultLogDir(), 0o755)
+		cfg.Filename = filepath.Join(defaultLogDir(), "app.log")
+	}
+	logFile = cfg.Filename
 
-	// 添加日志级别前缀
-	var levelStr string
-	switch level {
-	case DebugLevel:
-		levelStr = "[DEBUG] "
-	case InfoLevel:
-		levelStr = "[INFO] "
-	case WarnLevel:
-		levelStr = "[WARN] "
-	case ErrorLevel:
-		levelStr = "[ERROR] "
-	case FatalLevel:
-		levelStr = "[FATAL] "
+	lj := &lumberjack.Logger{
+		Filename:   cfg.Filename,
+		MaxSize:    max(1, cfg.MaxSizeMB),
+		MaxBackups: max(1, cfg.MaxBackups),
+		MaxAge:     max(1, cfg.MaxAgeDays),
+		Compress:   cfg.Compress,
 	}
 
-	// 格式化消息
-	timeStr := time.Now().Format("2006-01-02 15:04:05")
-	msg := fmt.Sprintf(format, args...)
-	fullMsg := fmt.Sprintf("%s %s%s%s", timeStr, l.prefix, levelStr, msg)
-
-	// 输出日志
-	l.logger.Println(fullMsg)
-
-	// 如果是致命错误，退出程序
-	if level == FatalLevel {
-		os.Exit(1)
+	if cfg.WriteStdout {
+		writer = io.MultiWriter(os.Stderr, lj)
+	} else {
+		writer = lj
 	}
+
+	levelVar.Set(slog.LevelInfo)
+	h := slog.NewJSONHandler(writer, &slog.HandlerOptions{Level: levelVar})
+	std = slog.New(h).With("app", "ImageMaster")
+	return nil
 }
 
-// 不同级别的日志方法
-func (l *Logger) Debug(format string, args ...interface{}) {
-	l.log(DebugLevel, format, args...)
-}
+func SetLevel(level LogLevel) { ensure(); levelVar.Set(level) }
 
-func (l *Logger) Info(format string, args ...interface{}) {
-	l.log(InfoLevel, format, args...)
-}
-
-func (l *Logger) Warn(format string, args ...interface{}) {
-	l.log(WarnLevel, format, args...)
-}
-
-func (l *Logger) Error(format string, args ...interface{}) {
-	l.log(ErrorLevel, format, args...)
-}
-
-func (l *Logger) Fatal(format string, args ...interface{}) {
-	l.log(FatalLevel, format, args...)
-}
-
-// 简便的全局方法
-func Debug(format string, args ...interface{}) {
-	GetLogger().Debug(format, args...)
-}
-
-func Info(format string, args ...interface{}) {
-	GetLogger().Info(format, args...)
-}
-
-func Warn(format string, args ...interface{}) {
-	GetLogger().Warn(format, args...)
-}
-
-func Error(format string, args ...interface{}) {
-	GetLogger().Error(format, args...)
-}
-
+// 全局便捷方法：保持原签名（格式化字符串）
+func Debug(format string, args ...interface{}) { ensure(); std.Debug(fmt.Sprintf(format, args...)) }
+func Info(format string, args ...interface{})  { ensure(); std.Info(fmt.Sprintf(format, args...)) }
+func Warn(format string, args ...interface{})  { ensure(); std.Warn(fmt.Sprintf(format, args...)) }
+func Error(format string, args ...interface{}) { ensure(); std.Error(fmt.Sprintf(format, args...)) }
 func Fatal(format string, args ...interface{}) {
-	GetLogger().Fatal(format, args...)
+	ensure()
+	std.Error(fmt.Sprintf(format, args...))
+	os.Exit(1)
+}
+
+// 结构化扩展
+func With(args ...any) *slog.Logger { ensure(); return std.With(args...) }
+
+// Panic 保护
+func Recover(label string) {
+	if r := recover(); r != nil {
+		ensure()
+		std.Error("panic recovered", "label", label, "err", r, "stack", string(debug.Stack()))
+	}
+}
+
+func SafeGo(ctx context.Context, label string, fn func(context.Context)) {
+	go func() {
+		defer Recover(label)
+		fn(ctx)
+	}()
+}
+
+func LogPath() string { return logFile }
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

@@ -9,9 +9,10 @@ import (
 	crawlerapi "ImageMaster/core/crawler/api"
 	"ImageMaster/core/history"
 	"ImageMaster/core/library"
+	appLogger "ImageMaster/core/logger"
 
 	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/logger"
+	wlogger "github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
@@ -22,6 +23,17 @@ var assets embed.FS
 const AppName = "imagemaster"
 
 func main() {
+	defer appLogger.Recover("main")
+
+	_ = appLogger.Init(appLogger.FileConfig{
+		Filename:    "",
+		MaxSizeMB:   50,
+		MaxBackups:  5,
+		MaxAgeDays:  14,
+		Compress:    true,
+		WriteStdout: true,
+	})
+
 	// 创建历史记录API
 	historyAPI := history.NewAPI(AppName)
 
@@ -52,9 +64,10 @@ func main() {
 			crawlerAPI,
 			historyAPI,
 			configAPI,
+			appLogger.NewAPI(),
 		},
-		LogLevel:                 logger.ERROR,
-		LogLevelProduction:       logger.ERROR,
+		LogLevel:                 wlogger.ERROR,
+		LogLevelProduction:       wlogger.ERROR,
 		EnableDefaultContextMenu: true,
 	})
 

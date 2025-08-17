@@ -11,6 +11,7 @@ require (
 	github.com/robertkrimen/otto v0.5.1
 	github.com/wailsapp/wails/v2 v2.10.1
 	golang.org/x/net v0.42.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (
