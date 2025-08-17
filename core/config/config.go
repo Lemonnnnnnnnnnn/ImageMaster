@@ -69,7 +69,7 @@ func (m *Manager) LoadConfig() bool {
 		return false
 	}
 
-	logger.Info("Config loaded successfully")
+	logger.Debug("Config loaded successfully")
 	return true
 }
 
@@ -167,7 +167,7 @@ func (m *Manager) GetActiveLibrary() string {
 // SetProxy 设置代理
 func (m *Manager) SetProxy(proxyURL string) bool {
 	m.config.ProxyURL = proxyURL
-	logger.Info("Set proxy: %s", proxyURL)
+	logger.Debug("Set proxy: %s", proxyURL)
 	return m.SaveConfig()
 }
 

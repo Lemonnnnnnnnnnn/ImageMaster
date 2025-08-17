@@ -16,7 +16,7 @@ type Manager struct {
 
 // NewManager 创建历史管理器
 func NewManager(appName string) *Manager {
-	logger.Info("Initializing history manager for app: %s", appName)
+	logger.Debug("Initializing history manager for app: %s", appName)
 	return &Manager{historyManager: NewHistoryManager(appName)}
 }
 

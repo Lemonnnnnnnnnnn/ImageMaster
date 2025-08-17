@@ -37,7 +37,7 @@ func (f *CrawlerFactory) SetConfigManager(configManager types.ConfigProvider) {
 
 		// 从配置中获取代理设置，并直接应用到请求客户端
 		if proxyURL := configManager.GetProxy(); proxyURL != "" {
-			logger.Info("设置代理: %s", proxyURL)
+			logger.Debug("设置代理: %s", proxyURL)
 			f.reqClient.SetProxy(proxyURL)
 		}
 	}

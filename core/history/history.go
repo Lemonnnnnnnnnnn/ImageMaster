@@ -130,5 +130,5 @@ func (m *HistoryManager) loadHistory() {
 		return
 	}
 
-	logger.Info("Loaded %d download history records", len(m.downloadHistory))
+	logger.Debug("Loaded %d download history records", len(m.downloadHistory))
 }

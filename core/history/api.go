@@ -12,7 +12,7 @@ type API struct {
 
 // NewAPI 创建历史 API
 func NewAPI(appName string) *API {
-	logger.Info("Creating history API for app: %s", appName)
+	logger.Debug("Creating history API for app: %s", appName)
 	return &API{
 		manager: NewManager(appName),
 	}
