@@ -27,8 +27,8 @@ type Downloader struct {
 	retryDelay    time.Duration
 	showProcess   bool
 	configManager types.ConfigProvider
-	taskUpdater   types.TaskUpdater  // 任务更新器
-	semaphore     *request.Semaphore // 用于控制并发数量的信号量
+	taskUpdater   types.TaskUpdater // 任务更新器
+	semaphore     *utils.Semaphore  // 用于控制并发数量的信号量
 	mu            sync.RWMutex
 	ctx           context.Context
 }
@@ -43,7 +43,7 @@ type Config struct {
 // NewDownloader 创建新的下载器
 func NewDownloader(config Config) *Downloader {
 	// 创建用于控制并发数量的信号量
-	semaphore := request.NewSemaphore(DefaultDownloadConcurrency)
+	semaphore := utils.NewSemaphore(DefaultDownloadConcurrency)
 
 	return &Downloader{
 		reqClient:   request.NewClient(),

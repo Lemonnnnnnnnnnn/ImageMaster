@@ -13,6 +13,7 @@ import (
 	"ImageMaster/core/logger"
 	"ImageMaster/core/request"
 	"ImageMaster/core/types"
+	"ImageMaster/core/utils"
 )
 
 // EHentaiAlbum EH专辑
@@ -494,7 +495,7 @@ func SetupEHentaiClient(reqClient *request.Client, downloader types.Downloader) 
 		return err
 	}
 
-	reqClient.SetSemaphore(request.NewSemaphore(5))
+	reqClient.SetSemaphore(utils.NewSemaphore(5))
 
 	// 设置ehentai需要的cookie
 	reqClient.AddCookie(&http.Cookie{

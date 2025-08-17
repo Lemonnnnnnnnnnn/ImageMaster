@@ -11,6 +11,7 @@ import (
 	"golang.org/x/net/http2"
 
 	"ImageMaster/core/types"
+	"ImageMaster/core/utils"
 )
 
 // Client HTTP客户端封装
@@ -21,7 +22,7 @@ type Client struct {
 	headers        map[string]string
 	cookies        []*http.Cookie
 	defaultHeaders map[string]string
-	semaphore      *Semaphore
+	semaphore      *utils.Semaphore
 	ctx            context.Context
 }
 
@@ -44,11 +45,11 @@ func NewClient() *Client {
 			"accept-language": "en,zh-CN;q=0.9,zh;q=0.8",
 			"user-agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
 		},
-		semaphore: NewSemaphore(10),
+		semaphore: utils.NewSemaphore(10),
 	}
 }
 
-func (c *Client) SetSemaphore(semaphore *Semaphore) {
+func (c *Client) SetSemaphore(semaphore *utils.Semaphore) {
 	c.semaphore = semaphore
 }
 
